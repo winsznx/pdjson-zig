@@ -83,7 +83,11 @@ TEXT_NUMBER_EXEMPT = {
 def numbers_in(text: str) -> list[str]:
     """Integers a reader would take as measurements."""
     out = []
-    for raw in re.findall(r"\b\d[\d,]*(?:\.\d+)?\b", text):
+    # NOT \b at the end: "26.07x" has no word boundary between "7" and "x", so
+    # the regex backtracked to "26" and reported a figure nobody wrote. On macOS
+    # every ratio truncated to an exempt single digit ("2.42x" -> "2") and the
+    # check passed by luck; the Linux job's two-digit ratios exposed it.
+    for raw in re.findall(r"(?<![\w.])\d[\d,]*(?:\.\d+)?(?![\d,])", text):
         n = raw.replace(",", "")
         if n.endswith(".0"):
             n = n[:-2]
@@ -100,6 +104,10 @@ def artifact_numbers(obj, acc: set) -> set:
         if s.endswith(".0"):
             s = s[:-2]
         acc.add(s)
+        # A claim writing "3.29" against a stored 3.291 is the same measurement.
+        if isinstance(obj, float):
+            acc.add(f"{obj:.2f}")
+            acc.add(f"{obj:.1f}")
         return acc
     if isinstance(obj, str):
         for n in numbers_in(obj):

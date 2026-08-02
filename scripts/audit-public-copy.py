@@ -78,6 +78,8 @@ PROSE_NUMBERS = {
     "142": "a historical fixture count, explicitly labelled as superseded",
     "214": "a historical fixture count, explicitly labelled as superseded",
     "4.6": "a figure quoted as not reproducing, with the measurement that replaces it",
+    "78": "the pinned upstream commit prefix, 78fe04b",
+    "720": "a video resolution in the demo-recording checklist",
 }
 
 # Phrases that identify an embargoed subject in prose. Keyed by claim id.
@@ -119,7 +121,11 @@ def numbers_in(text: str, fenced_is_content: bool = False) -> set[str]:
     # A trailing "(46)" on a line of staged copy is that field's character
     # count against the platform's limit, not a measurement.
     text = re.sub(r"\(\d{1,3}\)\s*$", "", text, flags=re.M)
-    for raw in re.findall(r"\b\d[\d,]*(?:\.\d+)?\b", text):
+    # NOT \b at the end: "26.07x" has no word boundary between "7" and "x", so
+    # the regex backtracked to "26" and reported a figure nobody wrote. On macOS
+    # every ratio truncated to an exempt single digit ("2.42x" -> "2") and the
+    # check passed by luck; the Linux job's two-digit ratios exposed it.
+    for raw in re.findall(r"(?<![\w.])\d[\d,]*(?:\.\d+)?(?![\d,])", text):
         n = raw.replace(",", "")
         if n.endswith(".0"):
             n = n[:-2]

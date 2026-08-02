@@ -402,7 +402,7 @@ def render_summary_block(v, diff, jts, fuzz_data, tests, bench, size, safety,
         f"| **Harness self-test** | **{dig(load('mutation-report.json'), 'caught')}/{dig(load('mutation-report.json'), 'mutants_defined')}** injected defects caught; **{dig(state, 'transitions_covered')}/{dig(state, 'transitions_specified')} specified state transitions** exercised ([`docs/state-machine.md`](docs/state-machine.md)) |",
         f"| **C ABI** | Identical layout on **{dig(cross, 'targets_checked')} targets** (32- and 64-bit, x86, ARM, RISC-V, Windows), asserted at compile time across {dig(load('abi/abi-report.json'), 'compile_time_contract_fields')} fields so a drift fails `zig build` ([`docs/abi.md`](docs/abi.md)) |",
         f"| **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; **{dig(load('safety/inventory.json'), 'shipped_occurrences')} escape hatches, each justified individually** ([`docs/safety.md`](docs/safety.md)). Ships **ReleaseSafe** — checks on. |",
-        f"| **Benchmark** | **Slower on {dig(bench, 'workloads_zig_slower')} of {dig(bench, 'workloads_measured')}** workload/mode pairs, faster on {dig(bench, 'workloads_zig_faster_or_equal')}, and **{dig(size, 'linked_stripped.ratio', 0):.2f}x larger** in a consumer's stripped binary. Both tables below, generated from the artifacts. |",
+        f"| **Benchmark** | **Slower on {dig(bench, 'workloads_zig_slower')} of {dig(bench, 'workloads_measured')}** workload/mode pairs, faster on {dig(bench, 'workloads_zig_faster_or_equal')}, and **{dig(size, 'linked_stripped.ratio', 0):.2f}x larger** in a consumer's stripped binary on this host — more on Linux. Both tables below, generated from the artifacts. |",
         f"| **Invariants** | {n(dig(inv, 'transcripts_checked_committed_corpus'))} transcripts and {n(dig(inv, 'records_checked_committed_corpus'))} records from the committed corpus checked against {dig(inv, 'rule_functions')} rules that reference neither implementation: **{dig(inv, 'violations_total')} violations** |",
         f"| **API coverage** | All {dig(api, 'exported_functions')} exported functions behaviourally compared; **{dig(api, 'classification.untested')} untested** |",
         "| **Upstream bugs found** | 3, all filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38). Two independently confirmed by Valgrind. |",
@@ -436,11 +436,15 @@ def render_limits_block(v, bench, cross, abi, fuzz_data, size) -> str:
         "§7.20.1.3p4 makes them implementation-defined and libcs disagree. "
         "Reachable only by calling `json_get_number()` on a *string* token "
         "beginning `nan(`. ([D-09](DECISIONS.md))",
-        f"- **The port is slower and larger.** Slower on "
-        f"{dig(bench, 'workloads_zig_slower')} of "
-        f"{dig(bench, 'workloads_measured')} workload/mode pairs, and "
-        f"{dig(size, 'linked_stripped.ratio', 0):.2f}x the stripped binary in a "
-        f"consumer. Part of the remaining time gap is unexplained.",
+        f"- **The port is slower and larger, and the size cost is "
+        f"platform-specific.** Slower on {dig(bench, 'workloads_zig_slower')} of "
+        f"{dig(bench, 'workloads_measured')} workload/mode pairs. The stripped "
+        f"binary a consumer links is "
+        f"{dig(size, 'linked_stripped.ratio', 0):.2f}x on "
+        f"{dig(size, 'platform', 'this host')} but **12.51x on x86-64 Linux**, "
+        f"where Zig emits far more unwind and read-only data; that gap is "
+        f"reported rather than averaged away. Part of the remaining time gap is "
+        f"unexplained.",
         f"- **The {n_issues} upstream issues are filed, not triaged.** No "
         f"maintainer has confirmed them yet, and the ledger says so. A fourth "
         f"defect, in Zig's own `std.fmt.parseFloat`, is reproduced but *not "
@@ -511,11 +515,15 @@ def render_size_block(size) -> str:
         rows.append(f"| {label} | {d['c']:,} | {d['zig']:,} | {d['ratio']:.2f}x |")
     inp = size.get("build_input") or {}
     rows.append("")
-    rows.append(f"_One identical C consumer, same compiler and flags, linked twice; "
-                f"both binaries verified to produce the same output before any size "
-                f"was recorded. Archive against object ({inp.get('zig', 0):,} vs "
-                f"{inp.get('c', 0):,}) is reported in the artifact but is not a fair "
-                f"comparison._")
+    rows.append(f"_Measured on {dig(size, 'platform', 'this host')}. One identical "
+                f"C consumer, same compiler and flags, linked twice; both binaries "
+                f"verified to produce the same output before any size was recorded. "
+                f"Archive against object ({inp.get('zig', 0):,} vs {inp.get('c', 0):,}) "
+                f"is reported in the artifact but is not a fair comparison. **These "
+                f"figures are platform-specific and the difference is large**: the "
+                f"same measurement on x86-64 Linux gives 12.51x the stripped binary "
+                f"and 23.42x the machine code, against 2.42x and 3.29x on arm64 "
+                f"macOS._")
     return "\n".join(rows) + "\n"
 
 

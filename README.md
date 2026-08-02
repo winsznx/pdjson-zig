@@ -14,7 +14,7 @@
 | **Harness self-test** | **12/12** injected defects caught; **54/54 specified state transitions** exercised ([`docs/state-machine.md`](docs/state-machine.md)) |
 | **C ABI** | Identical layout on **6 targets** (32- and 64-bit, x86, ARM, RISC-V, Windows), asserted at compile time across 27 fields so a drift fails `zig build` ([`docs/abi.md`](docs/abi.md)) |
 | **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; **59 escape hatches, each justified individually** ([`docs/safety.md`](docs/safety.md)). Ships **ReleaseSafe** — checks on. |
-| **Benchmark** | **Slower on 9 of 12** workload/mode pairs, faster on 3, and **2.42x larger** in a consumer's stripped binary. Both tables below, generated from the artifacts. |
+| **Benchmark** | **Slower on 9 of 12** workload/mode pairs, faster on 3, and **2.42x larger** in a consumer's stripped binary on this host — more on Linux. Both tables below, generated from the artifacts. |
 | **Invariants** | 5,824 transcripts and 203,433 records from the committed corpus checked against 13 rules that reference neither implementation: **0 violations** |
 | **API coverage** | All 22 exported functions behaviourally compared; **0 untested** |
 | **Upstream bugs found** | 3, all filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38). Two independently confirmed by Valgrind. |
@@ -327,7 +327,7 @@ implementation sits behind the pinned header:
 | read-only data | 448 | 3,104 | 6.93x |
 | string data | 1,020 | 7,112 | 6.97x |
 
-_One identical C consumer, same compiler and flags, linked twice; both binaries verified to produce the same output before any size was recorded. Archive against object (241,248 vs 16,360) is reported in the artifact but is not a fair comparison._
+_Measured on macOS-27.0-arm64-arm-64bit-Mach-O. One identical C consumer, same compiler and flags, linked twice; both binaries verified to produce the same output before any size was recorded. Archive against object (241,248 vs 16,360) is reported in the artifact but is not a fair comparison. **These figures are platform-specific and the difference is large**: the same measurement on x86-64 Linux gives 12.51x the stripped binary and 23.42x the machine code, against 2.42x and 3.29x on arm64 macOS._
 <!-- SIZE:END -->
 
 ReleaseSafe carries the bounds and overflow checks the C build has no
@@ -614,7 +614,7 @@ Stated here rather than left to be discovered.
 
 - **ABI equivalence is *executed* on two targets**, arm64 macOS and x86-64 Linux, and asserted at compile time on 6 more. Both executed targets are LP64. Three of the four findings in the first cold audit were platform-specific and invisible on the development machine, so a third executed target would likely find a fourth thing.
 - **`nan(...)` payloads that overflow 64 bits are not matched.** C99 §7.20.1.3p4 makes them implementation-defined and libcs disagree. Reachable only by calling `json_get_number()` on a *string* token beginning `nan(`. ([D-09](DECISIONS.md))
-- **The port is slower and larger.** Slower on 9 of 12 workload/mode pairs, and 2.42x the stripped binary in a consumer. Part of the remaining time gap is unexplained.
+- **The port is slower and larger, and the size cost is platform-specific.** Slower on 9 of 12 workload/mode pairs. The stripped binary a consumer links is 2.42x on macOS-27.0-arm64-arm-64bit-Mach-O but **12.51x on x86-64 Linux**, where Zig emits far more unwind and read-only data; that gap is reported rather than averaged away. Part of the remaining time gap is unexplained.
 - **The 3 upstream issues are filed, not triaged.** No maintainer has confirmed them yet, and the ledger says so. A fourth defect, in Zig's own `std.fmt.parseFloat`, is reproduced but *not filed* -- `ziglang/zig` restricts issue creation to collaborators -- so it is embargoed from every public channel in `CLAIMS.json`.
 - **Equivalence is demonstrated, not proven.** 11,730,088 compared cases and a 30-minute fuzz session is evidence, not a proof of behavioural equality. 100% state-transition coverage is not path coverage, and the hand-written specification agreeing with both implementations would not catch a shared misreading of the grammar.
 - **The corpus is not adversarial to itself.** Fixtures were written by the same person who wrote the port. The independent checks against that are JSONTestSuite, the mutation harness, the invariant rules, and the state-transition specification -- each of which found something the fixtures had missed.

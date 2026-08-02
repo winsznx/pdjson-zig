@@ -216,6 +216,22 @@ in the tree it will be read in. A corpus a fresh clone lacks, a build directory
 that differs, a platform that differs, a step ordering that differs. None is
 visible without actually cloning and running.
 
+**Sixth: the audit was under-reading its own inputs.** The Linux job kept
+failing on "the figure 26", which appears nowhere in the README. It came from
+`26.07x` — the number regex ended in `\b`, and there is no word boundary between
+`7` and `x`, so it backtracked and matched `26`. On macOS every ratio truncated
+the same way to an exempt single digit (`2.42x` → `2`), so the check had been
+passing by luck. Fixing it made the audit read **104 figures in the README where
+it had been reading 77** — it had been blind to a quarter of them.
+
+**Seventh, and the one that matters most to a reader: the size cost is
+platform-specific and the difference is large.** The same measurement that gives
+2.42× the stripped binary on arm64 macOS gives **12.51× on x86-64 Linux**, and
+3.29× against 23.42× for machine code. The README had been stating the macOS
+figure as though it were universal. It now names the platform, quotes both, and
+the Linux measurement is committed as an artifact so the comparison is backed
+rather than asserted.
+
 **CI had the same blind spot, for a different reason.** It runs the pipeline's
 steps individually rather than through `make verify`, and it had never run
 `scripts/state-machine.py` at all — so it was green while a clean clone failed.
