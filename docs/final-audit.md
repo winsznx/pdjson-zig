@@ -318,9 +318,32 @@ the ABI requirement, and it is argued for in D-02 rather than glossed over.
 
 ---
 
+## The measurement kept being the problem
+
+Four times in this project, a result was an artifact of how it was measured
+rather than of the thing measured. Listing them together because the pattern is
+the most useful thing here:
+
+| What it looked like | What it was |
+| --- | --- |
+| Zig 6.8× slower than C | a Debug build; `zig build` defaults to Debug unless `--release` |
+| Mutation testing 12/12 | mutants "caught" on cases where the C oracle crashes |
+| 29 divergences + 72 crashes from fuzzing | `build/transcript_c` touched by a container, then unrunnable; empty output on one side |
+| ABI cross-check passing a deliberate break | `errmsg_len` 128 → 127 absorbed by padding, invisible to offset-only assertions |
+
+Each was found by checking the check, not by reading it. Three of the four
+produced *better*-looking numbers than the truth, which is the direction that
+matters. Every one now has a guard:
+
+- The build defaults to ReleaseSafe (D-10).
+- Mutation comparability is decided by a sanitizer (D-17).
+- Both harnesses refuse to start against a binary that cannot produce a valid
+  transcript (D-20).
+- The ABI check asserts field sizes as well as offsets.
+
 ## Findings from this audit
 
-Four things were changed as a direct result:
+Five things were changed as a direct result:
 
 1. **1,242 JSONTestSuite files had been committed**, contradicting `LICENSES.md`,
    which states the corpus is fetched rather than vendored. Removed from the
@@ -334,6 +357,10 @@ Four things were changed as a direct result:
    `bundle_compiler_rt` fixes it; a C-appropriate panic handler also took the
    archive from 4.6 MB to 2.2 MB with 11 standard libc imports.
 4. **The C oracle was nondeterministic on Linux** — upstream #38, above.
+5. **Both harnesses could report findings from a broken binary.** They now
+   sanity-check both executables against a trivial document before comparing
+   anything, and an unrunnable binary is reported as `exec_error` rather than
+   counted as a crash. See the table above and D-20.
 
 One process failure worth recording: during audit check 3, the mutant binary was
 copied over `zig-out/bin/transcript_zig` while a fuzz session was running against

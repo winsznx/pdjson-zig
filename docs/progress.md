@@ -184,12 +184,17 @@ See [`final-audit.md`](final-audit.md) and [`final-status.md`](final-status.md).
 
 ## Recurring theme
 
-Three times, a result that looked good was wrong, and in each case the thing that
-caught it was an independent check rather than review:
+Four times, a result was an artifact of the measurement rather than the thing
+measured, and in each case the thing that caught it was another check rather than
+review:
 
-1. The benchmark said 6.8× slower — it was measuring Debug.
-2. Mutation testing said 12/12 — it was counting crashes as detections.
-3. The differential said 0 divergences — until 30 million fuzz cases found one.
+1. The benchmark said 6.8× slower — it was measuring a Debug build.
+2. Mutation testing said 12/12 — it was counting upstream crashes as detections.
+3. The differential said 0 divergences — until 30 million fuzz cases found one,
+   and until the determinism gate showed the oracle itself was unstable on Linux.
+4. A fuzz run reported 101 findings — the C binary had been made unrunnable by a
+   container, so one side was empty.
 
-Every headline number in this project should be read with that in mind, which is
-why each is tied to a regenerable artifact rather than to prose.
+Three of those four looked *better* than the truth, which is the direction that
+matters. Every headline number here is tied to a regenerable artifact rather than
+to prose, and every check that can be negative-tested has been.
