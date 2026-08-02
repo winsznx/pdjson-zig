@@ -200,10 +200,21 @@ reproducible between directories at all. Any hand-typed byte count in prose is
 wrong somewhere by construction. That sentence is generated from the artifact
 now.
 
-Three findings, one shape: a number that is true in the tree it was written in
-and false in the tree it will be read in. The first two were about a corpus, the
-third about the build directory. None of them is visible without actually cloning
-and running.
+**And a fifth, from CI rather than the clean clone.** The Linux job failed with
+eleven unbacked size figures — caused by the CI change made an hour earlier to
+*run* the audit. `size-report.py` had been placed after `report.py`, so the
+report spliced the previous platform's committed figures into the README and the
+size report then overwrote the artifact with this platform's, leaving the two
+disagreeing. The Makefile already had the right order; only CI did not.
+
+The audit catching a defect in the change made to run the audit is the clearest
+evidence available that it is doing work rather than confirming what was already
+believed.
+
+Five findings, one shape: a number true in the tree it was written in and false
+in the tree it will be read in. A corpus a fresh clone lacks, a build directory
+that differs, a platform that differs, a step ordering that differs. None is
+visible without actually cloning and running.
 
 **CI had the same blind spot, for a different reason.** It runs the pipeline's
 steps individually rather than through `make verify`, and it had never run
