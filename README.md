@@ -2,19 +2,23 @@
 
 **A clean-room Zig rewrite of [skeeto/pdjson](https://github.com/skeeto/pdjson), a C streaming JSON parser — verified against the original by byte-identical behaviour transcripts.**
 
+<!-- SUMMARY:BEGIN -->
 | | |
 | --- | --- |
 | **Migration** | C → Zig (Port Mortem 2026, Track G) |
 | **Upstream** | `skeeto/pdjson` @ [`78fe04b`](https://github.com/skeeto/pdjson/commit/78fe04b820dc8817f540bdd87fb22887e0ef3981) (master, 2024-02-22, Unlicense) |
 | **Dominant proof** | Two independent programs drive the C original and the Zig port through the same script and emit deterministic NDJSON behaviour transcripts. Equivalence means **byte-identical transcripts**. |
 | **Upstream tests** | **18/18** assertions pass, sources unmodified and hash-pinned, linked against only the Zig library |
-| **Differential** | **0 divergences** in 6,104 fixed-corpus + 3,498 JSONTestSuite comparisons, across all four input sources ([matrix](docs/differential-sources.md)) and 28 drive modes |
-| **Fuzzing** | 30-minute published session, **11.8M cases, 0 divergences, 0 crashes, 0 timeouts** |
+| **Differential** | **0 divergences** in 6,104 fixed-corpus + 3,816 JSONTestSuite comparisons, across all 4 input sources ([matrix](docs/differential-sources.md)) and 28 drive modes |
+| **Fuzzing** | 30-minute published session, **11,812,800 cases, 0 divergences, 0 crashes, 0 timeouts** ([raw trace](fuzz/logs/)) |
 | **Harness self-test** | **12/12** injected defects caught; **54/54 specified state transitions** exercised ([`docs/state-machine.md`](docs/state-machine.md)) |
-| **C ABI** | Identical layout on **6 targets** (32- and 64-bit, x86, ARM, RISC-V, Windows), asserted at compile time so a drift fails `zig build`; a C consumer using the pinned header links against the Zig archive alone |
+| **C ABI** | Identical layout on **6 targets** (32- and 64-bit, x86, ARM, RISC-V, Windows), asserted at compile time across 27 fields so a drift fails `zig build` ([`docs/abi.md`](docs/abi.md)) |
 | **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; **59 escape hatches, each justified individually** ([`docs/safety.md`](docs/safety.md)). Ships **ReleaseSafe** — checks on. |
-| **Benchmark** | **Slower on 9 of 12** workload/mode pairs, faster on 3, and **2.4x larger** in a consumer's stripped binary. Both tables below, generated from the artifacts. |
+| **Benchmark** | **Slower on 9 of 12** workload/mode pairs, faster on 3, and **2.42x larger** in a consumer's stripped binary. Both tables below, generated from the artifacts. |
+| **Invariants** | 13,936 transcripts and 6,162,897 records checked against 13 rules that reference neither implementation: **0 violations** |
+| **API coverage** | All 22 exported functions behaviourally compared; **0 untested** |
 | **Upstream bugs found** | 3, all filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38). Two independently confirmed by Valgrind. |
+<!-- SUMMARY:END -->
 
 ```sh
 make verify
@@ -47,7 +51,7 @@ and the reset boundary. Not pointer values, not timing, not uninitialised paddin
 original invokes undefined behaviour on some inputs. When the two implementations
 differ, the harness re-runs the case against an **ASan+UBSan build of the pinned
 original**; if the sanitizer fires, the case is classified `upstream_ub` and
-reported separately, with the sanitizer output attached as evidence. All 43 such
+reported separately, with the sanitizer output attached as evidence. All 45 such
 cases in this corpus resolve to a single line, `pdjson.c:912` — which is upstream
 bug [#36](https://github.com/skeeto/pdjson/issues/36).
 

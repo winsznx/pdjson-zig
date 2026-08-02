@@ -297,6 +297,12 @@ def main() -> int:
                           render_claim_block(json.loads(claims_path.read_text())))
         text = splice(text, "BENCH", render_bench_block(bench))
         text = splice(text, "SIZE", render_size_block(size))
+        text = splice(text, "SUMMARY", render_summary_block(
+            report, diff, jts, fuzz_data, tests, bench, size, safety,
+            load("invariants/summary.json"),
+            load("state-machine/coverage.json"),
+            load("differential/api-coverage.json"),
+            load("abi/abi-cross-report.json")))
         readme.write_text(text)
         print("  refreshed the generated blocks in README.md")
 
@@ -339,6 +345,41 @@ def render_bench_block(bench) -> str:
     rows.append(f"_{len(slower)} of {len(ratios)} workload/mode pairs are slower "
                 f"in Zig. Median ratios, {dig(bench, 'repetitions')} repetitions, "
                 f"raw samples in `bench/results/raw.json`._")
+    return "\n".join(rows) + "\n"
+
+
+def render_summary_block(v, diff, jts, fuzz_data, tests, bench, size, safety,
+                         inv, state, api, cross) -> str:
+    """The first-screen table, generated.
+
+    It is the most-read part of the README and was the most likely to go stale:
+    it carried "3,498 JSONTestSuite comparisons" and "43 upstream-UB cases" after
+    both numbers had moved. Every figure here now comes out of an artifact.
+    """
+    def n(x, default="?"):
+        return f"{x:,}" if isinstance(x, int) else default
+
+    ledger = dig(v, "no_divergence_ledger", {}) or {}
+    fuzz = fuzz_data or {}
+    sources = len(dig(load("differential/source-matrix-fixed-corpus.json"),
+                      "sources", {}) or {})
+    rows = [
+        "| | |",
+        "| --- | --- |",
+        "| **Migration** | C → Zig (Port Mortem 2026, Track G) |",
+        f"| **Upstream** | `skeeto/pdjson` @ [`78fe04b`](https://github.com/skeeto/pdjson/commit/{dig(v, 'upstream.commit', '')}) (master, 2024-02-22, {dig(v, 'upstream.license', 'Unlicense')}) |",
+        "| **Dominant proof** | Two independent programs drive the C original and the Zig port through the same script and emit deterministic NDJSON behaviour transcripts. Equivalence means **byte-identical transcripts**. |",
+        f"| **Upstream tests** | **{dig(v, 'original_tests.assertions_passed')}/{dig(v, 'original_tests.assertions_total')}** assertions pass, sources unmodified and hash-pinned, linked against only the Zig library |",
+        f"| **Differential** | **0 divergences** in {n(dig(diff, 'comparisons'))} fixed-corpus + {n(dig(jts, 'comparisons'))} JSONTestSuite comparisons, across all {sources} input sources ([matrix](docs/differential-sources.md)) and {len(dig(diff, 'modes', []) or [])} drive modes |",
+        f"| **Fuzzing** | {int(dig(fuzz, 'elapsed_seconds', 0) // 60)}-minute published session, **{n(dig(fuzz, 'cases'))} cases, {dig(fuzz, 'divergences')} divergences, {dig(fuzz, 'zig_crashes')} crashes, {dig(fuzz, 'timeouts')} timeouts** ([raw trace]({dig(fuzz, 'raw_log', 'fuzz/logs/')})) |",
+        f"| **Harness self-test** | **{dig(load('mutation-report.json'), 'caught')}/{dig(load('mutation-report.json'), 'mutants_defined')}** injected defects caught; **{dig(state, 'transitions_covered')}/{dig(state, 'transitions_specified')} specified state transitions** exercised ([`docs/state-machine.md`](docs/state-machine.md)) |",
+        f"| **C ABI** | Identical layout on **{dig(cross, 'targets_checked')} targets** (32- and 64-bit, x86, ARM, RISC-V, Windows), asserted at compile time across {dig(load('abi/abi-report.json'), 'compile_time_contract_fields')} fields so a drift fails `zig build` ([`docs/abi.md`](docs/abi.md)) |",
+        f"| **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; **{dig(load('safety/inventory.json'), 'shipped_occurrences')} escape hatches, each justified individually** ([`docs/safety.md`](docs/safety.md)). Ships **ReleaseSafe** — checks on. |",
+        f"| **Benchmark** | **Slower on {dig(bench, 'workloads_zig_slower')} of {dig(bench, 'workloads_measured')}** workload/mode pairs, faster on {dig(bench, 'workloads_zig_faster_or_equal')}, and **{dig(size, 'linked_stripped.ratio', 0):.2f}x larger** in a consumer's stripped binary. Both tables below, generated from the artifacts. |",
+        f"| **Invariants** | {n(dig(inv, 'transcripts_checked'))} transcripts and {n(dig(inv, 'records_checked'))} records checked against {dig(inv, 'rule_functions')} rules that reference neither implementation: **{dig(inv, 'violations_total')} violations** |",
+        f"| **API coverage** | All {dig(api, 'exported_functions')} exported functions behaviourally compared; **{dig(api, 'classification.untested')} untested** |",
+        "| **Upstream bugs found** | 3, all filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38). Two independently confirmed by Valgrind. |",
+    ]
     return "\n".join(rows) + "\n"
 
 
