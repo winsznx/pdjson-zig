@@ -147,11 +147,15 @@ jobs:
       - name: benchmark smoke test
         run: python3 scripts/bench.py --smoke
 
-      - name: reports
-        run: python3 scripts/report.py
-
+      # Must run BEFORE reports: report.py splices the size figures into
+      # README.md, so generating the report against the previous platform's
+      # artifact and then overwriting the artifact leaves the two disagreeing --
+      # which is exactly what the Linux job caught.
       - name: artifact size a consumer pays
         run: python3 scripts/size-report.py
+
+      - name: reports
+        run: python3 scripts/report.py
 
       - name: claim ledger
         run: |
