@@ -260,22 +260,29 @@ python3 -c "import json;d=json.load(open('artifacts/differential-summary.json'))
 state, ending on #38 so the maintainer's comment is visible. Scroll to it and
 leave it on screen for the last five seconds.
 
-> "Those three reports went upstream. The maintainer confirmed all three, wrote
-> a fix for each, and closed them — 858faf26f, b0f17fe6f, 2807b9ae1.
+> "Our differential methodology discovered and reported three defects in the
+> original pdjson implementation. The upstream maintainer confirmed the
+> analysis, fixed all three, and described the findings as solid with excellent
+> analysis.
 >
-> To be precise about what that is and isn't: I discovered and reported them
-> through this methodology. He wrote the fixes. I didn't open a pull request.
-> And it's not evidence the port is equivalent — it's evidence the defects were
-> real.
+> To be precise about what that is: I reported them, he wrote the fixes. I
+> didn't open a pull request. And it's evidence the defects were real — not
+> that the port is equivalent.
 >
 > The pin here stays at the original commit, so nothing I measured changes."
+
+**Say it as written.** The first paragraph is the agreed phrasing and should not
+be paraphrased on the day.
 
 **Timing:** 15–20 seconds. If it runs long, drop the last sentence, not the
 qualification before it.
 
-**Do not say** "my patches were merged" or anything implying the repository will
-stay active — the maintainer has said he intends to archive it in favour of
-`libpdjson5`.
+**Do not say** "my patches were merged", do not count the fourth commit
+`c32ccb6` — the maintainer credited that one to Opus, noticed while fixing #36,
+so it is adjacent upstream impact and not a finding of this project — and do not
+paraphrase the maintainer as endorsing the whole port. He reviewed three bug
+reports, not the rewrite. Nothing should imply the repository stays active
+either; he intends to archive it in favour of `libpdjson5`.
 
 ---
 
@@ -319,15 +326,23 @@ sed -n '/## Known limitations/,/## Decisions/p' README.md | head -20
 
 **Narration:**
 
-> "Seventeen decisions, including the two that changed and the ones I got wrong
-> first.
+> "The limitations are in the README, generated from the artifacts so they can't
+> quietly improve. ABI is executed on two targets and asserted at compile time
+> on six more. The port is slower on nine of twelve workloads and larger in your
+> binary — how much larger depends on the platform, so both figures are
+> published. And this is demonstrated equivalence, not proven equivalence.
 >
-> The limitations are in the README, not hidden: the differential corpus drives
-> the buffer source only, so the FILE* and callback sources aren't compared
-> transcript by transcript — and given that bug #37 is precisely a disagreement
-> between two sources, that's the hole most likely to hold something. ABI is
-> verified on two targets, not universally. The upstream issues are filed, not
-> triaged. And this is demonstrated equivalence, not proven equivalence.
+> Two last things, because they're the point of all of this.
+>
+> Running the release sequence exactly as documented, twice, found two defects
+> that weren't in the parser. `make release-gate` could never pass — it runs the
+> measurements, then demands nothing changed. And the committed differential
+> evidence was never reproducible: the sanitizer reports had ASLR addresses and
+> process IDs baked in, so the file differed on every run.
+>
+> Neither is a bug in the JSON parser. Both are bugs in the evidence. That's
+> what this project is actually about — verification has to test its own
+> evidence and its own documented paths, not just the code.
 >
 > `make verify`. One command, no network. Repository link's below."
 
@@ -336,7 +351,8 @@ sed -n '/## Known limitations/,/## Decisions/p' README.md | head -20
 ## Recording checklist
 
 - [ ] `make verify` passes end to end immediately before recording
-- [ ] `docs/final-audit.md` says PASS
+- [ ] `make release-gate` passes on a clean tree
+- [ ] Both CI jobs green on the commit you are recording
 - [ ] Working tree clean; `git status` shows nothing
 - [ ] `fuzz/logs/session-published.json` is the run being quoted
 - [ ] Benchmark table in the README regenerated from the current artifact

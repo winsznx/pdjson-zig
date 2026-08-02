@@ -651,7 +651,7 @@ Stated here rather than left to be discovered.
 
 ## Decisions
 
-[`DECISIONS.md`](DECISIONS.md) — 17 entries covering the ones that actually
+[`DECISIONS.md`](DECISIONS.md) — 24 entries covering the ones that actually
 shaped the result: why the struct layout is pinned rather than made opaque, why
 `strtod` is reimplemented, why one upstream bug is reproduced and another is not,
 why counters use wrapping arithmetic, and why the harness's own first results
