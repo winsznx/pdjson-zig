@@ -587,6 +587,23 @@ divergence I was choosing not to fix.
 **Compatibility impact.** Removes the divergence. Bit-identical to libc `strtod`
 across the fixed cases, a 661-point exponent sweep, and 20,000 randomised hex
 floats including exponents out to ±1200.
+
+**Upgraded from compatibility to correctness.** Agreeing with libc shows only
+that the two match; if libc were wrong, both would be. `scripts/hexfloat_oracle.py`
+is an exact-integer reference — arbitrary-precision mantissa, rounding decided by
+integer comparison, no floating point in the decision path — sharing no code with
+`src/strtod.zig`. Over 200,017 literals concentrated at the 53-bit, subnormal and
+overflow boundaries it agrees with this port on every one. Full account in
+[docs/hex-float-proof.md](docs/hex-float-proof.md).
+
+**Status of the Zig defect.** The same reference judges `std.fmt.parseFloat` and
+finds it truncating rather than rounding on significands wider than 53 bits, on
+both 0.16.0 and master 0.17.0-dev, with explicit `p` exponents so it is not the
+optional-exponent extension. It could **not** be filed: `ziglang/zig` restricts
+issue creation to collaborators. It is therefore recorded as demonstrated but
+unreported, with a standalone reproducer at
+`tests/upstream-bugs/repro_zig_parsefloat.zig`, and `CLAIMS.json` bars it from
+every public surface until a maintainer confirms it.
 **Performance impact.** None measurable; only on the hex path, which no JSON
 number reaches.
 **Verification.** `tests/port/number_torture.zig` (two new tests),

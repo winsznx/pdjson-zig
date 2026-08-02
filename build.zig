@@ -73,6 +73,7 @@ pub fn build(b: *std.Build) void {
         .{ .name = "abi_probe_zig", .src = "tools/abi_probe.zig" },
         .{ .name = "transcript_zig", .src = "tools/transcript_zig.zig" },
         .{ .name = "bench_zig", .src = "tools/bench_zig.zig" },
+        .{ .name = "hexprobe", .src = "tools/hexprobe.zig" },
     };
 
     for (tools) |t| {

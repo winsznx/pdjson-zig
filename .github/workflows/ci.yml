@@ -103,6 +103,9 @@ jobs:
       - name: Zig-native tests (Debug)
         run: zig build test -Doptimize=Debug
 
+      - name: hex-float correctness (exact-integer reference)
+        run: python3 scripts/hexfloat_oracle.py --compare 50000 --seed 20260802
+
       - name: transcript invariants
         run: python3 scripts/invariants.py --sweep
 

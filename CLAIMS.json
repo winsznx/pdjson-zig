@@ -502,6 +502,41 @@
         "devfolio",
         "video"
       ]
+    },
+    {
+      "id": "C-26",
+      "text": "Hex-float conversion in this port is correctly rounded under IEEE-754, verified against an exact-integer reference that shares no code with it, over 200,017 literals concentrated at the rounding boundaries.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/hex-float/property-summary.json",
+      "check": {
+        "kind": "equals",
+        "path": "oracle_vs_zig_disagreements",
+        "value": 0
+      },
+      "command": "python3 scripts/hexfloat_oracle.py --compare 200000 --seed 20260802",
+      "verified_date": "2026-08-02",
+      "limitation": "This is correctness under IEEE-754 round-to-nearest-ties-to-even, not merely compatibility with this platform's libc -- the reference computes the result with arbitrary-precision integers and decides rounding by integer comparison, with no floating point in the decision path. Scope: the C99 7.20.1.3 hex-float grammar and binary64 only. The reference itself is checked by 17 hand-derived cases before use. It is a tested reference, not a proof.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
+    },
+    {
+      "id": "C-27",
+      "text": "std.fmt.parseFloat truncates rather than rounds hex floats whose significand needs more than 53 bits; demonstrated on Zig 0.16.0 and on master 0.17.0-dev, with a standalone reproducer. Not filed upstream: ziglang/zig restricts issue creation to collaborators.",
+      "status": "reported-not-independently-verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/hex-float/property-summary.json",
+      "check": {
+        "kind": "exists",
+        "path": "zig_probe_available"
+      },
+      "command": "zig run tests/upstream-bugs/repro_zig_parsefloat.zig",
+      "verified_date": "2026-08-02",
+      "limitation": "The behaviour is reproduced and judged against an exact-integer reference and against libc, both of which disagree with parseFloat. It is NOT filed: `gh issue create -R ziglang/zig` returns 'Interactions on this repository have been restricted to collaborators only'. There is therefore no issue URL, and no Zig maintainer has confirmed it. Related closed issues (#10737, #20287, #2083, #11477) touch the same area but these cases still fail on master. Because it is unconfirmed by the project, this claim is not permitted in the README, on Devfolio, in the video, or in social copy.",
+      "allowed_in": []
     }
   ]
 }

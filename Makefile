@@ -11,7 +11,7 @@
 .POSIX:
 .PHONY: all build verify test test-original test-zig differential fuzz bench \
         report abi conformance safety fmt clean distclean docker-verify \
-        mutation release-gate claims invariants
+        mutation release-gate claims invariants hexfloat
 
 CC       = cc
 CFLAGS   = -std=c99 -pedantic -Wall -Wextra -Wno-missing-field-initializers -O2
@@ -69,6 +69,10 @@ abi: build
 	@sh scripts/abi-check.sh
 	@echo "==> C ABI layout equivalence (cross-target, compile-time)"
 	@sh scripts/abi-cross-check.sh
+
+hexfloat: build
+	@echo "==> Hex-float correctness against an exact-integer reference"
+	$(PYTHON) scripts/hexfloat_oracle.py --compare 200000 --seed 20260802
 
 invariants: build
 	@echo "==> Transcript invariants (implementation-independent)"
@@ -146,6 +150,9 @@ verify:
 	@echo
 	@echo "[9/16] fixed conformance corpus (differential)"
 	@$(PYTHON) scripts/differential.py --label fixed-corpus --quiet
+	@echo
+	@echo "[9b/16] hex-float correctness against an exact-integer reference"
+	@$(PYTHON) scripts/hexfloat_oracle.py --compare 20000 --seed 20260802
 	@echo
 	@echo "[10/16] transcript invariants, checked without reference to either implementation"
 	@$(PYTHON) scripts/invariants.py --sweep
