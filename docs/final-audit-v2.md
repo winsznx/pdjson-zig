@@ -193,6 +193,18 @@ claim quotes those, and the README row is generated from them — so the number 
 judge sees is the number their own clone produces. `make clean-clone-verify`
 makes the check a target rather than something to remember.
 
+**A third instance, subtler than both.** With C-25 fixed, the clean clone failed
+again on the archive's byte count. `libpdjson.a` is 241,248 bytes here and
+241,352 in a fresh clone — Zig embeds build paths, so the size is not
+reproducible between directories at all. Any hand-typed byte count in prose is
+wrong somewhere by construction. That sentence is generated from the artifact
+now.
+
+Three findings, one shape: a number that is true in the tree it was written in
+and false in the tree it will be read in. The first two were about a corpus, the
+third about the build directory. None of them is visible without actually cloning
+and running.
+
 **CI had the same blind spot, for a different reason.** It runs the pipeline's
 steps individually rather than through `make verify`, and it had never run
 `scripts/state-machine.py` at all — so it was green while a clean clone failed.

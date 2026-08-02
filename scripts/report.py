@@ -310,6 +310,7 @@ def main() -> int:
                           render_claim_block(json.loads(claims_path.read_text())))
         text = splice(text, "BENCH", render_bench_block(bench))
         text = splice(text, "SIZE", render_size_block(size))
+        text = splice(text, "PANIC", render_panic_block(size))
         text = splice(text, "STEPS", f"{report['pipeline_steps']}\n")
         text = splice(text, "OPTHISTORY", render_opthistory_block(
             load("optimization-history.json")))
@@ -473,6 +474,22 @@ def render_opthistory_block(hist) -> str:
                 "the port is slower. Artifact: "
                 "[`artifacts/optimization-history.json`](artifacts/optimization-history.json)._")
     return "\n".join(rows) + "\n"
+
+
+def render_panic_block(size) -> str:
+    """What the custom panic handler saves, generated.
+
+    The archive's exact byte count is not reproducible between build
+    directories -- Zig embeds paths, so a clean clone produced 241,352 against
+    241,248 here. A hand-typed byte count in prose is therefore wrong somewhere
+    by construction, which is what the clean-clone check found.
+    """
+    ph = dig(size, "panic_handler")
+    if not ph:
+        return "_No panic-handler measurement. Run `make size`._\n"
+    return (f"**{ph['with_std_default_handler_bytes']:,} bytes with std's default "
+            f"handler against {ph['with_custom_handler_bytes']:,} with the custom "
+            f"one — {ph['ratio']}×.**\n")
 
 
 def render_size_block(size) -> str:

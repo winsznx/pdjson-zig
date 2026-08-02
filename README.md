@@ -334,10 +334,14 @@ ReleaseSafe carries the bounds and overflow checks the C build has no
 equivalent of, and Zig emits unwind tables the C build does not. `src/root.zig`
 replaces std's default panic handler with a `write`+`abort` precisely to keep
 std's unwinder, DWARF reader and symbol tables out of the artifact, and the
-report measures what that saves by building both: **2,461,816 bytes with std's
-default handler against 241,248 with the custom one — 10.2×.** That figure used
-to be quoted from memory as "4.6 MB"; it does not reproduce, which is why it is
-now built rather than remembered.
+report measures what that saves by building both:
+
+<!-- PANIC:BEGIN -->**2,461,816 bytes with std's default handler against 241,248 with the custom one — 10.2×.**<!-- PANIC:END -->
+
+That figure used to be quoted from memory as "4.6 MB"; it does not reproduce,
+which is why it is now built rather than remembered. The exact archive size is
+not reproducible either — Zig embeds build paths, so a fresh clone lands about a
+hundred bytes away — which is why this sentence is generated rather than typed.
 Artifact: [`artifacts/size-report.json`](artifacts/size-report.json).
 
 **The first optimization guess was wrong, and measuring is what caught it.**
