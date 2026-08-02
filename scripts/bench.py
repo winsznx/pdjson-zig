@@ -18,6 +18,7 @@ Fairness rules, all of them enforced here rather than asserted in prose:
 from __future__ import annotations
 
 import argparse
+import os
 import json
 import pathlib
 import platform
@@ -51,6 +52,32 @@ PLAN = [
     ("whitespace-heavy", "parse", 60, 1),
     ("flat-ints", "parse", 40, 1),
 ]
+
+
+def cpu_model() -> str:
+    """CPU model, without assuming a particular OS.
+
+    An earlier version shelled out to `sysctl` unconditionally, which does not
+    exist on Debian -- so the benchmark step crashed inside the verification
+    container. Found by actually running `make verify` in Docker rather than
+    assuming it would work.
+    """
+    if sys.platform == "darwin":
+        try:
+            out = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"],
+                                 capture_output=True, timeout=10)
+            if out.returncode == 0 and out.stdout.strip():
+                return out.stdout.decode().strip()
+        except (OSError, subprocess.SubprocessError):
+            pass
+    elif sys.platform.startswith("linux"):
+        try:
+            for line in pathlib.Path("/proc/cpuinfo").read_text().splitlines():
+                if line.startswith(("model name", "Model")):
+                    return line.split(":", 1)[1].strip()
+        except OSError:
+            pass
+    return platform.processor() or platform.machine() or "unknown"
 
 
 def pct(xs: list[float], p: float) -> float:
@@ -190,11 +217,8 @@ def main() -> int:
         "environment": {
             "platform": platform.platform(),
             "machine": platform.machine(),
-            "processor": subprocess.run(
-                ["sysctl", "-n", "machdep.cpu.brand_string"],
-                capture_output=True).stdout.decode().strip() or platform.processor(),
-            "cpu_count": subprocess.run(["sysctl", "-n", "hw.ncpu"],
-                                        capture_output=True).stdout.decode().strip(),
+            "processor": cpu_model(),
+            "cpu_count": str(os.cpu_count() or "unknown"),
             "c_compiler": cc[0] if cc else "unknown",
             "c_flags": "-O2 -std=c99",
             "zig_version": subprocess.run(["zig", "version"],
