@@ -122,6 +122,26 @@ pub const Parser = struct {
         return self.classify(core.skip(&self.stream));
     }
 
+    /// Skip whole values until one of `target` is reached.
+    ///
+    /// Returns `.done` if the stream completes first, and the parser is left
+    /// positioned just after whatever it stopped on, so it stays usable.
+    pub fn skipUntil(self: *Parser, target: Event) Error!Event {
+        const t: abi.Type = switch (target) {
+            .done => .done,
+            .object_begin => .object,
+            .object_end => .object_end,
+            .array_begin => .array,
+            .array_end => .array_end,
+            .string => .string,
+            .number => .number,
+            .true_value => .true_,
+            .false_value => .false_,
+            .null_value => .null_,
+        };
+        return self.classify(core.skipUntil(&self.stream, t));
+    }
+
     /// The bytes of the most recent string or number token.
     ///
     /// Strings are decoded UTF-8 and may contain interior NULs, which is why

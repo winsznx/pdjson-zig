@@ -258,6 +258,73 @@ test "skip over a scalar consumes exactly one event" {
     try testing.expectEqualStrings("2", p.tokenText());
 }
 
+// --------------------------------------------------------------- skip_until
+
+// json_skip_until was exported, ABI-checked and never behaviourally exercised
+// until scripts/api-coverage.py reported it as the one untested export. These
+// pin the return value *and* the state it leaves behind, which is what a caller
+// continues from.
+
+test "skip_until consumes whole values until the target type" {
+    // Expectations taken from the C original, not guessed: json_skip_until
+    // calls json_skip repeatedly, and json_skip consumes an ENTIRE value at a
+    // time. So the siblings 1, [2,[3,4],5] and 6 are each swallowed whole, and
+    // the ARRAY_END that matches is the outer one -- leaving nothing after it.
+    var p = Parser.initBuffer("[1,[2,[3,4],5],6]");
+    defer p.deinit();
+    try testing.expectEqual(Event.array_begin, try p.next());
+    try testing.expectEqual(Event.array_end, try p.skipUntil(.array_end));
+    try testing.expectEqual(@as(usize, 0), p.depth());
+    try testing.expectEqual(Event.done, try p.next());
+}
+
+test "skip_until reaches a scalar type, leaving the parser usable" {
+    var p = Parser.initBuffer("[{\"a\":[1]},\"target\",99]");
+    defer p.deinit();
+    try testing.expectEqual(Event.array_begin, try p.next());
+    try testing.expectEqual(Event.string, try p.skipUntil(.string));
+    try testing.expectEqualStrings("target", p.tokenText());
+    try testing.expectEqual(@as(usize, 1), p.depth());
+    try testing.expectEqual(Event.number, try p.next());
+    try testing.expectEqualStrings("99", p.tokenText());
+}
+
+test "skip_until stops at DONE rather than running past the value" {
+    var p = Parser.initBuffer("[1,2,3]");
+    defer p.deinit();
+    // No object ever appears, so it consumes the array and reports completion.
+    try testing.expectEqual(Event.array_begin, try p.next());
+    try testing.expectEqual(Event.done, try p.skipUntil(.object_end));
+    try testing.expectEqual(@as(usize, 0), p.depth());
+}
+
+test "skip_until surfaces a parse error rather than looping" {
+    var p = Parser.initBuffer("[1,2,@]");
+    defer p.deinit();
+    try testing.expectEqual(Event.array_begin, try p.next());
+    try testing.expectError(Error.Malformed, p.skipUntil(.array_end));
+    try testing.expectEqualStrings("unexpected byte '@' in value", p.errorMessage().?);
+    // The error latches: depth stays where the failure happened.
+    try testing.expectEqual(@as(usize, 1), p.depth());
+}
+
+test "skip_until started mid-object still ends at the outermost close" {
+    // Entered after the member name "a", so the search begins on that member's
+    // value. Each subsequent value is skipped whole -- {"b":{"c":1}}, then the
+    // name "d", then 2 -- so the OBJECT_END that satisfies it is the outer
+    // object's and depth returns to 0. Ground truth taken from the C original,
+    // not assumed: an earlier version of this test expected depth 1 and was
+    // wrong about what json_skip consumes.
+    var p = Parser.initBuffer("{\"a\":{\"b\":{\"c\":1}},\"d\":2}");
+    defer p.deinit();
+    try testing.expectEqual(Event.object_begin, try p.next());
+    try testing.expectEqual(Event.string, try p.next()); // "a"
+    try testing.expectEqual(Event.object_end, try p.skipUntil(.object_end));
+    try testing.expectEqual(@as(usize, 0), p.depth());
+    try testing.expectEqualStrings("2", p.tokenText());
+    try testing.expectEqual(Event.done, try p.next());
+}
+
 // -------------------------------------------------------------- token buffer
 
 test "token buffer grows past its initial 1 KiB" {

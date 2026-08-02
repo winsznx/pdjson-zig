@@ -25,7 +25,7 @@
   },
   "differential": {
     "inputs": 215,
-    "comparisons": 4085,
+    "comparisons": 5805,
     "divergences": 0,
     "upstream_ub": 43,
     "zig_crashes": 0,
@@ -49,7 +49,15 @@
       "user:nostream",
       "user:peek",
       "user:skip",
-      "user:sep"
+      "user:sep",
+      "string:next",
+      "string:nostream",
+      "string:peek",
+      "skipuntil:4",
+      "skipuntil:6",
+      "skipuntil:7",
+      "skipuntil:8",
+      "skipuntil:11"
     ]
   },
   "fuzz": {

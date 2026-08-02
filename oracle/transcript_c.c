@@ -27,10 +27,12 @@
  *                                     with {"input":"<path>"}. Used by the
  *                                     fuzzer so throughput is not dominated by
  *                                     process startup.
- * Modes: next nostream peek skip sep oom:<n>
+ * Modes: next nostream peek skip sep oom:<n> skipuntil:<enum>
  *
  * A mode may be prefixed with an input source:
  *   (none)   json_open_buffer  -- a byte array
+ *   string:  json_open_string  -- a NUL-terminated string, so the length comes
+ *                                 from strlen rather than being supplied
  *   stream:  json_open_stream  -- a FILE*, so reads go through fgetc/ungetc
  *   user:    json_open_user    -- caller-supplied get/peek callbacks
  *
@@ -155,6 +157,7 @@ transcribe(const char *mode, const char *buf, size_t len)
     const char *m = mode;
     if (strncmp(m, "stream:", 7) == 0) { source = "stream"; m += 7; }
     else if (strncmp(m, "user:", 5) == 0) { source = "user"; m += 5; }
+    else if (strncmp(m, "string:", 7) == 0) { source = "string"; m += 7; }
 
     alloc_budget = -1;
     if (strncmp(m, "oom:", 4) == 0)
@@ -165,6 +168,7 @@ transcribe(const char *mode, const char *buf, size_t len)
 
     json_stream json[1];
     FILE *fp = NULL;
+    char *owned = NULL;
     struct user_src usrc;
 
     if (strcmp(source, "stream") == 0) {
@@ -178,6 +182,16 @@ transcribe(const char *mode, const char *buf, size_t len)
         usrc.len = len;
         usrc.pos = 0;
         json_open_user(json, user_io_get, user_io_peek, &usrc);
+    } else if (strcmp(source, "string") == 0) {
+        /* json_open_string derives the length with strlen, so a fixture with an
+         * embedded NUL is deliberately truncated here. Both implementations
+         * must truncate identically, which is the point of covering it. */
+        char *z = (char *)malloc(len + 1);
+        if (z == NULL) { printf("{\"error\":\"oom\"}\n"); return; }
+        memcpy(z, buf, len);
+        z[len] = '\0';
+        json_open_string(json, z);
+        owned = z;
     } else {
         json_open_buffer(json, buf, len);
     }
@@ -206,7 +220,15 @@ transcribe(const char *mode, const char *buf, size_t len)
             if (seq >= TR_MAX_RECORDS) break;
         }
 
-        if (strcmp(mode, "skip") == 0) {
+        if (strncmp(mode, "skipuntil:", 10) == 0) {
+            /* json_skip_until consumes whole values until it reaches one of the
+             * requested type, so the interesting comparison is not only its
+             * return value but the parser state it leaves behind -- which the
+             * emitted record carries (depth, context, position, token). */
+            enum json_type target = (enum json_type)atoi(mode + 10);
+            type = json_skip_until(json, target);
+            emit(seq++, "skipuntil", type, json);
+        } else if (strcmp(mode, "skip") == 0) {
             type = json_skip(json);
             emit(seq++, "skip", type, json);
         } else {
@@ -247,6 +269,7 @@ transcribe(const char *mode, const char *buf, size_t len)
 
     json_close(json);
     if (fp != NULL) fclose(fp);
+    free(owned);
 }
 
 /* --------------------------------------------------------------------- main */

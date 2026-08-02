@@ -51,6 +51,16 @@ DEFAULT_MODES = [
     "stream:next", "stream:nostream", "stream:peek", "stream:skip", "stream:sep",
     # json_open_user -- caller-supplied get/peek callbacks
     "user:next", "user:nostream", "user:peek", "user:skip", "user:sep",
+    # json_open_string -- length from strlen, so embedded NUL truncates
+    "string:next", "string:nostream", "string:peek",
+    # json_skip_until, targeting each container-end and each scalar event.
+    # Without these the function is exported and ABI-checked but never has its
+    # behaviour compared; scripts/api-coverage.py reported it as untested.
+    "skipuntil:4",   # JSON_OBJECT_END
+    "skipuntil:6",   # JSON_ARRAY_END
+    "skipuntil:7",   # JSON_STRING
+    "skipuntil:8",   # JSON_NUMBER
+    "skipuntil:11",  # JSON_NULL
 ]
 
 TIMEOUT = 20

@@ -67,7 +67,7 @@
     },
     {
       "id": "C-04",
-      "text": "Across 4,085 differential comparisons on the fixed corpus, spanning all three documented input sources, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences.",
+      "text": "Across 5,805 differential comparisons on the fixed corpus, spanning all four documented input sources and every exported function, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-summary.json",
@@ -78,7 +78,7 @@
       },
       "command": "make differential",
       "verified_date": "2026-08-02",
-      "limitation": "215 inputs x 19 drive modes, covering json_open_buffer, json_open_stream (FILE*) and json_open_user. Counts only inputs where the original has defined behaviour; the 43 cases where an ASan+UBSan build of the original reports an error are counted separately as upstream_ub (see C-06).",
+      "limitation": "215 inputs x 27 drive modes, covering json_open_buffer, json_open_string, json_open_stream (FILE*) and json_open_user. Counts only inputs where the original has defined behaviour; the 43 cases where an ASan+UBSan build of the original reports an error are counted separately as upstream_ub.",
       "allowed_in": [
         "readme",
         "devfolio",
@@ -88,14 +88,14 @@
     },
     {
       "id": "C-05",
-      "text": "The differential comparison covers 19 drive modes: three input sources crossed with peek, skip, reset, the separator API and strict mode, plus 4 deterministic allocation-failure schedules.",
+      "text": "The differential comparison covers 27 drive modes: four input sources crossed with peek, skip, reset, the separator API and strict mode, plus five json_skip_until targets and four allocation-failure schedules.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-summary.json",
       "check": {
         "kind": "at_least",
         "path": "comparisons",
-        "value": 4000
+        "value": 5800
       },
       "command": "make differential",
       "verified_date": "2026-08-02",
@@ -384,7 +384,7 @@
     },
     {
       "id": "C-20",
-      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 4,085 fixed-corpus comparisons plus 3,498 JSONTestSuite comparisons plus an 11.8-million-case fuzz session, all at zero.",
+      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 5,805 fixed-corpus comparisons plus 3,498 JSONTestSuite comparisons plus an 11.8-million-case fuzz session, all at zero.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-jsontestsuite.json",
@@ -537,6 +537,26 @@
       "verified_date": "2026-08-02",
       "limitation": "The behaviour is reproduced and judged against an exact-integer reference and against libc, both of which disagree with parseFloat. It is NOT filed: `gh issue create -R ziglang/zig` returns 'Interactions on this repository have been restricted to collaborators only'. There is therefore no issue URL, and no Zig maintainer has confirmed it. Related closed issues (#10737, #20287, #2083, #11477) touch the same area but these cases still fail on master. Because it is unconfirmed by the project, this claim is not permitted in the README, on Devfolio, in the video, or in social copy.",
       "allowed_in": []
+    },
+    {
+      "id": "C-28",
+      "text": "All 22 exported functions have their behaviour compared between the two implementations; none is untested.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/differential/api-coverage.json",
+      "check": {
+        "kind": "equals",
+        "path": "classification.untested",
+        "value": 0
+      },
+      "command": "python3 scripts/api-coverage.py",
+      "verified_date": "2026-08-02",
+      "limitation": "Classification is derived by reading the harness and test sources, not asserted. Running it the first time found json_skip_until untested -- exported, symbol-checked and ABI-checked, but never behaviourally compared, and not called by upstream's own tests either. Closed with five new drive modes and five Zig tests. Coverage is not exhaustiveness: every export is exercised, but a driven function can still have untested edge cases.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
     }
   ]
 }

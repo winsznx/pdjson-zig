@@ -223,6 +223,9 @@ fn transcribe(e: Emitter, full_mode: []const u8, input: []const u8) !void {
     } else if (std.mem.startsWith(u8, mode, "user:")) {
         source = "user";
         mode = mode["user:".len..];
+    } else if (std.mem.startsWith(u8, mode, "string:")) {
+        source = "string";
+        mode = mode["string:".len..];
     }
 
     alloc_budget = -1;
@@ -235,6 +238,7 @@ fn transcribe(e: Emitter, full_mode: []const u8, input: []const u8) !void {
     var stream: abi.Stream = undefined;
     const s = &stream;
     var fp: ?*anyopaque = null;
+    var owned: ?[:0]u8 = null;
 
     if (std.mem.eql(u8, source, "stream")) {
         fp = tmpfile();
@@ -248,6 +252,17 @@ fn transcribe(e: Emitter, full_mode: []const u8, input: []const u8) !void {
     } else if (std.mem.eql(u8, source, "user")) {
         UserSrc.instance = .{ .buf = input };
         core.openUser(s, UserSrc.get, UserSrc.peek, null);
+    } else if (std.mem.eql(u8, source, "string")) {
+        // json_open_string derives the length with strlen, so a fixture with an
+        // embedded NUL is deliberately truncated. Both implementations must
+        // truncate identically, which is the point of covering it.
+        const z = std.heap.page_allocator.allocSentinel(u8, input.len, 0) catch {
+            try e.out.writeAll("{\"error\":\"oom\"}\n");
+            return;
+        };
+        @memcpy(z, input);
+        owned = z;
+        core.openBufferString(s, z.ptr);
     } else {
         core.openBuffer(s, input.ptr, input.len);
     }
@@ -274,8 +289,24 @@ fn transcribe(e: Emitter, full_mode: []const u8, input: []const u8) !void {
             if (seq >= max_records) break;
         }
 
-        const t = if (std.mem.eql(u8, mode, "skip")) core.skip(s) else core.nextEvent(s);
-        try e.record(seq, if (std.mem.eql(u8, mode, "skip")) "skip" else "next", t, s);
+        var op_name: []const u8 = "next";
+        var t: abi.Type = undefined;
+        if (std.mem.startsWith(u8, mode, "skipuntil:")) {
+            // json_skip_until consumes whole values until it reaches one of the
+            // requested type; the record carries the parser state it leaves
+            // behind, not just the return value.
+            const target: abi.Type = @enumFromInt(
+                std.fmt.parseInt(u32, mode["skipuntil:".len..], 10) catch 0,
+            );
+            t = core.skipUntil(s, target);
+            op_name = "skipuntil";
+        } else if (std.mem.eql(u8, mode, "skip")) {
+            t = core.skip(s);
+            op_name = "skip";
+        } else {
+            t = core.nextEvent(s);
+        }
+        try e.record(seq, op_name, t, s);
         seq += 1;
 
         if (t == .err) break;
@@ -315,4 +346,5 @@ fn transcribe(e: Emitter, full_mode: []const u8, input: []const u8) !void {
 
     core.close(s);
     if (fp != null) _ = fclose(fp);
+    if (owned) |z| std.heap.page_allocator.free(z);
 }

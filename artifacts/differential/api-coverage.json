@@ -1,0 +1,335 @@
+{
+  "schema": "pdjson-zig/api-coverage@1",
+  "header": "upstream/pdjson/pdjson.h",
+  "exported_functions": 22,
+  "classification": {
+    "differential": 22,
+    "scenario": 15,
+    "consumer": 13,
+    "upstream": 15,
+    "unit": 17,
+    "untested": 0
+  },
+  "untested": [],
+  "behaviour_compared_but_not_per-record": [],
+  "functions": [
+    {
+      "function": "json_open_buffer",
+      "coverage": [
+        "differential",
+        "scenario",
+        "unit",
+        "upstream"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: all buffer-source modes",
+        "used by tests.c",
+        "Zig tests: allocator_failure.zig, behaviour.zig, number_torture.zig, regressions.zig"
+      ]
+    },
+    {
+      "function": "json_open_string",
+      "coverage": [
+        "consumer",
+        "differential",
+        "scenario",
+        "unit",
+        "upstream"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: string:next, string:nostream, string:peek",
+        "tests/original/abi_consumer.c, via the pinned header",
+        "used by pretty.c",
+        "Zig tests: allocator_failure.zig, regressions.zig"
+      ]
+    },
+    {
+      "function": "json_open_stream",
+      "coverage": [
+        "differential",
+        "scenario",
+        "upstream"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: stream:*",
+        "used by pretty.c"
+      ]
+    },
+    {
+      "function": "json_open_user",
+      "coverage": [
+        "differential",
+        "scenario"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: user:*"
+      ]
+    },
+    {
+      "function": "json_close",
+      "coverage": [
+        "consumer",
+        "differential",
+        "scenario",
+        "unit",
+        "upstream"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: every mode, at the end of every transcript",
+        "tests/original/abi_consumer.c, via the pinned header",
+        "used by tests.c",
+        "Zig tests: allocator_failure.zig, behaviour.zig, number_torture.zig, regressions.zig"
+      ]
+    },
+    {
+      "function": "json_set_allocator",
+      "coverage": [
+        "differential",
+        "scenario",
+        "unit"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: oom:0, oom:1, oom:2, oom:5",
+        "Zig tests: allocator_failure.zig, regressions.zig"
+      ]
+    },
+    {
+      "function": "json_set_streaming",
+      "coverage": [
+        "consumer",
+        "differential",
+        "scenario",
+        "unit",
+        "upstream"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: nostream (false) and all others (true)",
+        "tests/original/abi_consumer.c, via the pinned header",
+        "used by tests.c",
+        "Zig tests: behaviour.zig"
+      ]
+    },
+    {
+      "function": "json_next",
+      "coverage": [
+        "consumer",
+        "differential",
+        "scenario",
+        "unit",
+        "upstream"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: next, nostream, peek, sep, oom:*, stream:*, user:*",
+        "tests/original/abi_consumer.c, via the pinned header",
+        "used by tests.c",
+        "Zig tests: allocator_failure.zig, behaviour.zig, number_torture.zig, regressions.zig"
+      ]
+    },
+    {
+      "function": "json_peek",
+      "coverage": [
+        "differential",
+        "scenario",
+        "unit",
+        "upstream"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: peek, stream:peek, user:peek",
+        "used by pretty.c",
+        "Zig tests: regressions.zig"
+      ]
+    },
+    {
+      "function": "json_reset",
+      "coverage": [
+        "consumer",
+        "differential",
+        "scenario",
+        "unit",
+        "upstream"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: next, sep, stream:next, user:next",
+        "tests/original/abi_consumer.c, via the pinned header",
+        "used by tests.c",
+        "Zig tests: allocator_failure.zig, behaviour.zig, regressions.zig"
+      ]
+    },
+    {
+      "function": "json_get_string",
+      "coverage": [
+        "consumer",
+        "differential",
+        "unit",
+        "upstream"
+      ],
+      "notes": [
+        "value recorded on every transcript record, so compared on every corpus comparison",
+        "tests/original/abi_consumer.c, via the pinned header",
+        "used by tests.c",
+        "Zig tests: allocator_failure.zig, behaviour.zig, regressions.zig"
+      ]
+    },
+    {
+      "function": "json_get_number",
+      "coverage": [
+        "consumer",
+        "differential",
+        "unit"
+      ],
+      "notes": [
+        "value recorded on every transcript record, so compared on every corpus comparison",
+        "tests/original/abi_consumer.c, via the pinned header",
+        "Zig tests: allocator_failure.zig, number_torture.zig, regressions.zig"
+      ]
+    },
+    {
+      "function": "json_skip",
+      "coverage": [
+        "consumer",
+        "differential",
+        "scenario",
+        "unit"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: skip, user:skip",
+        "tests/original/abi_consumer.c, via the pinned header",
+        "Zig tests: behaviour.zig, regressions.zig"
+      ]
+    },
+    {
+      "function": "json_skip_until",
+      "coverage": [
+        "differential",
+        "scenario"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: skipuntil:4, skipuntil:6, skipuntil:7, skipuntil:8, skipuntil:11"
+      ]
+    },
+    {
+      "function": "json_get_lineno",
+      "coverage": [
+        "consumer",
+        "differential",
+        "unit",
+        "upstream"
+      ],
+      "notes": [
+        "value recorded on every transcript record, so compared on every corpus comparison",
+        "tests/original/abi_consumer.c, via the pinned header",
+        "used by pretty.c",
+        "Zig tests: behaviour.zig, regressions.zig"
+      ]
+    },
+    {
+      "function": "json_get_position",
+      "coverage": [
+        "differential",
+        "unit"
+      ],
+      "notes": [
+        "value recorded on every transcript record, so compared on every corpus comparison",
+        "Zig tests: behaviour.zig, regressions.zig"
+      ]
+    },
+    {
+      "function": "json_get_depth",
+      "coverage": [
+        "consumer",
+        "differential",
+        "unit",
+        "upstream"
+      ],
+      "notes": [
+        "value recorded on every transcript record, so compared on every corpus comparison",
+        "tests/original/abi_consumer.c, via the pinned header",
+        "used by pretty.c",
+        "Zig tests: allocator_failure.zig, behaviour.zig, regressions.zig"
+      ]
+    },
+    {
+      "function": "json_get_context",
+      "coverage": [
+        "consumer",
+        "differential",
+        "unit"
+      ],
+      "notes": [
+        "value recorded on every transcript record, so compared on every corpus comparison",
+        "tests/original/abi_consumer.c, via the pinned header",
+        "Zig tests: allocator_failure.zig, behaviour.zig, regressions.zig"
+      ]
+    },
+    {
+      "function": "json_get_error",
+      "coverage": [
+        "consumer",
+        "differential",
+        "unit",
+        "upstream"
+      ],
+      "notes": [
+        "value recorded on every transcript record, so compared on every corpus comparison",
+        "tests/original/abi_consumer.c, via the pinned header",
+        "used by pretty.c",
+        "Zig tests: allocator_failure.zig, behaviour.zig, regressions.zig"
+      ]
+    },
+    {
+      "function": "json_source_get",
+      "coverage": [
+        "differential",
+        "scenario",
+        "upstream"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: sep, stream:sep",
+        "used by tests.c"
+      ]
+    },
+    {
+      "function": "json_source_peek",
+      "coverage": [
+        "differential",
+        "scenario",
+        "unit",
+        "upstream"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: sep, stream:sep",
+        "used by tests.c",
+        "Zig tests: allocator_failure.zig"
+      ]
+    },
+    {
+      "function": "json_isspace",
+      "coverage": [
+        "consumer",
+        "differential",
+        "scenario",
+        "upstream"
+      ],
+      "notes": [
+        "driven by both transcript producers",
+        "modes: sep, stream:sep",
+        "tests/original/abi_consumer.c, via the pinned header",
+        "used by tests.c"
+      ]
+    }
+  ]
+}

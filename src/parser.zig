@@ -981,6 +981,13 @@ pub fn openBuffer(self: *Stream, buffer: ?[*]const u8, size: usize) void {
     self.source.source = .{ .buffer = .{ .buffer = buffer, .length = size } };
 }
 
+/// `json_open_string`: the length comes from the NUL terminator rather than
+/// being supplied, so an embedded NUL truncates the input.
+pub fn openBufferString(self: *Stream, string: [*:0]const u8) void {
+    const span = std.mem.span(string);
+    openBuffer(self, span.ptr, span.len);
+}
+
 pub fn openStream(self: *Stream, file: ?*anyopaque) void {
     init(self);
     self.source.get = streamGet;
