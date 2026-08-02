@@ -103,7 +103,7 @@ git checkout upstream/pdjson/tests/tests.c
 
 # 3. The Zig library really contains no C parser.
 sh scripts/verify-no-c-linkage.sh
-ar t zig-out/lib/libpdjson.a                   # one Zig object
+ar t zig-out/lib/libpdjson.a                   # Zig objects only
 nm -g zig-out/lib/libpdjson.a | grep ' T _\?json_' | wc -l   # 22 exports
 
 # 4. The upstream suite, compiled in place, linked against only the Zig archive.

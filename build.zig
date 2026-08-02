@@ -52,6 +52,18 @@ pub fn build(b: *std.Build) void {
         .root_module = pdjson_mod,
         .linkage = .static,
     });
+    // On Linux the archive references Zig's compiler-rt helpers (e.g.
+    // __zig_probe_stack) that a plain `cc`/`ld` does not provide, so a C
+    // consumer fails to link. `zig cc` hides that by supplying them itself,
+    // which is exactly why the ABI check uses the system compiler. Found by CI
+    // on x86-64 Linux; see docs/final-audit.md.
+    //
+    // Only on the targets that need it: bundling on macOS produces an archive
+    // member ld rejects as not 8-byte aligned.
+    lib.bundle_compiler_rt = switch (target.result.os.tag) {
+        .linux => true,
+        else => false,
+    };
     lib.installHeader(b.path("include/pdjson.h"), "pdjson.h");
     b.installArtifact(lib);
 

@@ -111,7 +111,8 @@ cat > "$OUT" <<EOF
 EOF
 
 if [ "$fail" -eq 0 ]; then
-    echo "  $OBJECT_COUNT Zig object(s), $EXPORTED/22 public symbols exported,"
+    echo "  $OBJECT_COUNT Zig-produced object(s) (the library, plus compiler-rt on"
+    echo "  targets that bundle it), $EXPORTED/22 public symbols exported,"
     echo "  no upstream implementation symbols, no json_* imports"
     echo "  wrote artifacts/linkage-report.json"
     exit 0

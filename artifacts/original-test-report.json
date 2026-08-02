@@ -14,7 +14,7 @@
       "returncode": 0,
       "passed": 18,
       "failed": 0,
-      "duration_seconds": 0.8037,
+      "duration_seconds": 0.5577,
       "raw_tail": "18 pass, 0 fail"
     },
     "tests.c[zig]": {
@@ -22,7 +22,7 @@
       "returncode": 0,
       "passed": 18,
       "failed": 0,
-      "duration_seconds": 0.308,
+      "duration_seconds": 0.4933,
       "raw_tail": "18 pass, 0 fail"
     },
     "stream.c[differential]": {
@@ -31,7 +31,7 @@
       "fixtures": 215,
       "mismatches": 0,
       "detail": [],
-      "duration_seconds": 2.166
+      "duration_seconds": 2.669
     },
     "pretty.c[differential]": {
       "kind": "differential",
@@ -39,7 +39,7 @@
       "fixtures": 215,
       "mismatches": 0,
       "detail": [],
-      "duration_seconds": 2.664
+      "duration_seconds": 3.004
     }
   },
   "build_commands": {

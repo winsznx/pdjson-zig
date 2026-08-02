@@ -147,7 +147,7 @@
     },
     {
       "id": "C-08",
-      "text": "The Zig static library contains exactly one Zig-compiled object, exports all 22 public symbols from the pinned header, and contains no upstream parser code.",
+      "text": "The Zig static library is built only from Zig-produced objects, exports all 22 public symbols from the pinned header, and contains no upstream parser code.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/linkage-report.json",
@@ -158,7 +158,7 @@
       },
       "command": "sh scripts/verify-no-c-linkage.sh",
       "verified_date": "2026-08-02",
-      "limitation": "Checks archive membership, absence of pdjson.c's 23 internal symbols, absence of undefined json_* imports, presence of all 22 exports, and that no Zig build input references pdjson.c.",
+      "limitation": "Checks archive membership, absence of pdjson.c's 23 internal symbols, absence of undefined json_* imports, presence of all 22 exports, and that no Zig build input references pdjson.c. The archive holds the library object plus, on Linux, Zig's compiler-rt -- bundled so a plain cc/ld can link it without zig cc supplying those helpers.",
       "allowed_in": [
         "readme",
         "devfolio",
