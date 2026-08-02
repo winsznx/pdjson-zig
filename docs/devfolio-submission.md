@@ -146,11 +146,11 @@ an IEEE-754 bit pattern (so negative zero and NaN payloads stay visible), line,
 byte position, depth, container context, and the diagnostic string. Equivalence
 on an input means the transcripts are byte-identical.
 
-Every input runs through nine drive modes, because the same bytes exercise
-different code depending on how the caller drives the parser: the plain event
-loop, strict non-streaming mode, peek-before-next, json_skip, the README's
-separator loop via json_source_get, and four deterministic allocation-failure
-schedules.
+Every input runs through 19 drive modes: three input sources (json_open_buffer,
+json_open_stream, json_open_user) crossed with five ways of driving the parser --
+the plain event loop, strict non-streaming mode, peek-before-next, json_skip and
+the README's separator loop via json_source_get -- plus four deterministic
+allocation-failure schedules.
 
 Fault attribution is mechanical, not editorial. When the two disagree, the
 harness re-runs the case against an ASan+UBSan build of the pinned original. If

@@ -101,10 +101,11 @@ terminator. `snprintf` writes the message and stops, leaving the rest of the
 those bytes are whatever was there before. Comparing them would compare
 uninitialised stack memory and produce divergences that mean nothing.
 
-Then each input runs through **nine drive modes**, because the same bytes
-exercise different code depending on how the caller drives the parser: the plain
-event loop, strict mode, peek-before-next, `json_skip`, the README's separator
-loop via `json_source_get`, and four deterministic allocation-failure schedules.
+Then each input runs through **19 drive modes** — three input sources
+(`json_open_buffer`, `json_open_stream`, `json_open_user`) crossed with five ways
+of driving the parser: the plain event loop, strict mode, peek-before-next,
+`json_skip`, and the README's separator loop via `json_source_get` — plus four
+deterministic allocation-failure schedules.
 
 That last category is where things got interesting.
 

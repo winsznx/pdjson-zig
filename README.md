@@ -9,8 +9,9 @@
 | **Dominant proof** | Two independent programs drive the C original and the Zig port through the same script and emit deterministic NDJSON behaviour transcripts. Equivalence means **byte-identical transcripts**. |
 | **Upstream tests** | **18/18** assertions pass, sources unmodified and hash-pinned, linked against only the Zig library |
 | **Differential** | **0 divergences** in 4,085 fixed-corpus + 3,498 JSONTestSuite comparisons, across all three input sources |
-| **Fuzzing** | 30-minute published session, **0 divergences, 0 crashes, 0 timeouts** |
+| **Fuzzing** | 30-minute published session, **11.8M cases, 0 divergences, 0 crashes, 0 timeouts** |
 | **Harness self-test** | **12/12** injected defects caught (its first sound run found 4 real gaps in the corpus) |
+| **C ABI** | Identical layout on **6 targets** (32- and 64-bit, x86, ARM, RISC-V, Windows); a C consumer using the pinned header links against the Zig archive alone |
 | **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; 10 pointer casts, each enumerated. Ships **ReleaseSafe** — checks on. |
 | **Benchmark** | **Slower on 9 of 12** workload/mode pairs, faster on 3. Full table below, generated from the artifact. |
 | **Upstream bugs found** | 3, all filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38). Two independently confirmed by Valgrind. |
@@ -25,8 +26,8 @@ upstream suite against Zig, runs the differential corpus, fuzzes, scans for
 escape hatches, benchmarks, and validates every claim below against the files it
 just generated. It fails on the first thing that does not hold.
 
-- **Demo video:** _placeholder — see [`docs/demo-script.md`](docs/demo-script.md)_
-- **Devfolio project:** _placeholder — draft in [`docs/devfolio-submission.md`](docs/devfolio-submission.md)_
+- **Demo video:** _not recorded. Script ready in [`docs/demo-script.md`](docs/demo-script.md)._
+- **Devfolio project:** _not submitted. Copy staged in [`docs/devfolio-submission.md`](docs/devfolio-submission.md); screenshots pending ([checklist](docs/screenshot-checklist.md))._
 
 ---
 
@@ -69,10 +70,10 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-14 | Both transcript producers are deterministic: five runs over every fixture in five modes produce byte-identical output. | verified | [`artifacts/determinism-report.json`](artifacts/determinism-report.json) |
 | C-15 | The Zig implementation's json_get_number matches C strtod bit for bit across a 661-point exponent sweep, powers of two, digit strings up to 500 digits, 20,000 randomised decimal lexemes and 20,000 randomised hex floats. | verified | [`artifacts/original-test-report.json`](artifacts/original-test-report.json) |
 | C-16 | The Zig implementation is slower than the C original on 9 of the 12 benchmark workload/mode pairs measured, and faster on 3. | verified | [`artifacts/benchmark-summary.json`](artifacts/benchmark-summary.json) |
-| C-17 | A published differential fuzz session found zero divergences, zero crashes and zero timeouts. | verified | [`artifacts/verification-report.json`](artifacts/verification-report.json) |
+| C-17 | A published 30-minute differential fuzz session of 11,812,800 cases, spanning all three input sources, found zero divergences, zero crashes and zero timeouts. | verified | [`artifacts/verification-report.json`](artifacts/verification-report.json) |
 | C-18 | Behavioural equivalence is demonstrated for all three documented input sources: json_open_buffer, json_open_stream (FILE*) and json_open_user. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-19 | On the independent nst/JSONTestSuite conformance corpus, the Zig port and the pinned C original agree on all 318 parsing cases across 11 drive modes and all three input sources, and the original is fully conforming (95/95 must-accept, 188/188 must-reject). | verified | [`artifacts/conformance-report.json`](artifacts/conformance-report.json) |
-| C-20 | No divergence has ever been observed on any input where the pinned original is well defined: 4,085 fixed-corpus comparisons plus 3,498 JSONTestSuite comparisons plus a 30-minute 34.6-million-case fuzz session, all at zero. | verified | [`artifacts/differential-jsontestsuite.json`](artifacts/differential-jsontestsuite.json) |
+| C-20 | No divergence has ever been observed on any input where the pinned original is well defined: 4,085 fixed-corpus comparisons plus 3,498 JSONTestSuite comparisons plus an 11.8-million-case fuzz session, all at zero. | verified | [`artifacts/differential-jsontestsuite.json`](artifacts/differential-jsontestsuite.json) |
 | C-21 | Verification found two real defects in this port -- a hex-float rounding error and an uninitialised read inherited from the original -- both fixed, regression-tested and documented. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-22 | Both transcript producers are deterministic on Linux and macOS: five runs over every fixture in five modes produce byte-identical output. | verified | [`artifacts/determinism-report.json`](artifacts/determinism-report.json) |
 | C-23 | The Zig type declarations and the pinned C header describe the same ABI on 6 targets spanning 32- and 64-bit, little-endian ARM, x86, RISC-V and Windows. | verified | [`artifacts/abi-cross-report.json`](artifacts/abi-cross-report.json) |
@@ -232,6 +233,11 @@ reading before trusting this section.
 JSON, number-boundary and Unicode-boundary cases, then runs both implementations
 over batches of ~400 inputs per process pair. That batching is what makes
 ~9,000 cases/second possible; per-case process spawning would be ~200× slower.
+
+Before measuring anything it runs a trivial document through both binaries and
+refuses to start unless both produce a valid, identical transcript — because "the
+implementations disagree" and "one binary is broken" produce the same diff, and
+the second one has happened here (DECISIONS.md D-20).
 
 Every finding is isolated to one input, minimized by delta debugging, and written
 to `fuzz/minimized/` with both transcripts. Duration, seed, case count and rate

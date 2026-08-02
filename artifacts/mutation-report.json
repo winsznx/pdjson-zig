@@ -1,7 +1,7 @@
 {
   "schema": "pdjson-zig/mutation-report@1",
   "description": "Deliberate defects injected into the Zig implementation. Each must be detected by comparing against the C oracle over the fixed corpus.",
-  "fixtures": 214,
+  "fixtures": 215,
   "modes": [
     "next",
     "peek",
@@ -11,7 +11,7 @@
     "oom:0",
     "oom:2"
   ],
-  "comparable_cases": 1463,
+  "comparable_cases": 1470,
   "excluded_cases": 35,
   "exclusion_reason": "(mode, fixture) pairs where an ASan+UBSan build of the pinned C original reports an error are excluded. Every mutant trivially differs on those, because the C side crashed or emitted bytes from unallocated memory; counting them would let this script certify itself. The decision is made by a sanitizer, not by judgement.",
   "mutants_defined": 12,

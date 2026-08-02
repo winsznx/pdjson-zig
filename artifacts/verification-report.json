@@ -55,9 +55,9 @@
   "fuzz": {
     "log": "fuzz/logs/session-published.json",
     "seed": 20260802,
-    "elapsed_seconds": 1800.0,
-    "cases": 34595200,
-    "cases_per_second": 19219.5,
+    "elapsed_seconds": 1800.02,
+    "cases": 11812800,
+    "cases_per_second": 6562.6,
     "divergences": 0,
     "zig_crashes": 0,
     "timeouts": 0,
@@ -66,7 +66,13 @@
       "nostream",
       "peek",
       "skip",
-      "sep"
+      "sep",
+      "stream:next",
+      "stream:peek",
+      "stream:sep",
+      "user:next",
+      "user:peek",
+      "user:skip"
     ]
   },
   "abi": {
@@ -102,7 +108,7 @@
     "defined": 12,
     "caught": 12,
     "survived": 0,
-    "comparable_cases": 1463,
+    "comparable_cases": 1470,
     "excluded_cases": 35
   },
   "determinism": {

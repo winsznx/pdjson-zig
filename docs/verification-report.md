@@ -27,13 +27,13 @@ artifacts in `artifacts/`. Every number here is read out of a file that
 ## Differential fuzzing
 
 - Session: `fuzz/logs/session-published.json` (seed 20260802)
-- Duration: 1800.0s, 34595200 cases (19219.5/s)
+- Duration: 1800.02s, 11812800 cases (6562.6/s)
 - Divergences: **0**, crashes: 0, timeouts: 0
 
 ## Harness self-test (mutation)
 
 - Mutants: 12/12 caught, 0 survived
-- Comparable cases: 1463 (35 excluded as upstream UB)
+- Comparable cases: 1470 (35 excluded as upstream UB)
 
 ## C ABI
 

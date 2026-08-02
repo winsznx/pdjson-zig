@@ -88,7 +88,7 @@ and one that permits a single allocation before failing (out-of-bounds read).
 ## How it was found
 
 Not by reading the code. The differential harness in this repository runs every
-input through both implementations under nine drive modes, four of which inject
+input through both implementations under many drive modes, four of which inject
 deterministic allocation failures (`oom:0`, `oom:1`, `oom:2`, `oom:5`). When the
 two transcripts disagreed, the harness re-ran the case against an ASan+UBSan
 build of the pinned original to decide which side was at fault

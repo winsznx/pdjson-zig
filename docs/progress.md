@@ -58,7 +58,7 @@ no `strtod` import.
 
 ## Phase 2 — transcript oracle
 
-Two independent transcript producers, nine drive modes, a versioned NDJSON
+Two independent transcript producers, a versioned NDJSON
 schema. First comparison on a real document was byte-identical.
 
 ## Phase 6 — differential testing

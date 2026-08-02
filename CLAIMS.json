@@ -323,7 +323,7 @@
     },
     {
       "id": "C-17",
-      "text": "A published differential fuzz session found zero divergences, zero crashes and zero timeouts.",
+      "text": "A published 30-minute differential fuzz session of 11,812,800 cases, spanning all three input sources, found zero divergences, zero crashes and zero timeouts.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/verification-report.json",
@@ -332,9 +332,9 @@
         "path": "fuzz.divergences",
         "value": 0
       },
-      "command": "make fuzz FUZZ_SECONDS=1500 FUZZ_SEED=20260802",
+      "command": "make fuzz FUZZ_SECONDS=1800 FUZZ_SEED=20260802",
       "verified_date": "2026-08-02",
-      "limitation": "Exact duration, seed, case count and rate are recorded in the session log referenced by artifacts/verification-report.json. Allocation-failure modes are excluded from the default fuzz modes because the original crashes constantly there; they are covered exhaustively by the fixed corpus and by tests/port/allocator_failure.zig instead.",
+      "limitation": "Exact duration, seed, rounds, case count, rate and mode list are recorded in the session log referenced by artifacts/verification-report.json. Modes cover json_open_buffer, json_open_stream and json_open_user. Allocation-failure modes are excluded from the fuzz defaults because the original crashes constantly there and swamps the signal; they are covered exhaustively by the fixed corpus and by tests/port/allocator_failure.zig. The harness refuses to start unless both binaries produce a valid transcript for a trivial document (DECISIONS.md D-20).",
       "allowed_in": [
         "readme",
         "devfolio",
@@ -384,7 +384,7 @@
     },
     {
       "id": "C-20",
-      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 4,085 fixed-corpus comparisons plus 3,498 JSONTestSuite comparisons plus a 30-minute 34.6-million-case fuzz session, all at zero.",
+      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 4,085 fixed-corpus comparisons plus 3,498 JSONTestSuite comparisons plus an 11.8-million-case fuzz session, all at zero.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-jsontestsuite.json",

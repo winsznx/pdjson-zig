@@ -34,16 +34,16 @@ each from a regenerated artifact:
 | Pinned upstream hashes | 9/9 files match |
 | Upstream test suite against the Zig library | **18/18**, unmodified, 0 skipped |
 | `stream.c` / `pretty.c` differential | 0 mismatches over 215 fixtures |
-| Fixed corpus differential | **0 divergences** in 1,935 comparisons |
-| JSONTestSuite differential | **0 divergences** in 1,590 comparisons |
-| Oracle determinism | byte-identical over 5 runs × 5 modes, both producers |
-| C ABI layout | identical on every offset, size, alignment, enumerator |
+| Fixed corpus differential | **0 divergences** in 4,085 comparisons, all 3 input sources |
+| JSONTestSuite differential | **0 divergences** in 3,498 comparisons |
+| Oracle determinism | byte-identical over 5 runs × 5 modes, both producers, Linux and macOS |
+| C ABI layout | identical on the host, plus 6 cross targets (32/64-bit, x86, ARM, RISC-V, Windows) |
 | C consumer against the pinned header | links and runs |
 | No upstream parser code in the artifact | 1 Zig object, 22/22 exports, 0 `json_*` imports |
 | Escape-hatch scan | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 asm |
 | Harness mutation testing | **12/12** injected defects caught |
-| Zig-native tests | 72 passing |
-| Claim ledger | 22/22 validate against artifacts |
+| Zig-native tests | 74 passing |
+| Claim ledger | 24/24 validate against artifacts |
 
 ## CI
 
@@ -54,7 +54,7 @@ Green on both targets, from a clean checkout:
 | pinned upstream hashes | success |
 | full verification (ubuntu-latest, x86-64) | success |
 | full verification (macos-latest, arm64) | success |
-| sanitizers on the C oracle | success |
+| sanitizers on the C oracle (ASan, UBSan, Valgrind) | success |
 
 Latest run: <https://github.com/winsznx/pdjson-zig/actions>
 
@@ -109,9 +109,16 @@ docs: README judge path, DECISIONS, claim ledger, and verification pipeline
 chore: stop tracking the fetched JSONTestSuite corpus
 ci: install Zig by pinned download instead of a marketplace action
 fix: make the static archive linkable by a system C compiler
+fix: make the static archive linkable by a system C compiler
 fix: read only the bytes the parser wrote in json_get_number
 docs: record the determinism finding and CI-green audit verdict
+test: compare all three input sources, not just the byte buffer
+test: verify the ABI on six targets, including 32-bit and Windows
+test: add valgrind memcheck against the pinned original
+fuzz: refuse to run against binaries that do not work
+docs: record the four measurement artifacts and their guards
 ```
+
 
 ## Outstanding
 
@@ -124,33 +131,32 @@ anywhere in the repository.
 expected output, narration, a fallback plan, and YouTube metadata. Nothing has
 been recorded. The README carries a placeholder, not a link.
 
-### 2. Devfolio submission — draft prepared, not published
+### 2. Devfolio submission — staged locally, deliberately not created
 
-The Devfolio MCP connection was unavailable for most of this build and came back
-late. The live form has now been inspected:
+Nothing exists on Devfolio: no draft, no project. This is by instruction — the
+submission waits until the video exists and the final release gate passes.
 
-- `name` 2–50, `tagline` 2–50, `hashtags` 1–10, `pictures` **1–6 required**,
-  `links` 0–5, plus two required long-form organizer fields
-  ("The problem it solves", "Challenges we ran into").
-- `getHackathonTracksAndPrizes` returns an empty list for this event, so there
-  are no track applications to file.
+The live form **has** been inspected through the MCP, so the staged copy is
+written against the real constraints rather than a guess: `name` 2–50,
+`tagline` 2–50, `hashtags` 1–10, `pictures` **1–6 required**, `links` 0–5, plus
+two required long-form organizer fields. `getHackathonTracksAndPrizes` returns an
+empty list, so there are no track applications to file.
 
-Copy for every field is prepared in `docs/devfolio-submission.md`, and every
-figure in it comes from an artifact `make verify` regenerates.
+Every field's copy is in [`devfolio-submission.md`](devfolio-submission.md), and
+every figure in it traces to an artifact `make verify` regenerates.
 
-**The blocker is `pictures`.** Devfolio requires 1–6 real screenshots of the
-running project and explicitly forbids generated stand-ins. Renderings of
-genuinely captured terminal output exist in `/tmp/shots/png/` — the *content* is
-byte-for-byte what the commands printed — but they are renderings, not screen
-captures, and that distinction is the user's call to make, not mine.
+**The one thing that cannot be produced here is `pictures`.** Devfolio requires
+real screenshots of the running project. Six shots with exact commands are listed
+in [`screenshot-checklist.md`](screenshot-checklist.md).
 
-Remaining manual steps:
+Remaining steps, in order:
 
-1. Decide on gallery images (capture real screenshots, or approve the renderings
-   of real output).
-2. Create the project via `createHackathonProject` with the prepared copy.
-3. Record the demo video, add `video_url`, update the README placeholder.
-4. Publish, and paste the project URL into the README and this file.
+1. Capture screenshots (checklist above).
+2. Record the demo video (`demo-script.md`).
+3. `make release-gate`, and confirm CI green.
+4. Create and publish via `createHackathonProject` with the staged copy,
+   screenshots and `video_url`.
+5. Paste the project URL into the README and this file.
 
 ## Reproducing any of the above
 
