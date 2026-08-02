@@ -11,7 +11,7 @@
     "bitCast": 13,
     "truncate": 4,
     "force_unwrap": 0,
-    "undefined_initializers": 8,
+    "undefined_initializers": 7,
     "unreachable": 0,
     "setRuntimeSafety": 0,
     "inline_asm": 0,
@@ -22,12 +22,12 @@
     "inline_asm": 0, "unreachable": 0, "volatile": 0, "force_unwrap": 0
   },
   "occurrences": {
-    "ptrCast": ["c_api.zig:20", "c_api.zig:70", "c_api.zig:105", "parser.zig:65", "parser.zig:252", "parser.zig:257", "parser.zig:324", "parser.zig:329", "parser.zig:1003", "parser.zig:1004"],
+    "ptrCast": ["c_api.zig:20", "c_api.zig:70", "c_api.zig:105", "parser.zig:65", "parser.zig:252", "parser.zig:257", "parser.zig:324", "parser.zig:329", "parser.zig:1006", "parser.zig:1007"],
     "alignCast": ["parser.zig:257"],
-    "bitCast": ["errmsg.zig:47", "errmsg.zig:53", "parser.zig:135", "parser.zig:215", "parser.zig:220", "parser.zig:225", "parser.zig:369", "parser.zig:381", "parser.zig:449", "parser.zig:561", "parser.zig:954", "strtod.zig:94", "strtod.zig:335"],
+    "bitCast": ["errmsg.zig:47", "errmsg.zig:53", "parser.zig:135", "parser.zig:215", "parser.zig:220", "parser.zig:225", "parser.zig:369", "parser.zig:381", "parser.zig:449", "parser.zig:561", "parser.zig:957", "strtod.zig:94", "strtod.zig:335"],
     "intCast": ["errmsg.zig:61", "parser.zig:363", "parser.zig:365", "parser.zig:366", "parser.zig:372", "parser.zig:373", "parser.zig:374", "parser.zig:376", "parser.zig:377", "parser.zig:378", "parser.zig:379", "strtod.zig:219", "strtod.zig:257", "strtod.zig:259", "strtod.zig:269"],
     "truncate": ["errmsg.zig:47", "parser.zig:215", "parser.zig:220", "parser.zig:225"],
-    "undefined": ["api.zig:69", "api.zig:215", "errmsg.zig:52", "errmsg.zig:79", "errmsg.zig:89", "errmsg.zig:102", "errmsg.zig:114", "parser.zig:767"]
+    "undefined": ["api.zig:69", "api.zig:215", "errmsg.zig:52", "errmsg.zig:79", "errmsg.zig:89", "errmsg.zig:102", "errmsg.zig:114"]
   },
   "justifications": {
     "ptrCast": "Two boundaries only. (a) json_allocator is a C interface returning void*, so every malloc/realloc/free crossing needs a cast; these are confined to cMalloc/cRealloc/cFree and close() in src/parser.zig. (b) json_get_string and json_get_error must return a char* into buffers the parser guarantees are NUL terminated, and json_open_buffer receives a const void*; these are in src/c_api.zig. No cast reinterprets one object type as another.",

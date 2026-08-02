@@ -13,6 +13,9 @@ on:
 permissions:
   contents: read
 
+env:
+  ZIG_VERSION: 0.16.0
+
 jobs:
   provenance:
     name: pinned upstream hashes
@@ -39,9 +42,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: mlugg/setup-zig@v1
-        with:
-          version: 0.16.0
+      # Zig is installed by direct pinned download rather than a marketplace
+      # action: the action hung for 20+ minutes on both runners, and a URL
+      # pinned to an exact release is more reproducible evidence anyway. This
+      # matches what the Dockerfile does.
+      - name: install Zig ${{ env.ZIG_VERSION }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ runner.os }}-$(uname -m)" in
+            Linux-x86_64)  target=x86_64-linux  ;;
+            Linux-aarch64) target=aarch64-linux ;;
+            macOS-arm64)   target=aarch64-macos ;;
+            macOS-x86_64)  target=x86_64-macos  ;;
+            *) echo "unsupported runner: ${{ runner.os }}-$(uname -m)" >&2; exit 1 ;;
+          esac
+          url="https://ziglang.org/download/${ZIG_VERSION}/zig-${target}-${ZIG_VERSION}.tar.xz"
+          echo "downloading $url"
+          curl -fsSL --retry 3 --retry-delay 5 "$url" -o /tmp/zig.tar.xz
+          mkdir -p "$HOME/zig"
+          tar -xJf /tmp/zig.tar.xz -C "$HOME/zig" --strip-components=1
+          echo "$HOME/zig" >> "$GITHUB_PATH"
 
       - uses: actions/setup-python@v5
         with:
@@ -117,9 +138,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: mlugg/setup-zig@v1
-        with:
-          version: 0.16.0
+      # Zig is installed by direct pinned download rather than a marketplace
+      # action: the action hung for 20+ minutes on both runners, and a URL
+      # pinned to an exact release is more reproducible evidence anyway. This
+      # matches what the Dockerfile does.
+      - name: install Zig ${{ env.ZIG_VERSION }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ runner.os }}-$(uname -m)" in
+            Linux-x86_64)  target=x86_64-linux  ;;
+            Linux-aarch64) target=aarch64-linux ;;
+            macOS-arm64)   target=aarch64-macos ;;
+            macOS-x86_64)  target=x86_64-macos  ;;
+            *) echo "unsupported runner: ${{ runner.os }}-$(uname -m)" >&2; exit 1 ;;
+          esac
+          url="https://ziglang.org/download/${ZIG_VERSION}/zig-${target}-${ZIG_VERSION}.tar.xz"
+          echo "downloading $url"
+          curl -fsSL --retry 3 --retry-delay 5 "$url" -o /tmp/zig.tar.xz
+          mkdir -p "$HOME/zig"
+          tar -xJf /tmp/zig.tar.xz -C "$HOME/zig" --strip-components=1
+          echo "$HOME/zig" >> "$GITHUB_PATH"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

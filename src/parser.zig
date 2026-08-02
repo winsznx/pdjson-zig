@@ -764,11 +764,14 @@ pub fn nextEvent(self: *Stream) Type {
         // json_source_get/peek; it is then skipped as leading whitespace of
         // the next value.
         if (self.flags & abi.flag_streaming == 0) {
-            var c: c_int = undefined;
-            while (true) {
+            // The original writes this as a do/while that re-reads the same
+            // byte; expressed as a peek-then-consume loop it needs no
+            // `undefined` local, and leaves `c` on the first non-space byte
+            // without consuming it, exactly as the original does.
+            var c = srcPeek(self);
+            while (isSpace(c)) {
+                _ = srcGet(self);
                 c = srcPeek(self);
-                if (isSpace(c)) c = srcGet(self);
-                if (!isSpace(c)) break;
             }
             if (c != EOF) {
                 errChar(self, "expected end of text instead of byte '", c, "'");
