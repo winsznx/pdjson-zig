@@ -9,7 +9,7 @@
 #include <string.h>
 
 /* Bump on any change to the record shape. Both implementations assert on it. */
-#define TR_SCHEMA "pdjson-zig/transcript@1"
+#define TR_SCHEMA "pdjson-zig/transcript@2"
 
 /* Upper bound on emitted records, so a pathological input cannot hang the
  * harness. Reaching it emits {"truncated":true} rather than pretending the

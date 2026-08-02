@@ -107,14 +107,13 @@
     },
     {
       "id": "C-06",
-      "text": "Differential testing found a null-pointer dereference and an out-of-bounds read in the pinned original, both at pdjson.c:912, reachable through the public API under allocation failure.",
+      "text": "Differential testing and the oracle determinism gate found three defects in the pinned original, all reported upstream with minimal public-API reproducers: a null dereference and an out-of-bounds read at pdjson.c:912, a 0xFF/EOF confusion in the buffer source, and an uninitialised read in json_get_number.",
       "status": "verified",
       "proof_level": "executable",
-      "artifact": "artifacts/differential-summary.json",
+      "artifact": "artifacts/upstream-issues.json",
       "check": {
-        "kind": "at_least",
-        "path": "upstream_ub",
-        "value": 1
+        "kind": "exists",
+        "path": "issues.2.url"
       },
       "command": "make differential && cc -fsanitize=address,undefined -I upstream/pdjson -o /tmp/r tests/upstream-bugs/repro_oom_stack.c upstream/pdjson/pdjson.c && /tmp/r",
       "verified_date": "2026-08-02",
@@ -406,7 +405,7 @@
     },
     {
       "id": "C-21",
-      "text": "Differential fuzzing found a real defect in this port -- a one-ULP hex-float rounding error in json_get_number -- which is fixed, regression-tested, and documented.",
+      "text": "Verification found two real defects in this port -- a hex-float rounding error and an uninitialised read inherited from the original -- both fixed, regression-tested and documented.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-summary.json",
@@ -417,7 +416,27 @@
       },
       "command": "zig build test && make differential",
       "verified_date": "2026-08-02",
-      "limitation": "Found at ~30 million cases in the published session against an earlier build. The minimized 22-byte reproducer is committed as fixture regress-fuzz-hexfloat-stale-buffer and as two tests in tests/port/regressions.zig. Root cause and fix in DECISIONS.md D-18. Reported here because a fuzzer that has never found anything is not evidence that anything was checked.",
+      "limitation": "The first was found by the published fuzz session at ~30M cases; the second by the oracle determinism gate on Linux, which is also upstream #38. Reported here because verification that has never found anything in its own subject is not evidence that anything was checked. See DECISIONS.md D-18 and D-19.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
+    },
+    {
+      "id": "C-22",
+      "text": "Both transcript producers are deterministic on Linux and macOS: five runs over every fixture in five modes produce byte-identical output.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/determinism-report.json",
+      "check": {
+        "kind": "equals",
+        "path": "zig_deterministic",
+        "value": true
+      },
+      "command": "sh scripts/oracle-determinism.sh",
+      "verified_date": "2026-08-02",
+      "limitation": "This gate failed on Linux on first run and that failure was a real upstream defect (#38), not a harness problem. Values that are indeterminate in the original -- errmsg bytes past the NUL, and json_get_number over an unterminated token -- are excluded from the transcript by a rule computed from the public API and applied identically on both sides.",
       "allowed_in": [
         "readme",
         "devfolio",

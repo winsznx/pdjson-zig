@@ -924,14 +924,19 @@ pub fn getStringSlice(self: *Stream) []const u8 {
 
 pub fn getNumber(self: *Stream) f64 {
     const s = self.data.string orelse return 0;
-    // The buffer is NUL terminated by construction: init_string writes [0] = 0
-    // and both token readers push a terminator before returning. The scan is
-    // still bounded by the allocation so a corrupted struct cannot walk off
-    // the end -- strictly safer than the original's unbounded strtod.
-    const limit = self.data.string_size;
-    var n: usize = 0;
-    while (n < limit and s[n] != 0) n += 1;
-    return strtod_mod.value(s[0..n]);
+    // Scan only the bytes the parser actually wrote.
+    //
+    // The original runs strtod over the buffer, which reads until it finds a
+    // NUL -- and a token that failed part way through (input "-", say) never
+    // got its terminator, so strtod walks into uninitialised heap and returns
+    // whatever it happens to find. That is upstream issue #38: on glibc it
+    // makes json_get_number() nondeterministic between runs. Bounding the scan
+    // by string_fill keeps this deterministic and reads nothing the parser did
+    // not write. Where the original is well defined -- a NUL within the written
+    // region -- both find the same terminator and agree.
+    const written = s[0..self.data.string_fill];
+    const end = std.mem.indexOfScalar(u8, written, 0) orelse written.len;
+    return strtod_mod.value(written[0..end]);
 }
 
 pub fn hasError(self: *Stream) bool {

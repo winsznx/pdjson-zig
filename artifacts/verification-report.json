@@ -43,11 +43,11 @@
     ]
   },
   "fuzz": {
-    "log": "fuzz/logs/session-verify.json",
-    "seed": 1,
-    "elapsed_seconds": 60.0,
-    "cases": 1222800,
-    "cases_per_second": 20379.8,
+    "log": "fuzz/logs/session-published.json",
+    "seed": 20260802,
+    "elapsed_seconds": 90.02,
+    "cases": 1834800,
+    "cases_per_second": 20383.2,
     "divergences": 0,
     "zig_crashes": 0,
     "timeouts": 0,

@@ -13,7 +13,7 @@
 | **Harness self-test** | **12/12** injected defects caught (its first sound run found 4 real gaps in the corpus) |
 | **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; 10 pointer casts, each enumerated. Ships **ReleaseSafe** — checks on. |
 | **Benchmark** | **Slower on 9 of 12** workload/mode pairs, faster on 3. Full table below, generated from the artifact. |
-| **Upstream bugs found** | 2, both filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37) |
+| **Upstream bugs found** | 3, all filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38) |
 
 ```sh
 make verify
@@ -58,7 +58,7 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-03 | The upstream source tree is byte-identical to commit 78fe04b across all 9 files. | verified | [`artifacts/upstream-manifest.json`](artifacts/upstream-manifest.json) |
 | C-04 | Across 1,935 differential comparisons on the fixed corpus, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-05 | The differential comparison covers 9 drive modes including peek, skip, reset, the separator API, strict mode, and 4 deterministic allocation-failure schedules. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
-| C-06 | Differential testing found a null-pointer dereference and an out-of-bounds read in the pinned original, both at pdjson.c:912, reachable through the public API under allocation failure. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
+| C-06 | Differential testing and the oracle determinism gate found three defects in the pinned original, all reported upstream with minimal public-API reproducers: a null dereference and an out-of-bounds read at pdjson.c:912, a 0xFF/EOF confusion in the buffer source, and an uninitialised read in json_get_number. | verified | [`artifacts/upstream-issues.json`](artifacts/upstream-issues.json) |
 | C-07 | The memory-buffer source in the pinned original treats byte 0xFF as end-of-input on signed-char targets, disagreeing with its own FILE* source on identical input. | verified | [`artifacts/upstream-issues.json`](artifacts/upstream-issues.json) |
 | C-08 | The Zig static library is built only from Zig-produced objects, exports all 22 public symbols from the pinned header, and contains no upstream parser code. | verified | [`artifacts/linkage-report.json`](artifacts/linkage-report.json) |
 | C-09 | The Zig declarations and the pinned C header agree on every struct offset, size, alignment and enumerator, with sizeof(struct json_stream) == 272 on this target. | verified | [`artifacts/abi-report.json`](artifacts/abi-report.json) |
@@ -73,7 +73,8 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-18 | Behavioural equivalence has been demonstrated for the buffer input source; the FILE* and user-callback sources are covered by the API surface but not by the differential corpus. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-19 | On the independent nst/JSONTestSuite conformance corpus, the Zig port and the pinned C original agree on all 318 parsing cases across 5 drive modes, and the original is fully conforming (95/95 must-accept, 188/188 must-reject). | verified | [`artifacts/conformance-report.json`](artifacts/conformance-report.json) |
 | C-20 | No divergence has ever been observed on any input where the pinned original is well defined: 1,935 fixed-corpus comparisons plus 1,590 JSONTestSuite comparisons plus the published fuzz session, all at zero. | verified | [`artifacts/differential-jsontestsuite.json`](artifacts/differential-jsontestsuite.json) |
-| C-21 | Differential fuzzing found a real defect in this port -- a one-ULP hex-float rounding error in json_get_number -- which is fixed, regression-tested, and documented. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
+| C-21 | Verification found two real defects in this port -- a hex-float rounding error and an uninitialised read inherited from the original -- both fixed, regression-tested and documented. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
+| C-22 | Both transcript producers are deterministic on Linux and macOS: five runs over every fixture in five modes produce byte-identical output. | verified | [`artifacts/determinism-report.json`](artifacts/determinism-report.json) |
 <!-- CLAIMS:END -->
 
 Every row is checked against a generated artifact by
@@ -315,6 +316,16 @@ Manifests as a SEGV or a heap-buffer-overflow depending on when the allocator
 gives out. Reachable through the documented `json_set_allocator` API.
 Analysis: [`docs/upstream-bug-oom-stack.md`](docs/upstream-bug-oom-stack.md).
 
+**[#38](https://github.com/skeeto/pdjson/issues/38) — `json_get_number()` reads
+uninitialised bytes after a partial token.** A token that fails part way never
+gets its terminating NUL, so `strtod` walks past what the parser wrote. On glibc
+this makes the accessor return different values for identical input across runs
+of the same binary — `0.0` then `-1.0` for the input `-`. Found not by the
+differential comparison but by the gate that checks the *oracle itself* is
+reproducible, which is the check that makes any of the other numbers mean
+anything.
+Analysis: [`docs/upstream-bug-uninit-number.md`](docs/upstream-bug-uninit-number.md).
+
 **[#37](https://github.com/skeeto/pdjson/issues/37) — byte `0xFF` is read as EOF
 by the memory-buffer source.** `buffer_peek()` reads through a `const char *`, so
 on signed-`char` targets `0xFF` becomes `-1`, which is `EOF`. The `FILE *` source
@@ -325,10 +336,16 @@ uses `fgetc` and does not have this problem, so the two documented input sources
 it misreports where and why the input was rejected.
 Analysis: [`docs/upstream-bug-0xff.md`](docs/upstream-bug-0xff.md).
 
-Neither is a duplicate: #31 is about the *execution* character set, #27 about
-locale and `strtod`, #15 about `peek` and position. Neither has been triaged by
+None is a duplicate: #31 is about the *execution* character set, #27 about
+locale and `strtod`, #15 about `peek` and position. None has been triaged by
 upstream at the time of writing, and the claim ledger records them as reported
 rather than as independently confirmed.
+
+Two defects were also found **in this port**, and are listed here rather than
+quietly fixed: a hex-float rounding error (found by fuzzing at ~30M cases) and
+the uninitialised read inherited from the original before #38 was understood.
+Both are fixed and regression-tested. Verification that never finds anything in
+its own subject is not evidence that anything was checked.
 
 The port **reproduces #37 deliberately**, using Zig's `c_char` so it makes the
 same signedness choice the C compiler makes on the same target. Silently fixing a

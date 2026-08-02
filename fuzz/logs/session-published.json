@@ -1,8 +1,8 @@
 {
   "schema": "pdjson-zig/fuzz-session@1",
-  "seed": 1,
-  "requested_seconds": 60.0,
-  "elapsed_seconds": 60.02,
+  "seed": 20260802,
+  "requested_seconds": 90.0,
+  "elapsed_seconds": 90.02,
   "modes": [
     "next",
     "nostream",
@@ -10,10 +10,10 @@
     "skip",
     "sep"
   ],
-  "rounds": 2955,
+  "rounds": 4587,
   "batch_size": 400,
-  "cases": 1182000,
-  "cases_per_second": 19694.3,
+  "cases": 1834800,
+  "cases_per_second": 20383.2,
   "seed_corpus_inputs": 215,
   "divergences": 0,
   "upstream_ub": 0,

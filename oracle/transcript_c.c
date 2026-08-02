@@ -11,6 +11,10 @@
  *   - pointer and heap addresses
  *   - the bytes of `errmsg` beyond its NUL terminator (snprintf leaves those
  *     untouched, so they are whatever was on the caller's stack)
+ *   - json_get_number() when the token buffer holds no NUL within the bytes the
+ *     parser actually wrote. strtod() then reads past the written region into
+ *     uninitialised heap, which is upstream issue #38 and is not reproducible
+ *     between runs on glibc. Recorded as null on both sides in that case.
  *   - timing
  *   - allocation sizes (an implementation detail, covered separately by the
  *     benchmark's allocation counters)
@@ -63,7 +67,15 @@ emit(size_t seq, const char *op, enum json_type event, json_stream *json)
 {
     size_t len = 0;
     const char *tok = json_get_string(json, &len);
-    double num = json_get_number(json);
+
+    /* json_get_number() is strtod() over the token buffer. That is well defined
+     * only when a NUL sits inside the bytes the parser wrote; otherwise strtod
+     * walks into memory nobody initialised (upstream #38). Ask for the value
+     * only when it is defined -- and note the check uses nothing but the public
+     * API, so both implementations apply the identical rule. */
+    int num_defined = (tok != NULL) && (memchr(tok, 0, len) != NULL);
+    double num = num_defined ? json_get_number(json) : 0.0;
+
     size_t ctxn = 0;
     enum json_type ctx = json_get_context(json, &ctxn);
     const char *err = json_get_error(json);
@@ -71,10 +83,12 @@ emit(size_t seq, const char *op, enum json_type event, json_stream *json)
     printf("{\"seq\":%lu,\"op\":\"%s\",\"event\":\"%s\",\"tok\":\"",
            (unsigned long)seq, op, tr_typename(event));
     tr_put_hex(stdout, tok, len);
-    printf("\",\"toklen\":%lu,\"num\":\"%s\",\"line\":%lu,\"pos\":%lu,"
+    printf("\",\"toklen\":%lu,\"num\":%s%s%s,\"line\":%lu,\"pos\":%lu,"
            "\"depth\":%lu,\"ctx\":\"%s\",\"ctxn\":%lu,\"err\":",
            (unsigned long)len,
-           tr_double_bits(num),
+           num_defined ? "\"" : "",
+           num_defined ? tr_double_bits(num) : "null",
+           num_defined ? "\"" : "",
            (unsigned long)json_get_lineno(json),
            (unsigned long)json_get_position(json),
            (unsigned long)json_get_depth(json),

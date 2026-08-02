@@ -219,28 +219,52 @@ test "deep nesting does not recurse in the parser" {
 // bug -- a defect in this port, and the reason the fuzzer exists.
 // ---------------------------------------------------------------------------
 
-test "regression: json_get_number rounds hex floats the way strtod does" {
-    // The token buffer is reused across events and is not cleared, so after a
-    // number token an unterminated string starting "0x" leaves json_get_number
-    // looking at "0x" followed by the previous token's bytes. That is faithful
-    // to the original; what was wrong was the rounding of the resulting
-    // 19-hex-digit float.
+test "regression: hex floats round to nearest, not truncated" {
+    // The published fuzz session surfaced this at ~30M cases. The value came
+    // from an odd route (see the next test), but the defect was real and
+    // independent: std.fmt.parseFloat truncates hex floats past 53 bits of
+    // mantissa. libc strtod gives 0x4418d2488cdca189; parseFloat gave ...188.
+    try testing.expectEqual(
+        @as(u64, 0x4418d2488cdca189),
+        @as(u64, @bitCast(pdjson.strtod.value("0x634922337286237e3"))),
+    );
+}
+
+test "regression: json_get_number reads only bytes the parser wrote" {
+    // This is the input the fuzzer produced. A number token leaves
+    // "97634922337286237e3\0" in the buffer; the next value is an unterminated
+    // string starting "0x", which errors before pushing a terminator. The
+    // original then runs strtod over "0x" plus whatever follows in the buffer,
+    // reading memory it never wrote -- upstream issue #38, and nondeterministic
+    // on glibc. The port scans only the written region, so the answer here is
+    // strtod("0x") == 0 and it is the same on every run.
     const input = "97634922337286237e3\"0x";
     var s: abi.Stream = undefined;
     core.openBuffer(&s, input.ptr, input.len);
     defer core.close(&s);
 
     try testing.expectEqual(abi.Type.number, core.skip(&s));
+    try testing.expectEqual(@as(f64, 97634922337286237e3), core.getNumber(&s));
     try testing.expectEqual(abi.Type.done, core.skip(&s));
     core.reset(&s);
     try testing.expectEqual(abi.Type.err, core.skip(&s));
 
-    // libc strtod("0x634922337286237e3") == 0x4418d2488cdca189.
-    // std.fmt.parseFloat truncated to ...188.
-    try testing.expectEqual(
-        @as(u64, 0x4418d2488cdca189),
-        @as(u64, @bitCast(core.getNumber(&s))),
-    );
+    try testing.expectEqualSlices(u8, "0x", core.getStringSlice(&s));
+    try testing.expectEqual(@as(f64, 0), core.getNumber(&s));
+}
+
+test "regression: a number token cut short does not read past what was written" {
+    // Input "-" pushes '-' and then hits EOF, so the buffer holds one byte and
+    // no terminator. On glibc the original returned 0.0 on one run and -1.0 on
+    // the next, from leftover heap. Deterministic here.
+    var s: abi.Stream = undefined;
+    core.openBuffer(&s, "-", 1);
+    defer core.close(&s);
+    try testing.expectEqual(abi.Type.err, core.nextEvent(&s));
+    try testing.expectEqualSlices(u8, "-", core.getStringSlice(&s));
+    try testing.expectEqual(@as(f64, 0), core.getNumber(&s));
+    // ...and stays that way however many times it is asked.
+    for (0..8) |_| try testing.expectEqual(@as(f64, 0), core.getNumber(&s));
 }
 
 test "regression: hex floats round correctly across the subnormal boundary" {

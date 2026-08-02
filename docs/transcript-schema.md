@@ -1,6 +1,6 @@
 # Behaviour transcript schema
 
-`pdjson-zig/transcript@1`
+`pdjson-zig/transcript@2`
 
 A transcript is the complete record of what a caller can observe while driving a
 `json_stream` through a fixed script. It is NDJSON — one JSON object per line —
@@ -22,7 +22,7 @@ normalise a real difference away on both sides at once.
 ### Header (first line)
 
 ```json
-{"schema":"pdjson-zig/transcript@1","mode":"next","bytes":27}
+{"schema":"pdjson-zig/transcript@2","mode":"next","bytes":27}
 ```
 
 ### Event record

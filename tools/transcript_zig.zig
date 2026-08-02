@@ -11,7 +11,7 @@ const pdjson = @import("pdjson");
 const abi = pdjson.abi;
 const core = pdjson.parser;
 
-const schema = "pdjson-zig/transcript@1";
+const schema = "pdjson-zig/transcript@2";
 const max_records = 200000;
 
 fn typeName(t: abi.Type) []const u8 {
@@ -74,16 +74,27 @@ const Emitter = struct {
         var len: usize = 0;
         _ = core.getStringPtr(s, &len);
         const tok = core.getStringSlice(s);
+
+        // Same rule as the C oracle, derived from the public API only: the
+        // number is well defined exactly when a NUL sits inside the bytes the
+        // parser wrote. Outside that, the original reads uninitialised heap
+        // (upstream #38) and there is nothing meaningful to compare.
+        const num_defined = std.mem.indexOfScalar(u8, tok, 0) != null;
         const num: u64 = @bitCast(core.getNumber(s));
+
         var ctxn: usize = 0;
         const ctx = core.getContext(s, &ctxn);
 
         try self.out.print("{{\"seq\":{d},\"op\":\"{s}\",\"event\":\"{s}\",\"tok\":\"", .{ seq, op, typeName(event) });
         try putHex(self.out, tok);
-        try self.out.print("\",\"toklen\":{d},\"num\":\"{x:0>16}\",\"line\":{d},\"pos\":{d}," ++
+        try self.out.print("\",\"toklen\":{d},\"num\":", .{len});
+        if (num_defined) {
+            try self.out.print("\"{x:0>16}\"", .{num});
+        } else {
+            try self.out.writeAll("null");
+        }
+        try self.out.print(",\"line\":{d},\"pos\":{d}," ++
             "\"depth\":{d},\"ctx\":\"{s}\",\"ctxn\":{d},\"err\":", .{
-            len,
-            num,
             s.lineno,
             s.source.position,
             core.getDepth(s),

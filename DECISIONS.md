@@ -437,6 +437,53 @@ carry a sanitizer report, and all resolve to one line: `pdjson.c:912`.
 
 ---
 
+## D-19 — `json_get_number` reads only what the parser wrote
+
+**Original behaviour.** `strtod()` over the token buffer, which reads until it
+finds a NUL. A token that fails part way never gets its terminator, so the
+conversion consumes uninitialised heap. Full analysis in
+[docs/upstream-bug-uninit-number.md](docs/upstream-bug-uninit-number.md);
+reported as [#38](https://github.com/skeeto/pdjson/issues/38).
+
+**Chosen design.** Scan only `string_fill` bytes:
+
+```zig
+const written = s[0..self.data.string_fill];
+const end = std.mem.indexOfScalar(u8, written, 0) orelse written.len;
+return strtod_mod.value(written[0..end]);
+```
+
+**Alternatives considered.** *Reproduce it* — there is nothing to reproduce; the
+value is indeterminate, and on glibc it differs between runs of the same binary
+on the same input. *Return 0 for any unterminated token* — what the suggested
+upstream fix does, and defensible, but converting the bytes that were actually
+written loses less information and agrees with the original wherever the
+original is defined.
+
+**Reason.** Where a NUL sits inside the written region, both implementations find
+the same terminator and agree. Where it does not, the original has no defined
+value, so matching it is impossible by construction.
+
+**Compatibility impact.** None on defined inputs. On undefined ones the port is
+deterministic where the original is not — which is why both transcript producers
+record `"num": null` there, by a rule computed from the public API alone
+(`memchr(token, 0, string_fill) != NULL`) and applied identically on both sides.
+Same principle as D-13.
+
+**Performance impact.** None; the scan is bounded by a length already in hand,
+where the original scanned for a terminator.
+
+**Verification.** `tests/port/regressions.zig` pins both the `-` case and the
+fuzz-found `"0x` case; `scripts/oracle-determinism.sh` is what caught it, and now
+passes on Linux across five runs in five modes.
+
+**How it was found is the point.** Not by the differential comparison — by the
+gate that checks the *oracle itself* is reproducible. Two implementations
+agreeing means nothing unless each is deterministic alone, and on macOS this was
+invisible because the allocator happened to hand back zeroed pages.
+
+---
+
 ## D-18 — Hex-float conversion is implemented here, because the fuzzer proved it had to be
 
 **Original behaviour.** `json_get_number()` is `strtod`, whose subject sequence
@@ -473,6 +520,14 @@ the mantissa exceeds 53 bits. Four of seven probe cases disagreed with libc:
 exactly into a `u128` with a sticky bit for anything that does not fit, then
 rounds once, to nearest, ties to even. The decimal path still delegates to
 `parseFloat`, which *is* correctly rounded.
+
+**A correction, recorded because it changes what this finding was.** The input
+that exposed this reached `json_get_number` through the *stale* part of the token
+buffer, which turned out to be upstream #38 (D-19). Once the port stopped reading
+past `string_fill`, that particular route no longer produces a hex float at all.
+The rounding defect was still real and independent — `parseFloat` truncates
+`0x634922337286237e3` to one ULP below libc — so the fix stands and is tested
+directly rather than through the stale-buffer path.
 
 The rounding works in units of the result's ULP rather than in significand bits.
 That matters near zero: the ULP is pinned at 2^-1074 in the subnormal range, so

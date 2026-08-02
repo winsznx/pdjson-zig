@@ -26,8 +26,8 @@ artifacts in `artifacts/`. Every number here is read out of a file that
 
 ## Differential fuzzing
 
-- Session: `fuzz/logs/session-verify.json` (seed 1)
-- Duration: 60.0s, 1222800 cases (20379.8/s)
+- Session: `fuzz/logs/session-published.json` (seed 20260802)
+- Duration: 90.02s, 1834800 cases (20383.2/s)
 - Divergences: **0**, crashes: 0, timeouts: 0
 
 ## Harness self-test (mutation)

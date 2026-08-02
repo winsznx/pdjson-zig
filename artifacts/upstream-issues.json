@@ -42,6 +42,26 @@
       "standards_basis": "C99 6.2.5p15 leaves the signedness of `char` implementation-defined; C99 7.21.7.1 specifies fgetc() to return the byte as an unsigned char converted to int. The inconsistency is between the library's own two documented input sources, so it does not depend on reading the JSON specification.",
       "scope_limitation": "0xFF is never valid UTF-8, so this does not make the parser accept invalid input. It changes which error is reported, the byte position, and whether json_source_get() can advance.",
       "independently_verified_by_upstream": false
+    },
+    {
+      "id": "UB-03",
+      "url": "https://github.com/skeeto/pdjson/issues/38",
+      "title": "json_get_number() reads uninitialised bytes after a partial token, making it nondeterministic",
+      "class": "uninitialised read / nondeterminism",
+      "location": "json_get_number(), pdjson.c:871-875; buffer terminated only on the success paths of read_number()/read_string()",
+      "evidence": [
+        "Identical input '-' produced json_get_number() == 0.0 on one run and -1.0 on the next, on x86-64 Debian with gcc 12",
+        "With an allocator that fills fresh blocks with '9': input '-' yields -inf and input '\"12' yields inf, where 0 and 12 are correct",
+        "Found as a reproducibility failure in scripts/oracle-determinism.sh, which requires byte-identical transcripts across five runs"
+      ],
+      "reproducer": "tests/upstream-bugs/repro_uninit_number.c",
+      "reproduce_command": "cc -std=c99 -I upstream/pdjson -o /tmp/repro tests/upstream-bugs/repro_uninit_number.c upstream/pdjson/pdjson.c && /tmp/repro",
+      "analysis": "docs/upstream-bug-uninit-number.md",
+      "found_by": "the C oracle's own determinism gate, run on x86-64 Linux in CI; the value differed between two runs of the same binary over the same corpus",
+      "regression_test": "tests/port/regressions.zig",
+      "standards_basis": "Reading an uninitialised object produces an indeterminate value (C99 6.7.8p10, 3.17.2). Not a JSON specification question.",
+      "scope_limitation": "Demonstrated: a read of uninitialised bytes inside the allocation, and the resulting nondeterminism. Not demonstrated: a read past the end of the allocation. Under ASan, calling only json_get_number() reports nothing, so an out-of-bounds read is a possible consequence of the same defect rather than an observed one.",
+      "independently_verified_by_upstream": false
     }
   ]
 }
