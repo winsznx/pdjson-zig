@@ -462,6 +462,26 @@
         "devfolio",
         "video"
       ]
+    },
+    {
+      "id": "C-24",
+      "text": "Valgrind memcheck independently confirms both memory defects in the pinned original and finds no further ones; the upstream test suite itself is clean under memcheck.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/valgrind-report.json",
+      "check": {
+        "kind": "equals",
+        "path": "result",
+        "value": "pass"
+      },
+      "command": "sh scripts/valgrind-upstream.sh",
+      "verified_date": "2026-08-02",
+      "limitation": "Linux only, so it runs in CI rather than in `make verify`. Valgrind detects a class ASan cannot -- uninitialised value propagation, with an origin trace -- which is how it independently confirms #38 (strtod branching on bytes malloc never initialised, origin traced to init_string at pdjson.c:186). The script asserts that both known defects still reproduce, so a silent run cannot be mistaken for a clean one. 'No further defects' is scoped to the fixture corpus and the two reproducers, not a general claim about the library.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
     }
   ]
 }

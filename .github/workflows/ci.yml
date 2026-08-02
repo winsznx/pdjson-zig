@@ -185,6 +185,13 @@ jobs:
             cat /tmp/err.txt >&2
             exit 1
           fi
+      - name: valgrind memcheck against the pinned original
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq valgrind
+          mkdir -p build && touch build/transcript_c
+          sh scripts/valgrind-upstream.sh
+
       - name: 0xFF reproducer runs
         run: |
           cc -std=c99 -I upstream/pdjson -o /tmp/ff \

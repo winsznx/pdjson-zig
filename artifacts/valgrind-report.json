@@ -1,0 +1,13 @@
+{
+  "schema": "pdjson-zig/valgrind-report@1",
+  "tool": "valgrind-3.19.0",
+  "target": "the pinned upstream C, not the Zig port",
+  "rationale": "Valgrind tracks uninitialised value propagation and reports its origin, which ASan does not. Upstream #38 is invisible to ASan and obvious here.",
+  "upstream_test_suite_errors": 0,
+  "reproduced_issue_36": true,
+  "reproduced_issue_38": true,
+  "corpus_error_lines": 0,
+  "new_defects_found": 0,
+  "note": "The corpus sweep runs through the transcript oracle, which by design does not call json_get_number() where the value is indeterminate. It therefore does not re-surface #38; that is covered by the dedicated check above.",
+  "result": "pass"
+}

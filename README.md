@@ -13,7 +13,7 @@
 | **Harness self-test** | **12/12** injected defects caught (its first sound run found 4 real gaps in the corpus) |
 | **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; 10 pointer casts, each enumerated. Ships **ReleaseSafe** — checks on. |
 | **Benchmark** | **Slower on 9 of 12** workload/mode pairs, faster on 3. Full table below, generated from the artifact. |
-| **Upstream bugs found** | 3, all filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38) |
+| **Upstream bugs found** | 3, all filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38). Two independently confirmed by Valgrind. |
 
 ```sh
 make verify
@@ -76,6 +76,7 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-21 | Verification found two real defects in this port -- a hex-float rounding error and an uninitialised read inherited from the original -- both fixed, regression-tested and documented. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-22 | Both transcript producers are deterministic on Linux and macOS: five runs over every fixture in five modes produce byte-identical output. | verified | [`artifacts/determinism-report.json`](artifacts/determinism-report.json) |
 | C-23 | The Zig type declarations and the pinned C header describe the same ABI on 6 targets spanning 32- and 64-bit, little-endian ARM, x86, RISC-V and Windows. | verified | [`artifacts/abi-cross-report.json`](artifacts/abi-cross-report.json) |
+| C-24 | Valgrind memcheck independently confirms both memory defects in the pinned original and finds no further ones; the upstream test suite itself is clean under memcheck. | verified | [`artifacts/valgrind-report.json`](artifacts/valgrind-report.json) |
 <!-- CLAIMS:END -->
 
 Every row is checked against a generated artifact by
@@ -359,6 +360,14 @@ uses `fgetc` and does not have this problem, so the two documented input sources
 `0xFF` is never valid UTF-8, so this does not make the parser accept bad input —
 it misreports where and why the input was rejected.
 Analysis: [`docs/upstream-bug-0xff.md`](docs/upstream-bug-0xff.md).
+
+Valgrind memcheck independently confirms #36 and #38 — and for #38 traces the
+origin of the uninitialised bytes to `malloc` in `init_string` at `pdjson.c:186`,
+which ASan cannot see at all. It finds no further defects, and the upstream test
+suite is itself clean under memcheck.
+[`scripts/valgrind-upstream.sh`](scripts/valgrind-upstream.sh) asserts that both
+known defects still reproduce, so a silent run cannot be mistaken for a clean
+one.
 
 None is a duplicate: #31 is about the *execution* character set, #27 about
 locale and `strtod`, #15 about `peek` and position. None has been triaged by
