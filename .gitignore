@@ -1,0 +1,8 @@
+.zig-cache/
+zig-out/
+build/
+*.o
+*.a
+!zig-out/**/*.h
+fuzz/work/
+bench/results/*.tmp

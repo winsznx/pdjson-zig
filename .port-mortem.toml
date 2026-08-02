@@ -1,0 +1,38 @@
+// Port Mortem 2026 submission descriptor.
+// TOML-ish key/value block describing what was ported, from where, and how the
+// claims in CLAIMS.json are meant to be reproduced.
+
+[submission]
+name = "pdjson-zig"
+track = "G"
+migration = "C -> Zig"
+one_command = "make verify"
+
+[upstream]
+project = "pdjson"
+url = "https://github.com/skeeto/pdjson"
+commit = "78fe04b820dc8817f540bdd87fb22887e0ef3981"
+branch = "master"
+commit_date = "2024-02-22T13:12:52+02:00"
+license = "Unlicense"
+# How upstream is carried in this repository. A pinned, de-gitted copy is
+# committed verbatim so the evidence is offline-reproducible and hash-checkable
+# without a network fetch; scripts/fetch-upstream.sh re-clones at the pinned
+# commit and proves the copy matches. See DECISIONS.md D-01.
+vendoring = "committed-verbatim-copy"
+manifest = "artifacts/upstream-manifest.json"
+
+[target]
+language = "Zig"
+zig_version = "0.16.0"
+library = "zig-out/lib/libpdjson.a"
+public_header = "include/pdjson.h"
+# The installed header is byte-identical to upstream's; verified by
+# scripts/verify-upstream-hashes.sh and the release gate.
+header_identical_to_upstream = true
+
+[proof]
+dominant_mechanism = "deterministic behaviour transcripts compared between an independent C oracle and the Zig implementation"
+transcript_schema = "docs/transcript-schema.md"
+claims = "CLAIMS.json"
+audit = "docs/final-audit.md"

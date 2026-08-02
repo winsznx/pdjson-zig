@@ -1,0 +1,20 @@
+{
+  "schema": "pdjson-zig/upstream-manifest@1",
+  "upstream_url": "https://github.com/skeeto/pdjson",
+  "commit": "78fe04b820dc8817f540bdd87fb22887e0ef3981",
+  "branch": "master",
+  "commit_date": "2024-02-22T13:12:52+02:00",
+  "license": "Unlicense",
+  "hash_algorithm": "sha256",
+  "files": [
+    {"path": ".gitignore", "sha256": "713122b8bf8665b9c6f08917f6a6bd64e5797b3cae68118211dd71e7ac76c134", "category": "ignore", "bytes": 42, "lines": 4},
+    {"path": "Makefile", "sha256": "d0125e0c23a9d8ee97a0b93be772f7b72f3d9a056c2567b7903282ef3eaec8fe", "category": "build", "bytes": 767, "lines": 30},
+    {"path": "README.md", "sha256": "217bb8625eab6a3985ed856437610e8c1f8213b1eaa3ce3a3007529f39ab6ab1", "category": "documentation", "bytes": 4894, "lines": 140},
+    {"path": "UNLICENSE", "sha256": "7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c", "category": "license", "bytes": 1211, "lines": 24},
+    {"path": "pdjson.c", "sha256": "75a8b37e6a519bfa38eedac52c1da70c8e672757f8af6dd6c6ad4dfe56cdde2b", "category": "source", "bytes": 26336, "lines": 992},
+    {"path": "pdjson.h", "sha256": "724f8ad94b752d7d2fd13e9bd6a599a5002b1564b041b161630d17a67bd3dac6", "category": "header", "bytes": 3244, "lines": 117},
+    {"path": "tests/pretty.c", "sha256": "910c03c244d99acc173a1a233471992f5dcae38d66bf901b5ce64318e01c0289", "category": "test", "bytes": 3095, "lines": 141},
+    {"path": "tests/stream.c", "sha256": "580fcb628ed0d4137c21004e38e540a8747d52855a31ed064251550d59e19dbc", "category": "test", "bytes": 2035, "lines": 74},
+    {"path": "tests/tests.c", "sha256": "8e4fcf075aa48582573e4816c17ec2f23a570675725840ea933981e364770a40", "category": "test", "bytes": 7756, "lines": 318}
+  ]
+}
