@@ -1,0 +1,126 @@
+# docker verify (rerun after the sysctl portability fix)
+date_utc: 2026-08-02T13:48:58Z
+$ docker run --rm pdjson-zig-verify
+==============================================================
+ pdjson-zig verification
+==============================================================
+
+[1/16] tool versions
+  zig    0.16.0
+  cc     cc (Debian 12.2.0-14+deb12u1) 12.2.0
+  python Python 3.11.2
+  wrote artifacts/toolchain.json
+
+[2/16] pinned upstream hashes
+upstream hash verification OK (9 files match artifacts/upstream-manifest.json)
+
+[3/16] build C reference oracle and Zig library
+make[1]: Nothing to be done for 'build'.
+
+[4/16] the Zig artifact contains no upstream parser code
+  2 Zig-produced object(s) (the library, plus compiler-rt on
+  targets that bundle it), 22/22 public symbols exported,
+  no upstream implementation symbols, no json_* imports
+  wrote artifacts/linkage-report.json
+
+[5/16] C ABI layout equivalence (host + 6 cross targets)
+  C and Zig agree on every offset, size, alignment and enumerator
+  a C consumer using the pinned header links against libpdjson.a and runs
+  wrote artifacts/abi-report.json
+OK   x86_64-linux-gnu  sizeof(json_stream)=272 align=8 enum=4
+OK   x86-linux-gnu  sizeof(json_stream)=204 align=4 enum=4
+OK   aarch64-linux-gnu  sizeof(json_stream)=272 align=8 enum=4
+OK   arm-linux-gnueabihf  sizeof(json_stream)=204 align=4 enum=4
+OK   x86_64-windows-gnu  sizeof(json_stream)=272 align=8 enum=4
+OK   riscv64-linux-gnu  sizeof(json_stream)=272 align=8 enum=4
+
+cross-target ABI: 6 target(s) checked, 0 mismatch(es)
+wrote artifacts/abi-cross-report.json
+
+[6/16] C oracle determinism
+  C oracle: 5 runs x 215 fixtures x 5 modes, byte-identical every time
+  Zig:      5 runs x 215 fixtures x 5 modes, byte-identical every time
+  wrote artifacts/determinism-report.json
+
+[7/16] upstream test suite against the Zig library
+tests.c against Zig: 18/18 passed, 0 failed
+stream.c differential over 215 fixtures: 0 mismatches
+pretty.c differential over 215 fixtures: 0 mismatches
+wrote artifacts/original-test-report.json
+
+[8/16] Zig-native test suite
+
+[9/16] fixed conformance corpus (differential)
+[fixed-corpus] 215 inputs x 19 modes = 4085 comparisons in 17.0s
+  divergences=0 upstream_ub=43 zig_crashes=0 c_crashes_unexplained=0 timeouts=0
+  wrote artifacts/differential-summary.json
+
+[10/16] JSONTestSuite conformance (skipped if not fetched)
+  running the equivalence comparison over JSONTestSuite
+[jsontestsuite] 318 inputs x 5 modes = 1590 comparisons in 5.0s
+  divergences=0 upstream_ub=0 zig_crashes=0 c_crashes_unexplained=0 timeouts=0
+  wrote artifacts/differential-jsontestsuite.json
+  classifying the pinned original against the suite's expectations
+  318 cases: implementations agree on 318, disagree on 0
+  upstream vs RFC 8259: must-accept 95/95, must-reject 188/188
+  wrote artifacts/conformance-report.json
+
+[11/16] bounded differential fuzz smoke test
+fuzz seed=1 60.0s  2088400 cases (34802.2/s) over modes next,nostream,peek,skip,sep,stream:next,stream:peek,stream:sep,user:next,user:peek,user:skip
+  divergences=0 upstream_ub=0 zig_crashes=0 c_crashes_unexplained=0 timeouts=0
+  wrote fuzz/logs/session-verify.json
+
+[12/16] formatting
+
+[13/16] escape-hatch scan
+  @ptrCast=10 (allocator + char* boundaries), @alignCast=1
+  @constCast=0  unreachable=0  force-unwrap=0  @setRuntimeSafety=0  asm=0
+  every occurrence enumerated in artifacts/safety-report.json
+
+[14/16] benchmark smoke test
+  large-mixed [parse] done
+
+workload               mode          C med   Zig safe   Zig fast   safe/C   fast/C
+large-mixed            parse        3.873m     3.982m     3.676m     0.97     1.05
+
+(values are median milliseconds per iteration; ratio > 1 means Zig is faster)
+wrote artifacts/benchmark-smoke.json and bench/results/raw-smoke.json
+
+[15/16] generate reports
+  refreshed the generated blocks in README.md
+  wrote artifacts/verification-report.json and docs/verification-report.md
+
+[16/16] validate CLAIMS.json against the artifacts just produced
+  OK   C-01  summary.assertions_passed_against_zig = 18, expected 18
+  OK   C-02  summary.assertions_failed_against_zig = 0, expected 0
+  OK   C-03  commit = '78fe04b820dc8817f540bdd87fb22887e0ef3981', expected '78fe04b820dc8817f540bdd87fb22887e0ef3981'
+  OK   C-04  divergences = 0, expected 0
+  OK   C-05  comparisons = 4085, expected >= 4000
+  OK   C-06  issues.2.url is 'https://github.com/skeeto/pdjson/issues/38'
+  OK   C-07  issues.1.reproducer is 'tests/upstream-bugs/repro_0xff_eof.c'
+  OK   C-08  result = 'pass', expected 'pass'
+  OK   C-09  comparison = 'identical', expected 'identical'
+  OK   C-10  c_consumer_link = 'linked_and_ran', expected 'linked_and_ran'
+  OK   C-11  result = 'pass', expected 'pass'
+  OK   C-12  shipped_optimize_mode is "ReleaseSafe -- bounds checks, overflow checks and illegal-behaviour detection are active in the artifact this project distributes, including in the benchmark numbers reported as 'zig-safe'."
+  OK   C-13  survived = 0, expected 0
+  OK   C-14  c_oracle_deterministic = True, expected True
+  OK   C-15  modified = False, expected False
+  OK   C-16  workloads_zig_slower = 9, expected 9
+  OK   C-17  fuzz.divergences = 0, expected 0
+  OK   C-18  divergences = 0, expected 0
+  OK   C-19  implementations_disagree = 0, expected 0
+  OK   C-20  divergences = 0, expected 0
+  OK   C-21  inputs = 215, expected >= 215
+  OK   C-22  zig_deterministic = True, expected True
+  OK   C-23  mismatches = 0, expected 0
+  OK   C-24  result = 'pass', expected 'pass'
+
+claims: 24 total, 24 checked against artifacts
+status breakdown: {'verified': 24}
+all claims validate against their artifacts
+
+==============================================================
+ VERIFY OK
+==============================================================
+DOCKER_VERIFY_EXIT=0

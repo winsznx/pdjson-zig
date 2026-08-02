@@ -1,0 +1,44 @@
+{
+  "schema": "pdjson-zig/reproducibility-summary@1",
+  "commit": "f9474c1ac121d0317a5ad69f02d607f7d84a4516",
+  "question": "Does the documented one-command path work for someone who has only the public repository?",
+  "checks": [
+    {
+      "name": "clean clone from the public remote",
+      "command": "git clone https://github.com/winsznx/pdjson-zig.git && git checkout <sha>",
+      "result": "pass",
+      "log": "artifacts/reproducibility/clean-clone.log",
+      "note": "333 tracked files. No build/, no zig-out/, no JSONTestSuite -- nothing untracked is required."
+    },
+    {
+      "name": "one-command verification from the clean clone",
+      "command": "make verify",
+      "result": "pass",
+      "exit_code": 0,
+      "log": "artifacts/reproducibility/clean-clone.log",
+      "note": "Run under `env -i` with a minimal PATH, so it cannot depend on this shell's environment. No network: the optional JSONTestSuite step skips and says so."
+    },
+    {
+      "name": "docker build",
+      "command": "docker build -t pdjson-zig-verify .",
+      "result": "pass",
+      "exit_code": 0,
+      "log": "artifacts/reproducibility/docker-build.log"
+    },
+    {
+      "name": "verification inside the container",
+      "command": "docker run --rm pdjson-zig-verify",
+      "result": "pass",
+      "exit_code": 0,
+      "log": "artifacts/reproducibility/docker-verify.log",
+      "note": "x86-64 Linux, a different target from the arm64 macOS host."
+    }
+  ],
+  "defect_found": {
+    "what": "scripts/bench.py called sysctl unconditionally; it does not exist on Debian, so `make verify` crashed at the benchmark step inside the container",
+    "how_found": "building and running the Dockerfile for the first time -- it had been written but never executed",
+    "fixed_in": "commit following the baseline; CPU model is now probed per platform"
+  },
+  "judge_path": "make verify",
+  "network_required": false
+}
