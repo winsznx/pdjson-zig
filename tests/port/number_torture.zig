@@ -99,6 +99,61 @@ test "powers of two and their neighbours" {
     }
 }
 
+test "hex floats match libc strtod, including past 53 bits of mantissa" {
+    // A differential fuzz run found std.fmt.parseFloat truncating rather than
+    // rounding here (src/strtod.zig parseHexFloat). These are the cases that
+    // differed, plus the boundaries around them.
+    const cases = [_][:0]const u8{
+        "0x634922337286237e3",   "0x1234567890abcdef",  "0xfffffffffffffffff",
+        "0x1.fffffffffffffp0",   "0x123456789abcdef01", "0x8000000000000001",
+        "0x10000000000000801",   "0x1p0",               "0x1p-1074",
+        "0x1p-1075",             "0x1p1024",            "0x1p1023",
+        "0x1.fffffffffffff8p0",  "0x1.fffffffffffff7p0", "0x0.0000000000001p-1022",
+        "0x10000000000000",      "0x20000000000001",    "0x20000000000003",
+        "0xabcdef0123456789abcdef", "0X1P+3",           "0x.8p1",
+        "0x1.p3",                "0x0p0",               "0x0.0p0",
+    };
+    for (cases) |c| try expectMatchesC(c);
+}
+
+test "randomised hex floats match libc strtod" {
+    var prng = std.Random.DefaultPrng.init(0xC0FFEE);
+    const rand = prng.random();
+    var buf: [64]u8 = undefined;
+
+    for (0..20000) |_| {
+        var n: usize = 0;
+        buf[n] = '0';
+        n += 1;
+        buf[n] = 'x';
+        n += 1;
+        const digits = rand.intRangeAtMost(usize, 1, 24);
+        var placed_point = false;
+        for (0..digits) |_| {
+            if (!placed_point and rand.uintLessThan(u8, 8) == 0) {
+                buf[n] = '.';
+                n += 1;
+                placed_point = true;
+            }
+            buf[n] = "0123456789abcdefABCDEF"[rand.uintLessThan(usize, 22)];
+            n += 1;
+        }
+        if (rand.boolean()) {
+            buf[n] = if (rand.boolean()) 'p' else 'P';
+            n += 1;
+            if (rand.boolean()) {
+                buf[n] = if (rand.boolean()) '+' else '-';
+                n += 1;
+            }
+            const e = rand.intRangeAtMost(u32, 0, 1200);
+            const written = std.fmt.bufPrint(buf[n..], "{d}", .{e}) catch unreachable;
+            n += written.len;
+        }
+        buf[n] = 0;
+        try expectMatchesC(buf[0..n :0]);
+    }
+}
+
 test "randomised lexemes match libc strtod" {
     var prng = std.Random.DefaultPrng.init(0xBEEF);
     const rand = prng.random();

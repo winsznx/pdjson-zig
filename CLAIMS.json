@@ -285,7 +285,7 @@
     },
     {
       "id": "C-15",
-      "text": "The Zig implementation's json_get_number matches C strtod bit for bit across a 661-point exponent sweep, powers of two, digit strings up to 500 digits, and 20,000 randomised lexemes.",
+      "text": "The Zig implementation's json_get_number matches C strtod bit for bit across a 661-point exponent sweep, powers of two, digit strings up to 500 digits, 20,000 randomised decimal lexemes and 20,000 randomised hex floats.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/original-test-report.json",
@@ -296,7 +296,7 @@
       },
       "command": "zig build test",
       "verified_date": "2026-08-02",
-      "limitation": "Asserted by tests/port/number_torture.zig, which fails the build on any mismatch; the artifact reference here is a proxy because Zig's test runner does not emit JSON. One documented exception: nan(...) payloads that overflow 64 bits are implementation-defined per C99 7.20.1.3p4 and are not matched (DECISIONS.md D-09).",
+      "limitation": "Asserted by tests/port/number_torture.zig, which fails the build on any mismatch; the artifact reference here is a proxy because Zig's test runner does not emit JSON. Two documented exceptions: nan(...) payloads that overflow 64 bits are implementation-defined per C99 7.20.1.3p4 and are not matched (D-09). The hex-float path is implemented in this project rather than delegated, because std.fmt.parseFloat truncates past 53 bits of mantissa -- found by fuzzing at ~30M cases (D-18).",
       "allowed_in": [
         "readme",
         "devfolio"
@@ -402,6 +402,26 @@
         "devfolio",
         "video",
         "social"
+      ]
+    },
+    {
+      "id": "C-21",
+      "text": "Differential fuzzing found a real defect in this port -- a one-ULP hex-float rounding error in json_get_number -- which is fixed, regression-tested, and documented.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/differential-summary.json",
+      "check": {
+        "kind": "at_least",
+        "path": "inputs",
+        "value": 215
+      },
+      "command": "zig build test && make differential",
+      "verified_date": "2026-08-02",
+      "limitation": "Found at ~30 million cases in the published session against an earlier build. The minimized 22-byte reproducer is committed as fixture regress-fuzz-hexfloat-stale-buffer and as two tests in tests/port/regressions.zig. Root cause and fix in DECISIONS.md D-18. Reported here because a fuzzer that has never found anything is not evidence that anything was checked.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
       ]
     }
   ]

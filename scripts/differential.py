@@ -181,10 +181,14 @@ def main() -> int:
     elapsed = time.time() - started
     divergences.sort(key=lambda d: (d["input"], d["mode"]))
 
-    log_dir = ROOT / "fuzz" / "logs"
+    # Kept apart from fuzz/logs/, which holds fuzz *sessions*. These are
+    # per-case findings from the fixed corpus, and mixing the two made it
+    # ambiguous which artifact a claim was quoting.
+    log_dir = ROOT / "artifacts" / "differential-cases"
     log_dir.mkdir(parents=True, exist_ok=True)
-    min_dir = ROOT / "fuzz" / "minimized"
-    min_dir.mkdir(parents=True, exist_ok=True)
+
+    for old in log_dir.glob("*.json"):
+        old.unlink()
 
     for d in divergences:
         stem = (d["input"].replace("/", "_") + "." + d["mode"].replace(":", "-"))

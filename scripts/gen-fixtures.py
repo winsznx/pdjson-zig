@@ -213,6 +213,15 @@ add("string-just-over-1k", '"' + "b" * 1100 + '"')  # crosses the 1024 buffer gr
 add("string-exactly-1023", '"' + "c" * 1023 + '"')
 add("many-small-docs", " ".join("{}" for _ in range(500)))
 
+# -- regressions from fuzzing ----------------------------------------------
+# Found by the published differential fuzz session at ~30M cases. A number
+# token leaves "97634922337286237e3\0" in the token buffer; the next value is
+# an unterminated string starting "0x", so json_get_number() sees "0x" followed
+# by the previous token's tail -- a 19-hex-digit float. std.fmt.parseFloat
+# truncated rather than rounded there, one ULP off libc strtod.
+# See DECISIONS.md D-18 and src/strtod.zig parseHexFloat.
+add("regress-fuzz-hexfloat-stale-buffer", b'97634922337286237e3"0x')
+
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)

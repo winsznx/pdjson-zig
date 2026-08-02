@@ -98,7 +98,9 @@ construction. Owning it also means owning its correctness, which is why it is
 tested against libc as an oracle rather than assumed.
 
 **Compatibility impact.** Bit-identical to libc `strtod` on everything tested,
-with one documented exception (D-09).
+with one documented exception (D-09). The hex-float branch is handled separately
+in this module rather than by `parseFloat`, because a fuzz run proved
+`parseFloat` truncates there — see D-18.
 **Performance impact.** Not measurable at the workload level; `json_get_number`
 is called once per number token and is not the hot path.
 **Verification.** `tests/port/number_torture.zig` compares raw f64 bit patterns
@@ -432,6 +434,67 @@ removes the author's judgement from the loop.
 
 **Verification.** All 43 exclusions in `artifacts/differential-summary.json`
 carry a sanitizer report, and all resolve to one line: `pdjson.c:912`.
+
+---
+
+## D-18 — Hex-float conversion is implemented here, because the fuzzer proved it had to be
+
+**Original behaviour.** `json_get_number()` is `strtod`, whose subject sequence
+includes hex floats (`0x1.8p3`). The binary exponent is optional, so
+`0x634922337286237e3` is a valid 19-hex-digit float.
+
+**What happened.** The published differential fuzz session found a divergence at
+about 30 million cases:
+
+```
+input (22 bytes):  97634922337286237e3"0x
+C   : "num":"4418d2488cdca189"
+Zig : "num":"4418d2488cdca188"
+```
+
+One ULP. The route there is worth following, because it is exactly the kind of
+case a hand-written corpus does not contain. A number token leaves
+`97634922337286237e3\0` in the token buffer. The next value is an unterminated
+string beginning `0x`, which errors — and the token buffer is deliberately *not*
+cleared on error, matching the original. So `json_get_number()` reads `0x`
+followed by the previous token's tail, and converts a 19-hex-digit float.
+
+**Root cause.** `std.fmt.parseFloat` truncates rather than rounds hex floats once
+the mantissa exceeds 53 bits. Four of seven probe cases disagreed with libc:
+
+```
+0x634922337286237e3    libc 0x4418d2488cdca189   parseFloat 0x4418d2488cdca188
+0xfffffffffffffffff    libc 0x4430000000000000   parseFloat 0x442ffffffffffffe
+0x123456789abcdef01    libc 0x43f23456789abcdf   parseFloat 0x43f23456789abcde
+0x10000000000000801    libc 0x43f0000000000001   parseFloat 0x43f0000000000000
+```
+
+**Chosen design.** `parseHexFloat` in `src/strtod.zig` accumulates the mantissa
+exactly into a `u128` with a sticky bit for anything that does not fit, then
+rounds once, to nearest, ties to even. The decimal path still delegates to
+`parseFloat`, which *is* correctly rounded.
+
+The rounding works in units of the result's ULP rather than in significand bits.
+That matters near zero: the ULP is pinned at 2^-1074 in the subnormal range, so
+there is exactly one rounding step. An earlier bits-based version returned 0 for
+`0xaBfA4fP-1098`, where the correct answer is the smallest subnormal — caught by
+the randomised hex-float test added with the fix, not by inspection.
+
+**Alternatives considered.** *Call libc `strtod` for the hex case only* — would
+reintroduce the locale dependency this module exists to avoid (D-03), and split
+the conversion across two implementations. *Document it as a known 1-ULP
+limitation* — tempting, and wrong: the fuzzer had just demonstrated the case is
+reachable through the public API, so a known-wrong result would have been a
+divergence I was choosing not to fix.
+
+**Compatibility impact.** Removes the divergence. Bit-identical to libc `strtod`
+across the fixed cases, a 661-point exponent sweep, and 20,000 randomised hex
+floats including exponents out to ±1200.
+**Performance impact.** None measurable; only on the hex path, which no JSON
+number reaches.
+**Verification.** `tests/port/number_torture.zig` (two new tests),
+`tests/port/regressions.zig` (the exact fuzz case and the subnormal boundary),
+and fixture `regress-fuzz-hexfloat-stale-buffer`.
 
 ---
 

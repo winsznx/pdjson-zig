@@ -95,7 +95,10 @@ pub fn strtod(s: []const u8) Result {
     }
 
     if (eqlIgnoreCase(rest, "0x")) {
-        if (scanHex(s, i)) |end| return finish(s, i, end, negative);
+        if (scanHex(s, i)) |end| {
+            const magnitude = parseHexFloat(s[i..end]);
+            return .{ .value = if (negative) -magnitude else magnitude, .consumed = end };
+        }
         // "0x" with no hex digits: the longest valid subject is just the "0".
         return finish(s, i, i + 1, negative);
     }
@@ -141,6 +144,130 @@ fn nanPayload(seq: []const u8) u64 {
         acc = std.math.add(u64, acc, d) catch return 0;
     }
     return acc;
+}
+
+/// Convert a validated hex-float body ("0x" + hex digits, optional '.', optional
+/// binary exponent) to the nearest f64, ties to even.
+///
+/// This is implemented here rather than delegated because `std.fmt.parseFloat`
+/// does not round hex floats correctly once the mantissa exceeds 53 bits -- it
+/// truncates. A differential fuzz session found this at 30 million cases:
+/// `strtod("0x634922337286237e3")` gave 0x4418d2488cdca189 from libc and
+/// 0x4418d2488cdca188 from parseFloat, one ULP apart. The decimal path is
+/// unaffected and still uses parseFloat, which is correctly rounded.
+///
+/// Reachable through the public API by calling `json_get_number()` when the
+/// token buffer holds text beginning "0x" -- which is how the fuzzer found it,
+/// via bytes left in the buffer from a previous token.
+fn parseHexFloat(body: []const u8) f64 {
+    // value = mantissa * 2^exp2, accumulated exactly where it fits and with a
+    // sticky bit for anything that does not.
+    var mantissa: u128 = 0;
+    var sticky = false;
+    var frac_digits: i32 = 0;
+    var dropped_digits: i32 = 0;
+    var seen_point = false;
+
+    // Room to shift in one more hex digit without overflowing.
+    const room = (std.math.maxInt(u128) - 15) / 16;
+
+    var i: usize = 2; // skip "0x"
+    var exp_start: ?usize = null;
+    while (i < body.len) : (i += 1) {
+        const c = body[i];
+        if (c == '.') {
+            seen_point = true;
+            continue;
+        }
+        if ((c | 0x20) == 'p') {
+            exp_start = i + 1;
+            break;
+        }
+        const d: u8 = switch (c) {
+            '0'...'9' => c - '0',
+            'a'...'f' => c - 'a' + 10,
+            'A'...'F' => c - 'A' + 10,
+            else => break,
+        };
+        if (seen_point) frac_digits += 1;
+        if (mantissa <= room) {
+            mantissa = mantissa * 16 + d;
+        } else {
+            // No room left: remember that something non-zero was discarded and
+            // account for the place value we are no longer tracking.
+            if (d != 0) sticky = true;
+            dropped_digits += 1;
+        }
+    }
+
+    if (mantissa == 0) return 0;
+
+    var exp2: i32 = -4 * frac_digits + 4 * dropped_digits;
+
+    if (exp_start) |es| {
+        var j = es;
+        var neg_exp = false;
+        if (j < body.len and (body[j] == '+' or body[j] == '-')) {
+            neg_exp = body[j] == '-';
+            j += 1;
+        }
+        var e: i64 = 0;
+        while (j < body.len and isDigit(body[j])) : (j += 1) {
+            e = @min(e * 10 + (body[j] - '0'), 1 << 30);
+        }
+        const signed: i64 = if (neg_exp) -e else e;
+        exp2 += @intCast(std.math.clamp(signed, -(1 << 30), 1 << 30));
+    }
+
+    return roundToF64(mantissa, sticky, exp2);
+}
+
+/// Round `mantissa * 2^exp2` (with `sticky` marking discarded low bits) to the
+/// nearest f64, ties to even.
+///
+/// Works in units of the result's ULP rather than in significand bits, which is
+/// what makes the subnormal range come out right without double rounding: near
+/// zero the ULP is fixed at 2^-1074 regardless of how many significant bits the
+/// input had, so the single rounding step below is the only one that happens.
+///
+/// The randomised hex-float test found the earlier bits-based version returning
+/// 0 for `0xaBfA4fP-1098`, where libc correctly returns the smallest subnormal.
+fn roundToF64(mantissa: u128, sticky_in: bool, exp2: i32) f64 {
+    if (mantissa == 0) return 0;
+
+    // Widened so a shift can never exceed the type's bit count.
+    var m: u256 = mantissa;
+    const sticky = sticky_in;
+
+    const msb: i32 = 128 - @as(i32, @clz(mantissa));
+    // Exponent of the leading set bit, i.e. floor(log2(value)).
+    const value_exp = exp2 + msb - 1;
+
+    // 2^1024 and above cannot round to anything finite.
+    if (value_exp >= 1024) return std.math.inf(f64);
+    // Below half the smallest subnormal, everything rounds to zero.
+    if (value_exp < -1075) return 0;
+
+    // Exponent of the unit in the last place of the result: 52 below the
+    // leading bit while normal, pinned at 2^-1074 once subnormal.
+    const ulp_exp: i32 = @max(-1074, value_exp - 52);
+    const shift: i32 = ulp_exp - exp2;
+
+    if (shift <= 0) {
+        m <<= @intCast(-shift);
+    } else {
+        const sh: u8 = @intCast(shift);
+        const lost = m & ((@as(u256, 1) << sh) - 1);
+        const half = @as(u256, 1) << (sh - 1);
+        m >>= sh;
+        if (lost > half or (lost == half and (sticky or (m & 1) == 1))) m += 1;
+    }
+
+    if (m == 0) return 0;
+    // m is now at most 2^53 (2^53 exactly only when rounding carried out of the
+    // significand, which ldexp scales correctly).
+    const scaled: f64 = @floatFromInt(@as(u64, @intCast(m)));
+    return std.math.ldexp(scaled, ulp_exp);
 }
 
 /// Returns the end index of a valid hex-float body starting at `start`

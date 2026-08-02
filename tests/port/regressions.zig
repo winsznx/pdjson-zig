@@ -213,6 +213,46 @@ test "deep nesting does not recurse in the parser" {
     try testing.expectError(pdjson.Error.Malformed, p.next());
 }
 
+// ---------------------------------------------------------------------------
+// Finding 3: hex-float rounding in json_get_number.
+// Found by the published fuzz session at ~30 million cases. Not an upstream
+// bug -- a defect in this port, and the reason the fuzzer exists.
+// ---------------------------------------------------------------------------
+
+test "regression: json_get_number rounds hex floats the way strtod does" {
+    // The token buffer is reused across events and is not cleared, so after a
+    // number token an unterminated string starting "0x" leaves json_get_number
+    // looking at "0x" followed by the previous token's bytes. That is faithful
+    // to the original; what was wrong was the rounding of the resulting
+    // 19-hex-digit float.
+    const input = "97634922337286237e3\"0x";
+    var s: abi.Stream = undefined;
+    core.openBuffer(&s, input.ptr, input.len);
+    defer core.close(&s);
+
+    try testing.expectEqual(abi.Type.number, core.skip(&s));
+    try testing.expectEqual(abi.Type.done, core.skip(&s));
+    core.reset(&s);
+    try testing.expectEqual(abi.Type.err, core.skip(&s));
+
+    // libc strtod("0x634922337286237e3") == 0x4418d2488cdca189.
+    // std.fmt.parseFloat truncated to ...188.
+    try testing.expectEqual(
+        @as(u64, 0x4418d2488cdca189),
+        @as(u64, @bitCast(core.getNumber(&s))),
+    );
+}
+
+test "regression: hex floats round correctly across the subnormal boundary" {
+    // Found by the randomised hex-float test added alongside the fix: an
+    // earlier version worked in significand bits and returned 0 here, where
+    // the value is above half the smallest subnormal and must round up to it.
+    try testing.expectEqual(
+        @as(u64, 1),
+        @as(u64, @bitCast(pdjson.strtod.value("0xaBfA4fP-1098"))),
+    );
+}
+
 test "the parser never panics on arbitrary bytes" {
     var prng = std.Random.DefaultPrng.init(0x5EED);
     const rand = prng.random();
