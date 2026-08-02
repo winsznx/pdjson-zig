@@ -13,7 +13,7 @@
 | **Harness self-test** | **12/12** injected defects caught (its first sound run found 4 real gaps in the corpus) |
 | **C ABI** | Identical layout on **6 targets** (32- and 64-bit, x86, ARM, RISC-V, Windows), asserted at compile time so a drift fails `zig build`; a C consumer using the pinned header links against the Zig archive alone |
 | **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; **59 escape hatches, each justified individually** ([`docs/safety.md`](docs/safety.md)). Ships **ReleaseSafe** — checks on. |
-| **Benchmark** | **Slower on 9 of 12** workload/mode pairs, faster on 3. Full table below, generated from the artifact. |
+| **Benchmark** | **Slower on 9 of 12** workload/mode pairs, faster on 3, and **2.4x larger** in a consumer's stripped binary. Both tables below, generated from the artifacts. |
 | **Upstream bugs found** | 3, all filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38). Two independently confirmed by Valgrind. |
 
 ```sh
@@ -86,6 +86,7 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-31 | The Zig archive exports exactly the 22 functions the pinned header declares -- none missing, none extra -- compared as a set rather than as a count. | verified | [`artifacts/abi/abi-report.json`](artifacts/abi/abi-report.json) |
 | C-32 | Every escape hatch in the shipped library is classified individually -- 59 occurrences across 8 categories, each matched to a rule keyed by enclosing function rather than by line number, with 0 unclassified. | verified | [`artifacts/safety/inventory.json`](artifacts/safety/inventory.json) |
 | C-33 | The escape-hatch classifier passes 10 self-tests covering the ways it could silently report the wrong thing, including a hatch mentioned only in a comment, a // inside a string literal, and a test block's scratch being counted as shipped code. | verified | [`artifacts/safety/inventory.json`](artifacts/safety/inventory.json) |
+| C-34 | The Zig port costs a consumer more space than the original: linking one identical C program against the Zig archive rather than the pinned original's object grows the stripped executable 2.42x and the machine-code section 3.29x. | verified | [`artifacts/size-report.json`](artifacts/size-report.json) |
 <!-- CLAIMS:END -->
 
 Every row is checked against a generated artifact by
@@ -292,6 +293,28 @@ are close to free here. The shipped library keeps them on.
 
 **The one large Zig win is not a throughput result.** `malformed-early` rejects
 its input on the first byte, so it measures setup cost, not parsing.
+
+**The port is bigger, and that is a real cost.** One identical C consumer,
+linked twice with the same compiler and flags, differing only in which
+implementation sits behind the pinned header:
+
+<!-- SIZE:BEGIN -->
+| | C original | pdjson-zig | |
+| --- | ---: | ---: | --- |
+| linked executable, stripped | 35,072 | 84,744 | 2.42x |
+| machine code (`__text`) | 8,104 | 26,672 | 3.29x |
+| read-only data | 448 | 3,104 | 6.93x |
+| string data | 1,020 | 7,112 | 6.97x |
+
+_One identical C consumer, same compiler and flags, linked twice; both binaries verified to produce the same output before any size was recorded. Archive against object (241,248 vs 16,360) is reported in the artifact but is not a fair comparison._
+<!-- SIZE:END -->
+
+ReleaseSafe carries the bounds and overflow checks the C build has no
+equivalent of, and Zig emits unwind tables the C build does not. `src/root.zig`
+replaces std's default panic handler with a `write`+`abort` precisely to keep
+std's unwinder, DWARF reader and symbol tables out of the artifact — without
+that the archive was 4.6 MB rather than 241 KB.
+Artifact: [`artifacts/size-report.json`](artifacts/size-report.json).
 
 **The first optimization guess was wrong, and measuring is what caught it.**
 The initial gap was 0.57×–0.70×. I assumed the null checks the port adds on the

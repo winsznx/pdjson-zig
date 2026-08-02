@@ -70,6 +70,7 @@ def main() -> int:
     tests = load("original-test-report.json")
     diff = load("differential-summary.json")
     abi = load("abi/abi-report.json")
+    size = load("size-report.json")
     safety = load("safety-report.json")
     linkage = load("linkage-report.json")
     bench = load("benchmark-summary.json")
@@ -276,6 +277,7 @@ def main() -> int:
             text = splice(text, "CLAIMS",
                           render_claim_block(json.loads(claims_path.read_text())))
         text = splice(text, "BENCH", render_bench_block(bench))
+        text = splice(text, "SIZE", render_size_block(size))
         readme.write_text(text)
         print("  refreshed the generated blocks in README.md")
 
@@ -318,6 +320,33 @@ def render_bench_block(bench) -> str:
     rows.append(f"_{len(slower)} of {len(ratios)} workload/mode pairs are slower "
                 f"in Zig. Median ratios, {dig(bench, 'repetitions')} repetitions, "
                 f"raw samples in `bench/results/raw.json`._")
+    return "\n".join(rows) + "\n"
+
+
+def render_size_block(size) -> str:
+    """What the library costs a consumer, straight from the artifact.
+
+    Generated for the same reason as the benchmark table: a size quoted by hand
+    goes stale on the next build and nothing notices.
+    """
+    if not size:
+        return "_No size data. Run `make size`._\n"
+    rows = ["| | C original | pdjson-zig | |", "| --- | ---: | ---: | --- |"]
+    for label, key in (("linked executable, stripped", "linked_stripped"),
+                       ("machine code (`__text`)", "machine_code"),
+                       ("read-only data", "read_only_data"),
+                       ("string data", "string_data")):
+        d = size.get(key)
+        if not d:
+            continue
+        rows.append(f"| {label} | {d['c']:,} | {d['zig']:,} | {d['ratio']:.2f}x |")
+    inp = size.get("build_input") or {}
+    rows.append("")
+    rows.append(f"_One identical C consumer, same compiler and flags, linked twice; "
+                f"both binaries verified to produce the same output before any size "
+                f"was recorded. Archive against object ({inp.get('zig', 0):,} vs "
+                f"{inp.get('c', 0):,}) is reported in the artifact but is not a fair "
+                f"comparison._")
     return "\n".join(rows) + "\n"
 
 

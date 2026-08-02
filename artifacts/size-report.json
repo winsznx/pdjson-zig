@@ -1,0 +1,78 @@
+{
+  "schema": "pdjson-zig/size-report@1",
+  "method": "One identical C consumer, compiled with the same compiler and flags, linked twice: once against the pinned original's .o, once against the Zig archive. Archive-vs-object byte counts are reported for reference but are not comparable -- a .a carries symbol and relocation data the linker discards. The linked and text figures are what a consumer actually pays.",
+  "consumer_agreement": "10",
+  "platform": "macOS-27.0-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "build_input": {
+    "c": 16360,
+    "zig": 241248,
+    "delta": 224888,
+    "ratio": 14.746
+  },
+  "linked_executable": {
+    "c": 35352,
+    "zig": 99888,
+    "delta": 64536,
+    "ratio": 2.826
+  },
+  "linked_stripped": {
+    "c": 35072,
+    "zig": 84744,
+    "delta": 49672,
+    "ratio": 2.416
+  },
+  "machine_code": {
+    "c": 8104,
+    "zig": 26672,
+    "delta": 18568,
+    "ratio": 3.291
+  },
+  "read_only_data": {
+    "c": 448,
+    "zig": 3104,
+    "delta": 2656,
+    "ratio": 6.929
+  },
+  "string_data": {
+    "c": 1020,
+    "zig": 7112,
+    "delta": 6092,
+    "ratio": 6.973
+  },
+  "unwind_tables": null,
+  "detail": {
+    "c": {
+      "input": "pdjson.o",
+      "input_bytes": 16360,
+      "linked_bytes": 35352,
+      "linked_stripped_bytes": 35072,
+      "sections": {
+        "text": 8104,
+        "stubs": 96,
+        "cstring": 1020,
+        "const": 448,
+        "unwind_info": 208,
+        "got": 96
+      },
+      "consumer_output": "10"
+    },
+    "zig": {
+      "input": "libpdjson.a",
+      "input_bytes": 241248,
+      "linked_bytes": 99888,
+      "linked_stripped_bytes": 84744,
+      "sections": {
+        "text": 26672,
+        "stubs": 144,
+        "cstring": 7112,
+        "const": 3104,
+        "unwind_info": 608,
+        "eh_frame": 3760,
+        "got": 104
+      },
+      "consumer_output": "10"
+    }
+  },
+  "note": "The Zig side ships ReleaseSafe, so its machine code carries the bounds and overflow checks and the panic path the C build has no equivalent of, and it emits unwind tables (eh_frame) that the C build does not. src/root.zig replaces std's default panic handler with a write+abort specifically to keep std's unwinder, DWARF reader and symbol tables out of the artifact; without that the archive was 4.6 MB. This is a real cost, reported rather than worked around: the port is larger than the original."
+}

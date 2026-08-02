@@ -657,6 +657,26 @@
         "devfolio",
         "video"
       ]
+    },
+    {
+      "id": "C-34",
+      "text": "The Zig port costs a consumer more space than the original: linking one identical C program against the Zig archive rather than the pinned original's object grows the stripped executable 2.42x and the machine-code section 3.29x.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/size-report.json",
+      "check": {
+        "kind": "at_least",
+        "path": "machine_code.ratio",
+        "value": 1.0
+      },
+      "command": "python3 scripts/size-report.py",
+      "verified_date": "2026-08-02",
+      "limitation": "Measured on arm64 macOS with Apple clang; section names and page rounding differ on ELF, which the script handles but which has not been cross-checked on every target. The comparison links the same consumer source with the same compiler and flags and verifies both binaries produce the same output before reporting, but a larger consumer would dilute the ratio. Archive-vs-object bytes are recorded and deliberately not claimed, because a .a and a .o are not the same kind of object.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
     }
   ]
 }

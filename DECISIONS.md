@@ -743,3 +743,39 @@ wrapping subtract, two hatches on one line counted as one.
 **Verification.** `artifacts/safety/inventory.json` (59 shipped occurrences, 0
 unclassified), `docs/safety.md`, and
 `python3 scripts/safety-inventory.py --self-test`.
+
+---
+
+## D-23 — Binary size is measured as a consumer's delta, not as archive bytes
+
+**Chosen design.** `scripts/size-report.py` links one identical C consumer twice
+— once against the pinned original's `.o`, once against the Zig archive — with
+the same compiler and the same flags, and reports the difference in the
+resulting executable and in its individual sections.
+
+**Reason.** `ls -l libpdjson.a` against `ls -l pdjson.o` compares two things that
+are not the same kind of object: an archive carries symbol tables and relocation
+records the linker discards. It gives 14.7×, which is not a number anyone pays.
+The honest question is what a consumer's binary grows by, and that is 2.42×
+stripped.
+
+**A measurement error caught in the writing.** The first version reported the
+`__TEXT` *segment*, which arm64 macOS rounds to 16 KiB pages: 16,384 against
+65,536, a clean-looking 4.0×. The actual `__text` *section* is 8,104 against
+26,672 — 3.29×. Page rounding had inflated the number in the direction that
+makes the port look worse, which is the direction nobody double-checks. Sections
+are now reported individually on both Mach-O and ELF.
+
+**Both binaries are run before a size is recorded.** A size reported for a
+binary that does not work is worse than no size, so the consumer's output must
+match between the two links or the script refuses to report.
+
+**The result is not flattering and is published anyway.** ReleaseSafe carries
+bounds and overflow checks the C build has no equivalent of, and Zig emits
+unwind tables the C build does not. The panic handler in `src/root.zig` is
+already a size decision: replacing std's default with a `write`+`abort` is what
+keeps std's unwinder, DWARF reader and symbol tables out of the archive, which
+was 4.6 MB before.
+
+**Verification.** `artifacts/size-report.json`, and the README table generated
+from it by `scripts/report.py` so it cannot drift.

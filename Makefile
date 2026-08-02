@@ -10,7 +10,7 @@
 
 .POSIX:
 .PHONY: all build verify test test-original test-zig differential fuzz bench \
-        report abi abi-generate diagnose conformance safety fmt clean distclean \
+        report abi abi-generate diagnose conformance safety size fmt clean distclean \
         docker-verify mutation release-gate claims invariants hexfloat api-coverage
 
 CC       = cc
@@ -118,6 +118,12 @@ fmt:
 bench: build
 	@echo "==> Benchmark ($(BENCH_REPS) repetitions)"
 	$(PYTHON) scripts/bench.py --repetitions $(BENCH_REPS)
+	@echo "==> Artifact size: what this library costs a consumer"
+	$(PYTHON) scripts/size-report.py
+
+size: build
+	@echo "==> Artifact size: what this library costs a consumer"
+	$(PYTHON) scripts/size-report.py
 
 claims:
 	@echo "==> Claim ledger validation"
@@ -193,8 +199,9 @@ verify:
 	@echo "[13/16] escape-hatch scan and per-occurrence inventory"
 	@sh scripts/safety-scan.sh
 	@echo
-	@echo "[14/16] benchmark smoke test"
+	@echo "[14/16] benchmark smoke test and artifact size"
 	@$(PYTHON) scripts/bench.py --smoke
+	@$(PYTHON) scripts/size-report.py
 	@echo
 	@echo "[15/16] generate reports"
 	@$(PYTHON) scripts/report.py
