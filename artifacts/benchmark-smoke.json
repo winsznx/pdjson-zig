@@ -37,49 +37,49 @@
       "impls": {
         "c": {
           "samples": 3,
-          "median_ns": 3935000.0,
-          "mean_ns": 3937666.7,
-          "stdev_ns": 6798.7,
-          "p95_ns": 3945800.0,
-          "p99_ns": 3946760.0,
-          "min_ns": 3931000.0,
-          "throughput_mb_s": 220.5,
-          "cold_ns_median": 4007000,
+          "median_ns": 3981000.0,
+          "mean_ns": 3947666.7,
+          "stdev_ns": 49277.0,
+          "p95_ns": 3983700.0,
+          "p99_ns": 3983940.0,
+          "min_ns": 3878000.0,
+          "throughput_mb_s": 217.9,
+          "cold_ns_median": 4008000,
           "alloc_count": 2,
           "alloc_bytes": 1088,
           "peak_rss_kb": 2496
         },
         "zig-safe": {
           "samples": 3,
-          "median_ns": 4458000.0,
-          "mean_ns": 4462333.3,
-          "stdev_ns": 7586.5,
-          "p95_ns": 4471500.0,
-          "p99_ns": 4472700.0,
-          "min_ns": 4456000.0,
-          "throughput_mb_s": 194.6,
-          "cold_ns_median": 4613000,
+          "median_ns": 4483000.0,
+          "mean_ns": 4483000.0,
+          "stdev_ns": 1633.0,
+          "p95_ns": 4484800.0,
+          "p99_ns": 4484960.0,
+          "min_ns": 4481000.0,
+          "throughput_mb_s": 193.5,
+          "cold_ns_median": 4478000,
           "alloc_count": 2,
           "alloc_bytes": 1088,
-          "peak_rss_kb": 3792
+          "peak_rss_kb": 3808
         },
         "zig-fast": {
           "samples": 3,
-          "median_ns": 4413000.0,
-          "mean_ns": 4412000.0,
-          "stdev_ns": 6976.1,
-          "p95_ns": 4419300.0,
-          "p99_ns": 4419860.0,
-          "min_ns": 4403000.0,
-          "throughput_mb_s": 196.6,
-          "cold_ns_median": 4366000,
+          "median_ns": 4428000.0,
+          "mean_ns": 4429333.3,
+          "stdev_ns": 31857.3,
+          "p95_ns": 4464900.0,
+          "p99_ns": 4468180.0,
+          "min_ns": 4391000.0,
+          "throughput_mb_s": 195.9,
+          "cold_ns_median": 4376000,
           "alloc_count": 2,
           "alloc_bytes": 1088,
           "peak_rss_kb": 2768
         }
       },
-      "speedup_zig-safe_vs_c": 0.883,
-      "speedup_zig-fast_vs_c": 0.892
+      "speedup_zig-safe_vs_c": 0.888,
+      "speedup_zig-fast_vs_c": 0.899
     }
   ]
 }

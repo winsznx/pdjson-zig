@@ -1,0 +1,11 @@
+{
+  "input": "tests/conformance/fixtures/obj-simple.json",
+  "mode": "oom:0",
+  "input_sha256": "14c466b89eb208ab1b4599c9a7d7fab0c56bf6572a03473c578a4c2374bc5be7",
+  "input_bytes": 11,
+  "kind": "upstream_ub",
+  "c_returncode": -11,
+  "zig_returncode": 0,
+  "detail": "the pinned C original crashed; the Zig port did not",
+  "sanitizer_report": "upstream/pdjson/pdjson.c:912:18: runtime error: member access within null pointer of type 'struct json_stack'\n    #0 0xADDR in json_get_context pdjson.c:912\n    #1 0xADDR in emit transcript_c.c:91\n    #2 0xADDR in transcribe transcript_c.c\n    #3 0xADDR in main transcript_c.c:377\n    #4 0xADDR in start+0xADDR (dyld)\n\nSUMMARY: UndefinedBehaviorSanitizer: undefined-behavior upstream/pdjson/pdjson.c:912:18\nAddressSanitizer:DEADLYSIGNAL\n=================================================================\n==PID==ERROR: AddressSanitizer: SEGV on unknown address 0xADDR (pc 0xADDR bp 0xADDR sp 0xADDR T0)\n==PID==The signal is caused by a READ memory access.\n==PID==Hint: address points to the zero page.\n    #0 0xADDR in json_get_context pdjson.c:912\n    #1 0xADDR in emit transcript_c.c:91\n    #2 0xADDR in transcribe transcript_c.c\n    #3 0xADDR in main transcript_c.c:377\n    #4 0xADDR in start+0xADDR (dyld)\n\n==PID=="
+}

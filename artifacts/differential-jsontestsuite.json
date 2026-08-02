@@ -25,7 +25,7 @@
   "zig_crashes": 0,
   "c_crashes_unexplained": 0,
   "timeouts": 0,
-  "elapsed_seconds": 38.66,
+  "elapsed_seconds": 38.34,
   "c_oracle": "build/transcript_c",
   "zig_binary": "zig-out/bin/transcript_zig",
   "findings": [],

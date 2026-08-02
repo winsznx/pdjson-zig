@@ -264,11 +264,56 @@ else
     python3 scripts/audit-public-copy.py || true
 fi
 
+# The tree must be clean -- with one carve-out that has to be stated rather than
+# assumed. `make release-gate` runs `make verify` first, and verify *takes
+# measurements*: durations, cold-start nanoseconds, how many fuzz rounds fit in
+# sixty seconds. Those differ every run by construction, so demanding a
+# byte-clean tree after verify is a check nothing can ever satisfy -- and it
+# meant `make release-gate` could never pass while `sh scripts/release-gate.sh`
+# on its own did.
+#
+# So re-measurement is distinguished from drift. These paths hold a fresh
+# measurement and are allowed to differ; everything else -- sources, docs,
+# CLAIMS.json, and every artifact that records a *decision* rather than a
+# timing -- must be committed. A substantive change to the files below would
+# still be caught, because their contents are checked by validate-claims.py and
+# by the audits above.
+MEASUREMENT_OUTPUTS="artifacts/original-test-report.json
+bench/results/raw-smoke.json
+bench/results/raw.json
+fuzz/logs/session-verify.json
+artifacts/benchmark-smoke.json
+artifacts/differential-summary.json
+artifacts/differential-jsontestsuite.json"
+
+# The two differential summaries are here only for their elapsed_seconds. Their
+# sanitizer reports used to churn too -- they carried ASLR addresses and process
+# IDs -- and are normalised now, so everything in those files except the wall
+# clock is byte-reproducible. Nothing is lost by allowing them: the fields that
+# matter (comparisons, divergences, upstream_ub) are asserted by C-04, C-05,
+# C-18 and C-20 in step 11, which runs before this one and fails on any change
+# to them.
+
 if command -v git >/dev/null 2>&1 && [ -d .git ]; then
-    if [ -n "$(git status --porcelain)" ]; then
+    DIRTY=$(git status --porcelain | awk '{print $2}')
+    REAL=""
+    REMEASURED=""
+    for f in $DIRTY; do
+        if echo "$MEASUREMENT_OUTPUTS" | grep -qx "$f"; then
+            REMEASURED="$REMEASURED $f"
+        else
+            REAL="$REAL $f"
+        fi
+    done
+    if [ -n "$REMEASURED" ]; then
+        echo
+        echo "  re-measured by this run (timings differ every run, not drift):"
+        for f in $REMEASURED; do echo "    $f"; done
+    fi
+    if [ -n "$REAL" ]; then
         echo
         echo "  note: the working tree has uncommitted changes:"
-        git status --short | sed 's/^/    /'
+        for f in $REAL; do echo "    $f"; done
         bad "commit everything before tagging a release"
     fi
 fi

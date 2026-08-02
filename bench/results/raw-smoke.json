@@ -6,15 +6,15 @@
   "bytes": 867544,
   "iterations": 3,
   "inner": 1,
-  "cold_ns": 4007000,
+  "cold_ns": 4008000,
   "alloc_count": 2,
   "alloc_bytes": 1088,
   "peak_rss_kb": 2496,
   "checksum": 1082104,
   "samples_ns": [
-   3947000,
-   3935000,
-   3931000
+   3878000,
+   3981000,
+   3984000
   ],
   "repetition": 0,
   "workload_name": "large-mixed"
@@ -26,15 +26,15 @@
   "bytes": 867544,
   "iterations": 3,
   "inner": 1,
-  "cold_ns": 4613000,
+  "cold_ns": 4478000,
   "alloc_count": 2,
   "alloc_bytes": 1088,
-  "peak_rss_kb": 3792,
+  "peak_rss_kb": 3808,
   "checksum": 1082104,
   "samples_ns": [
-   4473000,
-   4456000,
-   4458000
+   4485000,
+   4483000,
+   4481000
   ],
   "repetition": 0,
   "workload_name": "large-mixed"
@@ -46,15 +46,15 @@
   "bytes": 867544,
   "iterations": 3,
   "inner": 1,
-  "cold_ns": 4366000,
+  "cold_ns": 4376000,
   "alloc_count": 2,
   "alloc_bytes": 1088,
   "peak_rss_kb": 2768,
   "checksum": 1082104,
   "samples_ns": [
-   4413000,
-   4420000,
-   4403000
+   4469000,
+   4391000,
+   4428000
   ],
   "repetition": 0,
   "workload_name": "large-mixed"

@@ -22,6 +22,7 @@ import hashlib
 import json
 import os
 import pathlib
+import re
 import subprocess
 import sys
 import time
@@ -113,6 +114,33 @@ def sanity_check() -> str | None:
         probe.unlink(missing_ok=True)
 
 
+def normalise_sanitizer_report(err: str) -> str:
+    """Strip the parts of a sanitizer report that change every run.
+
+    A sanitizer report carries process IDs, ASLR'd stack and code addresses, a
+    register dump and a memory map. None of that is the evidence -- the evidence
+    is which check fired, with what message, at which source line. Storing the
+    raw text made artifacts/differential-summary.json differ on every run, so
+    the committed evidence churned constantly and the release gate could never
+    see a clean tree.
+
+    What is kept: the runtime-error lines, the SUMMARY, the ERROR line, and the
+    stack frames with their file:line. What is dropped: addresses, PIDs, and
+    everything from the register dump onward.
+    """
+    # Register values and the memory map are machine state, not findings.
+    for marker in ("Register values:", "Memory state around",
+                   "SUMMARY: AddressSanitizer: SEGV"):
+        idx = err.find(marker)
+        if idx != -1 and marker != "SUMMARY: AddressSanitizer: SEGV":
+            err = err[:idx]
+    err = re.sub(r"0x[0-9a-fA-F]{4,}", "0xADDR", err)
+    err = re.sub(r"==\d+==", "==PID==", err)
+    err = re.sub(r"\(dyld:[^)]*\)", "(dyld)", err)
+    err = re.sub(r"[ \t]+\n", "\n", err)
+    return err.strip()[:4000]
+
+
 def upstream_sanitizer_report(mode: str, path: pathlib.Path) -> str | None:
     """Re-run the case against an ASan+UBSan build of the ORIGINAL pdjson.
 
@@ -133,7 +161,7 @@ def upstream_sanitizer_report(mode: str, path: pathlib.Path) -> str | None:
         return None
     err = p.stderr.decode("utf-8", "replace")
     if "AddressSanitizer" in err or "runtime error:" in err or p.returncode == 86:
-        return err[:4000]
+        return normalise_sanitizer_report(err)
     return None
 
 
