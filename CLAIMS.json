@@ -482,6 +482,26 @@
         "devfolio",
         "video"
       ]
+    },
+    {
+      "id": "C-25",
+      "text": "An implementation-independent invariant checker validates 12,792 transcripts and 5,645,337 records from both implementations against 13 rules, with zero violations on either side.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/invariants/summary.json",
+      "check": {
+        "kind": "equals",
+        "path": "violations_total",
+        "value": 0
+      },
+      "command": "python3 scripts/invariants.py --sweep",
+      "verified_date": "2026-08-02",
+      "limitation": "Complements rather than replaces the C-vs-Zig comparison: equality catches the two disagreeing, invariants catch both being wrong the same way. Written in Python so it shares no code with either implementation. Each of the 14 violation classes is proved able to fail by a deliberately malformed fixture, checked by --self-test before every sweep. Rules were developed against the C original's output first -- two candidate rules fired on unmodified upstream output and were corrected as wrong rules, not reported as findings. Allocation-failure modes are not run against the C binary because it crashes there (#36).",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
     }
   ]
 }

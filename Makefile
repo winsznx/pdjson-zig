@@ -11,7 +11,7 @@
 .POSIX:
 .PHONY: all build verify test test-original test-zig differential fuzz bench \
         report abi conformance safety fmt clean distclean docker-verify \
-        mutation release-gate claims
+        mutation release-gate claims invariants
 
 CC       = cc
 CFLAGS   = -std=c99 -pedantic -Wall -Wextra -Wno-missing-field-initializers -O2
@@ -69,6 +69,10 @@ abi: build
 	@sh scripts/abi-check.sh
 	@echo "==> C ABI layout equivalence (cross-target, compile-time)"
 	@sh scripts/abi-cross-check.sh
+
+invariants: build
+	@echo "==> Transcript invariants (implementation-independent)"
+	$(PYTHON) scripts/invariants.py --sweep
 
 conformance: build
 	@echo "==> Fixed conformance corpus (differential)"
@@ -143,7 +147,10 @@ verify:
 	@echo "[9/16] fixed conformance corpus (differential)"
 	@$(PYTHON) scripts/differential.py --label fixed-corpus --quiet
 	@echo
-	@echo "[10/16] JSONTestSuite conformance (skipped if not fetched)"
+	@echo "[10/16] transcript invariants, checked without reference to either implementation"
+	@$(PYTHON) scripts/invariants.py --sweep
+	@echo
+	@echo "[10b/16] JSONTestSuite conformance (skipped if not fetched)"
 	@sh scripts/conformance-suite.sh
 	@echo
 	@echo "[11/16] bounded differential fuzz smoke test"

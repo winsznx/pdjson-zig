@@ -103,6 +103,9 @@ jobs:
       - name: Zig-native tests (Debug)
         run: zig build test -Doptimize=Debug
 
+      - name: transcript invariants
+        run: python3 scripts/invariants.py --sweep
+
       - name: differential, fixed corpus
         run: python3 scripts/differential.py --label fixed-corpus --quiet
 

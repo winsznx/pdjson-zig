@@ -1,0 +1,50 @@
+{
+  "schema": "pdjson-zig/invariant-summary@1",
+  "method": "Each transcript is validated on its own terms, without reference to the other implementation. Rules were developed against the C original's output first: a rule that fires on unmodified upstream output is a wrong rule, not a finding.",
+  "rules": [
+    "sequence-contiguous",
+    "token-length-matches-bytes",
+    "position-monotonic",
+    "line-monotonic",
+    "error-is-latched",
+    "error-has-message",
+    "depth-matches-container-events",
+    "containers-balanced",
+    "context-agrees-with-depth",
+    "reset-clears-state",
+    "peek-then-next-agree",
+    "number-defined-exactly-when-terminated",
+    "schema-and-terminator"
+  ],
+  "rule_functions": 13,
+  "violation_classes": 14,
+  "each_class_provably_fails": true,
+  "corpora": {
+    "fixtures": 215,
+    "jsontestsuite": 318
+  },
+  "modes": [
+    "next",
+    "nostream",
+    "peek",
+    "skip",
+    "sep",
+    "stream:next",
+    "stream:peek",
+    "stream:sep",
+    "user:next",
+    "user:peek",
+    "user:skip",
+    "oom:0",
+    "oom:2"
+  ],
+  "note_oom_c": "Allocation-failure modes are not run against the C binary: it crashes there (upstream #36), so its transcript is truncated by a signal rather than being invalid. The Zig side is checked.",
+  "transcripts_checked": 12792,
+  "records_checked": 5645337,
+  "violations_c_only": 0,
+  "violations_zig_only": 0,
+  "violations_both": 0,
+  "violations_total": 0,
+  "detail_c": [],
+  "detail_zig": []
+}

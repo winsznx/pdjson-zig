@@ -78,6 +78,7 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-22 | Both transcript producers are deterministic on Linux and macOS: five runs over every fixture in five modes produce byte-identical output. | verified | [`artifacts/determinism-report.json`](artifacts/determinism-report.json) |
 | C-23 | The Zig type declarations and the pinned C header describe the same ABI on 6 targets spanning 32- and 64-bit, little-endian ARM, x86, RISC-V and Windows. | verified | [`artifacts/abi-cross-report.json`](artifacts/abi-cross-report.json) |
 | C-24 | Valgrind memcheck independently confirms both memory defects in the pinned original and finds no further ones; the upstream test suite itself is clean under memcheck. | verified | [`artifacts/valgrind-report.json`](artifacts/valgrind-report.json) |
+| C-25 | An implementation-independent invariant checker validates 12,792 transcripts and 5,645,337 records from both implementations against 13 rules, with zero violations on either side. | verified | [`artifacts/invariants/summary.json`](artifacts/invariants/summary.json) |
 <!-- CLAIMS:END -->
 
 Every row is checked against a generated artifact by
