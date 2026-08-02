@@ -297,6 +297,8 @@ def main() -> int:
                           render_claim_block(json.loads(claims_path.read_text())))
         text = splice(text, "BENCH", render_bench_block(bench))
         text = splice(text, "SIZE", render_size_block(size))
+        text = splice(text, "LIMITS", render_limits_block(
+            report, bench, load("abi/abi-cross-report.json"), abi, fuzz_data, size))
         text = splice(text, "SUMMARY", render_summary_block(
             report, diff, jts, fuzz_data, tests, bench, size, safety,
             load("invariants/summary.json"),
@@ -379,6 +381,58 @@ def render_summary_block(v, diff, jts, fuzz_data, tests, bench, size, safety,
         f"| **Invariants** | {n(dig(inv, 'transcripts_checked'))} transcripts and {n(dig(inv, 'records_checked'))} records checked against {dig(inv, 'rule_functions')} rules that reference neither implementation: **{dig(inv, 'violations_total')} violations** |",
         f"| **API coverage** | All {dig(api, 'exported_functions')} exported functions behaviourally compared; **{dig(api, 'classification.untested')} untested** |",
         "| **Upstream bugs found** | 3, all filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38). Two independently confirmed by Valgrind. |",
+    ]
+    return "\n".join(rows) + "\n"
+
+
+def render_limits_block(v, bench, cross, abi, fuzz_data, size) -> str:
+    """Known limitations, with the numbers generated.
+
+    This section had drifted furthest of anything in the README: "slower on 11
+    of 12" when the artifact said 9, "the two upstream issues" when there were
+    three, "3,500+ compared cases and 25 minutes of fuzzing" against 11.8M cases
+    and 30 minutes. Limitations are the last place a stale number is acceptable,
+    since understating them is the failure that matters.
+    """
+    fuzz = fuzz_data or {}
+    ledger = dig(v, "no_divergence_ledger", {}) or {}
+    issues = load("upstream-issues.json")
+    n_issues = len(dig(issues, "issues", []) or [])
+    rows = [
+        "Stated here rather than left to be discovered.",
+        "",
+        f"- **ABI equivalence is *executed* on two targets**, arm64 macOS and "
+        f"x86-64 Linux, and asserted at compile time on "
+        f"{dig(cross, 'targets_checked')} more. Both executed targets are LP64. "
+        f"Three of the four findings in the first cold audit were "
+        f"platform-specific and invisible on the development machine, so a third "
+        f"executed target would likely find a fourth thing.",
+        "- **`nan(...)` payloads that overflow 64 bits are not matched.** C99 "
+        "§7.20.1.3p4 makes them implementation-defined and libcs disagree. "
+        "Reachable only by calling `json_get_number()` on a *string* token "
+        "beginning `nan(`. ([D-09](DECISIONS.md))",
+        f"- **The port is slower and larger.** Slower on "
+        f"{dig(bench, 'workloads_zig_slower')} of "
+        f"{dig(bench, 'workloads_measured')} workload/mode pairs, and "
+        f"{dig(size, 'linked_stripped.ratio', 0):.2f}x the stripped binary in a "
+        f"consumer. Part of the remaining time gap is unexplained.",
+        f"- **The {n_issues} upstream issues are filed, not triaged.** No "
+        f"maintainer has confirmed them yet, and the ledger says so. A fourth "
+        f"defect, in Zig's own `std.fmt.parseFloat`, is reproduced but *not "
+        f"filed* -- `ziglang/zig` restricts issue creation to collaborators -- "
+        f"so it is embargoed from every public channel in `CLAIMS.json`.",
+        f"- **Equivalence is demonstrated, not proven.** "
+        f"{dig(ledger, 'total_comparisons', 0):,} compared cases and a "
+        f"{int(dig(fuzz, 'elapsed_seconds', 0) // 60)}-minute fuzz session is "
+        f"evidence, not a proof of behavioural equality. 100% state-transition "
+        f"coverage is not path coverage, and the hand-written specification "
+        f"agreeing with both implementations would not catch a shared "
+        f"misreading of the grammar.",
+        "- **The corpus is not adversarial to itself.** Fixtures were written by "
+        "the same person who wrote the port. The independent checks against that "
+        "are JSONTestSuite, the mutation harness, the invariant rules, and the "
+        "state-transition specification -- each of which found something the "
+        "fixtures had missed.",
     ]
     return "\n".join(rows) + "\n"
 

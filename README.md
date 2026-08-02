@@ -580,21 +580,16 @@ The documents worth reading in their own right:
 
 ## Known limitations
 
+<!-- LIMITS:BEGIN -->
 Stated here rather than left to be discovered.
 
-- **ABI equivalence is verified on two targets**, arm64 macOS and x86-64 Linux,
-  not asserted universally. Three of the four findings in the final audit were
-  platform-specific and invisible on the development machine, so a third target
-  would likely find a fourth thing.
-- **`nan(...)` payloads that overflow 64 bits are not matched.** C99 §7.20.1.3p4
-  makes them implementation-defined and libcs disagree. Reachable only by calling
-  `json_get_number()` on a *string* token beginning `nan(`. ([D-09](DECISIONS.md))
-- **Zig is slower than C** on 11 of 12 workloads, and part of the remaining gap
-  is unexplained.
-- **The two upstream issues are filed, not triaged.** No maintainer has confirmed
-  them yet, and the ledger says so.
-- **Equivalence is demonstrated, not proven.** 3,500+ compared cases and 25
-  minutes of fuzzing is evidence, not a proof of behavioural equality.
+- **ABI equivalence is *executed* on two targets**, arm64 macOS and x86-64 Linux, and asserted at compile time on 6 more. Both executed targets are LP64. Three of the four findings in the first cold audit were platform-specific and invisible on the development machine, so a third executed target would likely find a fourth thing.
+- **`nan(...)` payloads that overflow 64 bits are not matched.** C99 §7.20.1.3p4 makes them implementation-defined and libcs disagree. Reachable only by calling `json_get_number()` on a *string* token beginning `nan(`. ([D-09](DECISIONS.md))
+- **The port is slower and larger.** Slower on 9 of 12 workload/mode pairs, and 2.42x the stripped binary in a consumer. Part of the remaining time gap is unexplained.
+- **The 3 upstream issues are filed, not triaged.** No maintainer has confirmed them yet, and the ledger says so. A fourth defect, in Zig's own `std.fmt.parseFloat`, is reproduced but *not filed* -- `ziglang/zig` restricts issue creation to collaborators -- so it is embargoed from every public channel in `CLAIMS.json`.
+- **Equivalence is demonstrated, not proven.** 11,822,720 compared cases and a 30-minute fuzz session is evidence, not a proof of behavioural equality. 100% state-transition coverage is not path coverage, and the hand-written specification agreeing with both implementations would not catch a shared misreading of the grammar.
+- **The corpus is not adversarial to itself.** Fixtures were written by the same person who wrote the port. The independent checks against that are JSONTestSuite, the mutation harness, the invariant rules, and the state-transition specification -- each of which found something the fixtures had missed.
+<!-- LIMITS:END -->
 
 ## Decisions
 
