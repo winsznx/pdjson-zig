@@ -14,13 +14,14 @@
     "stream:sep",
     "user:next",
     "user:peek",
-    "user:skip"
+    "user:skip",
+    "after-end"
   ],
-  "rounds": 29532,
+  "rounds": 29300,
   "batch_size": 400,
-  "cases": 11812800,
-  "cases_per_second": 6562.6,
-  "seed_corpus_inputs": 215,
+  "cases": 11720000,
+  "cases_per_second": 6511.0,
+  "seed_corpus_inputs": 218,
   "divergences": 0,
   "upstream_ub": 0,
   "zig_crashes": 0,
@@ -29,5 +30,12 @@
   "zig_version": "0.16.0",
   "c_compiler": "Apple clang version 21.0.0 (clang-2100.1.1.101)",
   "upstream_commit": "78fe04b820dc8817f540bdd87fb22887e0ef3981",
-  "findings": []
+  "c_oracle_sha256": "063b54e4fc19421a724fc2012c4e67066bb6f2e049509b7429c88c9c4ecd6a53",
+  "zig_binary_sha256": "3fd6c7ef1479a2efcd8577c58313ce36512f51874c63c4cfb026085d3dcb6f65",
+  "raw_log": "fuzz/logs/session-published-raw.ndjson.gz",
+  "findings": [],
+  "raw_log_uncompressed_sha256": "72b4770791a2f56af9fb51fd41a4bb55f55d6a01f71df4bf0b5d2572c8f0f1ed",
+  "raw_log_uncompressed_bytes": 5994249,
+  "raw_log_lines": 29302,
+  "raw_log_note": "Committed gzipped so it renders in a clone rather than being a 5.7 MB blob GitHub declines to display. `gunzip -c fuzz/logs/session-published-raw.ndjson.gz` reproduces the file whose sha256 is above; nothing in it is filtered or reordered."
 }
