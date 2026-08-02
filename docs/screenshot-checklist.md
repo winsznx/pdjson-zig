@@ -6,6 +6,10 @@ yourself; nothing in this repository will produce them for you.
 
 Six shots, in priority order — if you only capture three, take 1, 2 and 4.
 
+Every command below was run before this list was written, and the "what you
+should see" notes describe the output that actually came back. If one of them
+produces something different on your machine, that is a finding, not a typo.
+
 ## Before you start
 
 ```sh
@@ -59,7 +63,10 @@ OK, then a red `FAIL drift` with both digests, then OK again. Proves the
 "untouched tests" claim is checked rather than asserted.
 
 **Remember the `git checkout`** — leaving the file modified will fail
-`make verify`.
+`make verify`, the release gate, and shot 1.
+
+What you should see: `OK (9 files match ...)`, then the two digests and
+`FAILED (1 problem(s), 9 file(s) checked)`, then `OK` again.
 
 ## 4. An upstream bug, under sanitizers
 
@@ -90,8 +97,8 @@ Shows the actual proof mechanism, on a surrogate pair and on an embedded NUL.
 
 ```sh
 clear
-sed -n '/BENCH:BEGIN/,/BENCH:END/p' README.md
-sed -n '/SIZE:BEGIN/,/SIZE:END/p'   README.md
+sed -n '/BENCH:BEGIN/,/BENCH:END/p' README.md | grep -v '<!--'
+sed -n '/SIZE:BEGIN/,/SIZE:END/p'   README.md | grep -v '<!--'
 ```
 
 Both generated tables in one frame: slower on 9 of 12 workloads, and 2.42x the
