@@ -1,0 +1,25 @@
+{
+  "schema": "pdjson-zig/differential-summary@2",
+  "label": "defined-behaviour-only",
+  "corpora": [
+    "tests/conformance/fixtures"
+  ],
+  "modes": [
+    "next",
+    "nostream",
+    "peek",
+    "skip",
+    "sep"
+  ],
+  "inputs": 142,
+  "comparisons": 710,
+  "divergences": 0,
+  "upstream_ub": 0,
+  "zig_crashes": 0,
+  "c_crashes_unexplained": 0,
+  "timeouts": 0,
+  "elapsed_seconds": 3.64,
+  "c_oracle": "build/transcript_c",
+  "zig_binary": "zig-out/bin/transcript_zig",
+  "findings": []
+}

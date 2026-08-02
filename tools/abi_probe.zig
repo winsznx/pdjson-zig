@@ -12,9 +12,10 @@ fn field(out: anytype, comptime st: []const u8, comptime name: []const u8, offse
     );
 }
 
-pub fn main() !void {
+pub fn main(p: std.process.Init) !void {
+    const app = try cli.App.init(p);
     var buf: [1 << 16]u8 = undefined;
-    var stdout = cli.stdout(&buf);
+    var stdout = app.stdout(&buf);
     const out = stdout.w();
 
     try out.print("{{\n", .{});

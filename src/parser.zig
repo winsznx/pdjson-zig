@@ -256,13 +256,29 @@ fn push(self: *Stream, t: Type) Type {
     return t;
 }
 
+/// The frame `stack_top` points at, or null when there is no valid one.
+///
+/// The bound check matters. `push` increments `stack_top` *before* it grows the
+/// stack, so a failed allocation leaves `stack_top` pointing at a slot that was
+/// never allocated -- with `stack` still null on the very first push. The
+/// original reads that slot anyway, which is a null dereference or an
+/// out-of-bounds read depending on when the allocator gave out
+/// (docs/upstream-bug-oom-stack.md). Every access here goes through this
+/// accessor so the port stays memory-safe in a state the original does not.
+fn currentFrame(self: *Stream) ?*abi.Stack {
+    if (self.stack_top == abi.stack_empty) return null;
+    if (self.stack_top >= self.stack_size) return null;
+    const stack = self.stack orelse return null;
+    return &stack[self.stack_top];
+}
+
 /// `c` is assumed not to be EOF, matching the original's note.
 fn pop(self: *Stream, c: c_int, expected: Type) Type {
-    const stack = self.stack orelse {
+    const frame = currentFrame(self) orelse {
         errChar(self, "unexpected byte '", c, "'");
         return .err;
     };
-    if (stack[self.stack_top].type != expected) {
+    if (frame.type != expected) {
         errChar(self, "unexpected byte '", c, "'");
         return .err;
     }
@@ -740,11 +756,10 @@ pub fn nextEvent(self: *Stream) Type {
         return readValue(self, c);
     }
 
-    const stack = self.stack orelse {
+    const frame = currentFrame(self) orelse {
         errStr(self, "invalid parser state");
         return .err;
     };
-    const frame = &stack[self.stack_top];
 
     switch (frame.type) {
         .array => {
@@ -899,26 +914,17 @@ pub fn getErrorSlice(self: *Stream) ?[]const u8 {
     return std.mem.sliceTo(&self.errmsg, 0);
 }
 
-/// The full `errmsg` field including any bytes after an embedded NUL. Used by
-/// the transcript oracle so the differential comparison covers what C callers
-/// cannot see through `char *` but which still lives in the public struct.
-pub fn getErrorRaw(self: *Stream) ?[]const u8 {
-    if (!hasError(self)) return null;
-    return &self.errmsg;
-}
-
 pub fn getDepth(self: *Stream) usize {
     return self.stack_top +% 1;
 }
 
 pub fn getContext(self: *Stream, count: ?*usize) Type {
-    if (self.stack_top == abi.stack_empty) return .done;
-    const stack = self.stack orelse return .done;
+    const frame = currentFrame(self) orelse return .done;
     if (count) |c| {
-        const widened: isize = stack[self.stack_top].count;
+        const widened: isize = frame.count;
         c.* = @bitCast(widened);
     }
-    return stack[self.stack_top].type;
+    return frame.type;
 }
 
 pub fn sourceGet(self: *Stream) c_int {
