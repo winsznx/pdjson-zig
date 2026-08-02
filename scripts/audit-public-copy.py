@@ -119,7 +119,11 @@ def platform_strings() -> list[str]:
             walk(json.loads(path.read_text()))
         except (OSError, json.JSONDecodeError):
             continue
-    return sorted(set(found), key=len, reverse=True)
+    # Longest first so a longer identifier is stripped before a shorter one it
+    # contains; ties broken by the string itself, because sorting a set by
+    # length alone leaves equal-length entries in iteration order and made this
+    # artifact differ between runs of the same command.
+    return sorted(set(found), key=lambda x: (-len(x), x))
 
 
 def numbers_in(text: str, fenced_is_content: bool = False,
