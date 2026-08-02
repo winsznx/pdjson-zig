@@ -6,6 +6,7 @@
 | --- | --- |
 | URL | https://github.com/winsznx/pdjson-zig |
 | Branch | `main` |
+| Release | [`v1.0.0`](https://github.com/winsznx/pdjson-zig/releases/tag/v1.0.0), 10 evidence artifacts attached |
 | Visibility | public |
 | License | Unlicense (matching upstream) |
 
