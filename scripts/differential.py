@@ -61,6 +61,11 @@ DEFAULT_MODES = [
     "skipuntil:7",   # JSON_STRING
     "skipuntil:8",   # JSON_NUMBER
     "skipuntil:11",  # JSON_NULL
+    # Calling json_next twice past the terminal event, without a reset. Every
+    # other mode stops there, so the error latch and DONE's idempotence were
+    # never compared; scripts/state-machine.py reported both transitions as
+    # unreachable by the harness.
+    "after-end",
 ]
 
 TIMEOUT = 20

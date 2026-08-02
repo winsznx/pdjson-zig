@@ -309,6 +309,21 @@ fn transcribe(e: Emitter, full_mode: []const u8, input: []const u8) !void {
         try e.record(seq, op_name, t, s);
         seq += 1;
 
+        // "after-end" keeps calling json_next past the terminal event, without a
+        // reset. It is the only way to observe two documented properties: the
+        // error flag latches, and DONE is idempotent. Every other mode stops at
+        // the first terminal event, which is why the state-machine coverage
+        // analysis reported both transitions as never reached.
+        if (std.mem.eql(u8, mode, "after-end") and (t == .err or t == .done)) {
+            var extra: usize = 0;
+            while (extra < 2 and seq < max_records) : (extra += 1) {
+                t = core.nextEvent(s);
+                try e.record(seq, "next", t, s);
+                seq += 1;
+            }
+            break;
+        }
+
         if (t == .err) break;
 
         if (t == .done) {

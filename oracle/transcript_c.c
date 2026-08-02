@@ -236,6 +236,19 @@ transcribe(const char *mode, const char *buf, size_t len)
             emit(seq++, "next", type, json);
         }
 
+        /* "after-end" keeps calling json_next past the terminal event, without
+         * a reset, which is the only way to observe two documented properties:
+         * the error flag latches, and JSON_DONE is idempotent. Every other mode
+         * stops at the first terminal event, so the state-machine coverage
+         * analysis reported both transitions as never reached. */
+        if (strcmp(mode, "after-end") == 0 && (type == JSON_ERROR || type == JSON_DONE)) {
+            for (int extra = 0; extra < 2 && seq < TR_MAX_RECORDS; extra++) {
+                type = json_next(json);
+                emit(seq++, "next", type, json);
+            }
+            break;
+        }
+
         if (type == JSON_ERROR) break;
 
         if (type == JSON_DONE) {

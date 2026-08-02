@@ -313,7 +313,7 @@ each other. The safety checks are close to free here.
 
 - **~~The differential corpus drives `json_open_buffer` only.~~** Closed. All
   three sources — buffer, `FILE *`, and user callbacks — are now compared
-  transcript by transcript, 4,085 comparisons, zero divergences. This was the
+  transcript by transcript, 6,104 comparisons, zero divergences. This was the
   largest hole, and it mattered specifically because the `0xFF` bug *is* a
   disagreement between two sources.
 - **ABI equivalence is verified on two targets**, not asserted universally.

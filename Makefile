@@ -10,7 +10,8 @@
 
 .POSIX:
 .PHONY: all build verify test test-original test-zig differential fuzz bench \
-        report abi abi-generate diagnose conformance safety size fmt clean distclean \
+        report abi abi-generate diagnose conformance safety size state-machine fmt \
+        clean distclean \
         docker-verify mutation release-gate claims invariants hexfloat api-coverage
 
 CC       = cc
@@ -83,6 +84,11 @@ diagnose: build
 api-coverage:
 	@echo "==> Exported API behaviour coverage"
 	$(PYTHON) scripts/api-coverage.py
+
+state-machine: build
+	@echo "==> State-transition specification and coverage"
+	$(PYTHON) scripts/state-machine.py --self-test
+	$(PYTHON) scripts/state-machine.py
 
 hexfloat: build
 	@echo "==> Hex-float correctness against an exact-integer reference"
@@ -179,6 +185,10 @@ verify:
 	@echo
 	@echo "[9a/16] exported API behaviour coverage"
 	@$(PYTHON) scripts/api-coverage.py
+	@echo
+	@echo "[9c/16] state-transition coverage against a written specification"
+	@$(PYTHON) scripts/state-machine.py --self-test
+	@$(PYTHON) scripts/state-machine.py
 	@echo
 	@echo "[9b/16] hex-float correctness against an exact-integer reference"
 	@$(PYTHON) scripts/hexfloat_oracle.py --compare 20000 --seed 20260802

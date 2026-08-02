@@ -26,7 +26,7 @@ untested, so this cannot silently regress.
 Seven functions are in the `differential` set by construction, because the
 transcript records their value on **every record**: `json_get_string`,
 `json_get_number`, `json_get_lineno`, `json_get_position`, `json_get_depth`,
-`json_get_context`, `json_get_error`. Every one of the 5,805 corpus comparisons
+`json_get_context`, `json_get_error`. Every one of the 6,104 corpus comparisons
 compares all seven.
 
 ## Coverage

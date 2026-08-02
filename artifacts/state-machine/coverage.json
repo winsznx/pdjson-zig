@@ -1,0 +1,461 @@
+{
+  "schema": "pdjson-zig/state-machine-coverage@1",
+  "method": "The transition relation is written from RFC 8259's grammar and pdjson.h's contract, not derived from either implementation. The state a caller is in is computed only from json_get_context's type and count, both of which are observable through the public API; inside an object an odd count means a key was just returned and an even one means a value was.",
+  "scope": "Single-step transitions under json_next only. peek does not advance the parser and skip consumes a whole value, so neither forms a single-step successor; both are excluded and their coverage is reported by scripts/api-coverage.py instead.",
+  "corpora": {
+    "fixtures": 218,
+    "jsontestsuite": 318
+  },
+  "modes": [
+    "next",
+    "nostream",
+    "stream:next",
+    "user:next",
+    "after-end"
+  ],
+  "transcripts": 2680,
+  "records": 1294760,
+  "states": 10,
+  "transitions_specified": 54,
+  "transitions_covered": 54,
+  "transitions_uncovered": 0,
+  "transitions_unspecified_but_observed": 0,
+  "coverage_percent": 100.0,
+  "implementations_differ": 0,
+  "uncovered": [],
+  "unspecified_but_observed": [],
+  "observed_only_in_c": [],
+  "observed_only_in_zig": [],
+  "by_state": {
+    "TOP.START": {
+      "specified": 9,
+      "covered": 9,
+      "uncovered": []
+    },
+    "TOP.AFTER_VALUE": {
+      "specified": 2,
+      "covered": 2,
+      "uncovered": []
+    },
+    "TOP.DONE": {
+      "specified": 1,
+      "covered": 1,
+      "uncovered": []
+    },
+    "TOP.DONE_RESET": {
+      "specified": 9,
+      "covered": 9,
+      "uncovered": []
+    },
+    "ERROR_LATCHED": {
+      "specified": 1,
+      "covered": 1,
+      "uncovered": []
+    },
+    "OBJECT.EMPTY": {
+      "specified": 3,
+      "covered": 3,
+      "uncovered": []
+    },
+    "OBJECT.AFTER_KEY": {
+      "specified": 8,
+      "covered": 8,
+      "uncovered": []
+    },
+    "OBJECT.AFTER_VALUE": {
+      "specified": 3,
+      "covered": 3,
+      "uncovered": []
+    },
+    "ARRAY.EMPTY": {
+      "specified": 9,
+      "covered": 9,
+      "uncovered": []
+    },
+    "ARRAY.AFTER_VALUE": {
+      "specified": 9,
+      "covered": 9,
+      "uncovered": []
+    }
+  },
+  "transitions": [
+    {
+      "state": "ARRAY.AFTER_VALUE",
+      "event": "ARRAY",
+      "count": 5,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-mixed.json"
+    },
+    {
+      "state": "ARRAY.AFTER_VALUE",
+      "event": "ARRAY_END",
+      "count": 5685,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-extra-close.json"
+    },
+    {
+      "state": "ARRAY.AFTER_VALUE",
+      "event": "ERROR",
+      "count": 208,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-close-mismatch.json"
+    },
+    {
+      "state": "ARRAY.AFTER_VALUE",
+      "event": "FALSE",
+      "count": 5,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-literals-after-value.json"
+    },
+    {
+      "state": "ARRAY.AFTER_VALUE",
+      "event": "NULL",
+      "count": 25,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-literals-after-value.json"
+    },
+    {
+      "state": "ARRAY.AFTER_VALUE",
+      "event": "NUMBER",
+      "count": 10075,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-flat.json"
+    },
+    {
+      "state": "ARRAY.AFTER_VALUE",
+      "event": "OBJECT",
+      "count": 10,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-mixed.json"
+    },
+    {
+      "state": "ARRAY.AFTER_VALUE",
+      "event": "STRING",
+      "count": 10,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-mixed.json"
+    },
+    {
+      "state": "ARRAY.AFTER_VALUE",
+      "event": "TRUE",
+      "count": 10,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-literals-after-value.json"
+    },
+    {
+      "state": "ARRAY.EMPTY",
+      "event": "ARRAY",
+      "count": 510200,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/deep-array-32.json"
+    },
+    {
+      "state": "ARRAY.EMPTY",
+      "event": "ARRAY_END",
+      "count": 56,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-empty.json"
+    },
+    {
+      "state": "ARRAY.EMPTY",
+      "event": "ERROR",
+      "count": 550,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-leading-comma.json"
+    },
+    {
+      "state": "ARRAY.EMPTY",
+      "event": "FALSE",
+      "count": 15,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/JSONTestSuite/test_parsing/n_structure_unclosed_array_partial_null.json"
+    },
+    {
+      "state": "ARRAY.EMPTY",
+      "event": "NULL",
+      "count": 10,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/JSONTestSuite/test_parsing/y_array_heterogeneous.json"
+    },
+    {
+      "state": "ARRAY.EMPTY",
+      "event": "NUMBER",
+      "count": 363,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-close-mismatch.json"
+    },
+    {
+      "state": "ARRAY.EMPTY",
+      "event": "OBJECT",
+      "count": 250015,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/JSONTestSuite/test_parsing/n_array_unclosed_with_object_inside.json"
+    },
+    {
+      "state": "ARRAY.EMPTY",
+      "event": "STRING",
+      "count": 275,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/JSONTestSuite/test_parsing/n_array_colon_instead_of_comma.json"
+    },
+    {
+      "state": "ARRAY.EMPTY",
+      "event": "TRUE",
+      "count": 10,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/JSONTestSuite/test_parsing/n_structure_unclosed_array_unfinished_false.json"
+    },
+    {
+      "state": "ERROR_LATCHED",
+      "event": "ERROR",
+      "count": 588,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-close-mismatch.json"
+    },
+    {
+      "state": "OBJECT.AFTER_KEY",
+      "event": "ARRAY",
+      "count": 250015,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/obj-nested.json"
+    },
+    {
+      "state": "OBJECT.AFTER_KEY",
+      "event": "ERROR",
+      "count": 65,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/obj-missing-colon.json"
+    },
+    {
+      "state": "OBJECT.AFTER_KEY",
+      "event": "FALSE",
+      "count": 5,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/obj-literal-values.json"
+    },
+    {
+      "state": "OBJECT.AFTER_KEY",
+      "event": "NULL",
+      "count": 5,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/obj-literal-values.json"
+    },
+    {
+      "state": "OBJECT.AFTER_KEY",
+      "event": "NUMBER",
+      "count": 70,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/deep-object-256.json"
+    },
+    {
+      "state": "OBJECT.AFTER_KEY",
+      "event": "OBJECT",
+      "count": 1285,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/deep-object-256.json"
+    },
+    {
+      "state": "OBJECT.AFTER_KEY",
+      "event": "STRING",
+      "count": 105,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/JSONTestSuite/test_parsing/n_object_garbage_at_end.json"
+    },
+    {
+      "state": "OBJECT.AFTER_KEY",
+      "event": "TRUE",
+      "count": 15,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/obj-literal-values.json"
+    },
+    {
+      "state": "OBJECT.AFTER_VALUE",
+      "event": "ERROR",
+      "count": 50,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/obj-close-mismatch.json"
+    },
+    {
+      "state": "OBJECT.AFTER_VALUE",
+      "event": "OBJECT_END",
+      "count": 1410,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/deep-object-256.json"
+    },
+    {
+      "state": "OBJECT.AFTER_VALUE",
+      "event": "STRING",
+      "count": 45,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/obj-duplicate-key.json"
+    },
+    {
+      "state": "OBJECT.EMPTY",
+      "event": "ERROR",
+      "count": 95,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/obj-nonstring-key.json"
+    },
+    {
+      "state": "OBJECT.EMPTY",
+      "event": "OBJECT_END",
+      "count": 1540,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-mixed.json"
+    },
+    {
+      "state": "OBJECT.EMPTY",
+      "event": "STRING",
+      "count": 251520,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/deep-object-256.json"
+    },
+    {
+      "state": "TOP.AFTER_VALUE",
+      "event": "DONE",
+      "count": 2699,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-empty.json"
+    },
+    {
+      "state": "TOP.AFTER_VALUE",
+      "event": "ERROR",
+      "count": 33,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-extra-close.json"
+    },
+    {
+      "state": "TOP.DONE",
+      "event": "DONE",
+      "count": 484,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-empty.json"
+    },
+    {
+      "state": "TOP.DONE_RESET",
+      "event": "ARRAY",
+      "count": 9,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/stream-error-midway.json"
+    },
+    {
+      "state": "TOP.DONE_RESET",
+      "event": "DONE",
+      "count": 637,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-empty.json"
+    },
+    {
+      "state": "TOP.DONE_RESET",
+      "event": "ERROR",
+      "count": 65,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-extra-close.json"
+    },
+    {
+      "state": "TOP.DONE_RESET",
+      "event": "FALSE",
+      "count": 3,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/stream-literals.json"
+    },
+    {
+      "state": "TOP.DONE_RESET",
+      "event": "NULL",
+      "count": 3,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/stream-literals.json"
+    },
+    {
+      "state": "TOP.DONE_RESET",
+      "event": "NUMBER",
+      "count": 33,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/num-leading-zero.json"
+    },
+    {
+      "state": "TOP.DONE_RESET",
+      "event": "OBJECT",
+      "count": 1500,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/many-small-docs.json"
+    },
+    {
+      "state": "TOP.DONE_RESET",
+      "event": "STRING",
+      "count": 9,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/stream-literals.json"
+    },
+    {
+      "state": "TOP.DONE_RESET",
+      "event": "TRUE",
+      "count": 3,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/stream-literals.json"
+    },
+    {
+      "state": "TOP.START",
+      "event": "ARRAY",
+      "count": 1265,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/arr-close-mismatch.json"
+    },
+    {
+      "state": "TOP.START",
+      "event": "DONE",
+      "count": 22,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/empty-input.json"
+    },
+    {
+      "state": "TOP.START",
+      "event": "ERROR",
+      "count": 518,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/bad-utf8-e0-overlong.json"
+    },
+    {
+      "state": "TOP.START",
+      "event": "FALSE",
+      "count": 10,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/lit-false.json"
+    },
+    {
+      "state": "TOP.START",
+      "event": "NULL",
+      "count": 15,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/lit-null-trailing.json"
+    },
+    {
+      "state": "TOP.START",
+      "event": "NUMBER",
+      "count": 200,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/ff-after-number.json"
+    },
+    {
+      "state": "TOP.START",
+      "event": "OBJECT",
+      "count": 345,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/deep-object-256.json"
+    },
+    {
+      "state": "TOP.START",
+      "event": "STRING",
+      "count": 295,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/ctrl-escaped-00.json"
+    },
+    {
+      "state": "TOP.START",
+      "event": "TRUE",
+      "count": 10,
+      "in_spec": true,
+      "first_seen_in": "/Users/mac/pdjson-zig/tests/conformance/fixtures/lit-true.json"
+    }
+  ]
+}

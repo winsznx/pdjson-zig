@@ -157,7 +157,7 @@ unchanged, so no layout table — this one, `_Static_assert`, or otherwise — c
 see it. `next` and `flags` are exactly such a pair. That case is covered by
 behaviour instead: the differential compares `json_get_lineno`,
 `json_get_depth`, `json_get_context` and the error text on every one of the
-5,805 corpus records, and reading a flag word as an event type does not survive
+6,104 corpus records, and reading a flag word as an event type does not survive
 that.
 
 ## `zig build diagnose`

@@ -132,7 +132,7 @@ link against only the Zig archive, and behave identically.
 
 It does not prove behavioural equivalence in general. 18 assertions over ~990
 lines of parser is thin coverage, and the two tools exercise a wide but shallow
-path. The transcript differential (4,085 fixed-corpus comparisons + 3,498
+path. The transcript differential (6,104 fixed-corpus comparisons + 3,498
 JSONTestSuite comparisons across all three input sources, plus the fuzz
 session) is what carries that claim; the
 upstream suite is the part a reader can check in ten seconds without trusting

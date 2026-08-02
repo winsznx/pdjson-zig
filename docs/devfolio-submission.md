@@ -163,7 +163,7 @@ broken.
 Results:
   - 18/18 assertions in the UNMODIFIED upstream test suite, compiled in place
     from the pinned tree and linked against only the Zig static library
-  - 0 divergences in 4,085 fixed-corpus comparisons (215 inputs x 19 modes),
+  - 0 divergences in 6,104 fixed-corpus comparisons (218 inputs x 28 modes),
     covering all three documented input sources: json_open_buffer,
     json_open_stream (FILE*) and json_open_user
   - 0 divergences in 3,498 JSONTestSuite comparisons (318 cases x 11 modes)

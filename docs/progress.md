@@ -164,7 +164,7 @@ Three things the audit and CI turned up, each fixed rather than documented away:
   C-appropriate panic handler: 4.6 MB → 2.2 MB, 11 libc imports.
 - **The C oracle was nondeterministic on Linux** — upstream #38.
 - **The differential drove only one input source.** Now all three
-  (`json_open_buffer`, `json_open_stream`, `json_open_user`): 4,085 fixed-corpus
+  (`json_open_buffer`, `json_open_stream`, `json_open_user`): 6,104 fixed-corpus
   comparisons and 3,498 JSONTestSuite comparisons, still zero divergences. This
   closed the project's largest stated limitation, and it mattered specifically
   because #37 *is* a disagreement between two sources.

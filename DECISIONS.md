@@ -779,3 +779,57 @@ was 4.6 MB before.
 
 **Verification.** `artifacts/size-report.json`, and the README table generated
 from it by `scripts/report.py` so it cannot drift.
+
+---
+
+## D-24 — The state machine is specified separately, and the specification found a hole in the harness
+
+**Chosen design.** `scripts/state-machine.py` writes out the transition relation
+— 10 states, 54 transitions — from RFC 8259's grammar and `pdjson.h`'s contract,
+then measures which transitions the corpus actually exercises. The state is
+computed only from `json_get_context`'s type and count, both observable through
+the public API.
+
+**Reason.** "0 divergences across 6,104 comparisons" counts inputs. It says
+nothing about which parts of the parser those inputs drive, and a large corpus
+can still never reach a boolean immediately after an object key.
+
+**The count does more work than it looks like.** `json_next` increments
+`json_get_context`'s count per event, so inside an object an odd count means a
+key was just returned and an even one means a value. That is what lets the
+specification say "a key must be followed by a value" rather than collapsing both
+into "a STRING". No internal variable is read; a specification written against
+internals would just be the implementation again.
+
+**What the first run found.** 46 of 54. Six gaps were ordinary corpus gaps and
+three new fixtures closed them. Two were not.
+
+`ERROR_LATCHED → ERROR` and `TOP.DONE → DONE` were unreachable **by any drive
+mode**: both transcript producers `break` at the first terminal event. So no
+transcript ever contained two consecutive `ERROR` records, or two `DONE` records
+without a reset between them. Both are documented API behaviours — the error flag
+latches, `DONE` is idempotent — and the invariant checker's `error-is-latched`
+rule had therefore never fired against real data. It passed its own self-test
+against synthetic malformed transcripts, so nothing looked wrong from inside.
+
+Closed with an `after-end` mode implemented independently in both producers,
+which calls `json_next` twice past the terminal event. It is in the differential
+mode list as well, so the latch and the idempotence are now *compared*, not
+merely reached.
+
+**A mistake of my own, kept in the record.** The streaming fixture that closes
+`TOP.DONE_RESET → TRUE` first read `true false null`, which covers
+`TOP.START → TRUE` — already covered — and left the intended transition at zero.
+Putting a number first is what closes it. A coverage number that moves for the
+wrong reason is precisely what this analysis exists to catch.
+
+**Limits.** Single-step transitions under `json_next` only; peek and skip do not
+form single-step successors. 100% transition coverage is not path coverage.
+`ERROR` is one event regardless of cause. The specification is hand-written, so
+its agreeing with both implementations is evidence rather than proof — the
+independent JSONTestSuite corpus is what covers a shared misreading of the
+grammar.
+
+**Verification.** `artifacts/state-machine/coverage.json` (54/54, 0 unspecified,
+0 implementation differences), `docs/state-machine.md`, and
+`python3 scripts/state-machine.py --self-test`.

@@ -20,7 +20,7 @@
   "violation_classes": 14,
   "each_class_provably_fails": true,
   "corpora": {
-    "fixtures": 215,
+    "fixtures": 218,
     "jsontestsuite": 318
   },
   "modes": [
@@ -29,6 +29,7 @@
     "peek",
     "skip",
     "sep",
+    "after-end",
     "stream:next",
     "stream:peek",
     "stream:sep",
@@ -39,8 +40,8 @@
     "oom:2"
   ],
   "note_oom_c": "Allocation-failure modes are not run against the C binary: it crashes there (upstream #36), so its transcript is truncated by a signal rather than being invalid. The Zig side is checked.",
-  "transcripts_checked": 12792,
-  "records_checked": 5645337,
+  "transcripts_checked": 13936,
+  "records_checked": 6162897,
   "violations_c_only": 0,
   "violations_zig_only": 0,
   "violations_both": 0,

@@ -67,7 +67,7 @@
     },
     {
       "id": "C-04",
-      "text": "Across 5,805 differential comparisons on the fixed corpus, spanning all four documented input sources and every exported function, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences.",
+      "text": "Across 6,104 differential comparisons on the fixed corpus, spanning all four documented input sources and every exported function, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-summary.json",
@@ -88,14 +88,14 @@
     },
     {
       "id": "C-05",
-      "text": "The differential comparison covers 27 drive modes: four input sources crossed with peek, skip, reset, the separator API and strict mode, plus five json_skip_until targets and four allocation-failure schedules.",
+      "text": "The differential comparison covers 28 drive modes: four input sources crossed with peek, skip, reset, the separator API and strict mode, plus five json_skip_until targets, four allocation-failure schedules, and a mode that calls json_next past the terminal event.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-summary.json",
       "check": {
         "kind": "at_least",
         "path": "comparisons",
-        "value": 5800
+        "value": 6100
       },
       "command": "make differential",
       "verified_date": "2026-08-02",
@@ -384,7 +384,7 @@
     },
     {
       "id": "C-20",
-      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 5,805 fixed-corpus comparisons plus 3,498 JSONTestSuite comparisons plus an 11.8-million-case fuzz session, all at zero.",
+      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 6,104 fixed-corpus comparisons plus 3,498 JSONTestSuite comparisons plus an 11.8-million-case fuzz session, all at zero.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-jsontestsuite.json",
@@ -485,7 +485,7 @@
     },
     {
       "id": "C-25",
-      "text": "An implementation-independent invariant checker validates 12,792 transcripts and 5,645,337 records from both implementations against 13 rules, with zero violations on either side.",
+      "text": "An implementation-independent invariant checker validates 13,936 transcripts and 6,162,897 records from both implementations against 13 rules, with zero violations on either side.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/invariants/summary.json",
@@ -672,6 +672,46 @@
       "command": "python3 scripts/size-report.py",
       "verified_date": "2026-08-02",
       "limitation": "Measured on arm64 macOS with Apple clang; section names and page rounding differ on ELF, which the script handles but which has not been cross-checked on every target. The comparison links the same consumer source with the same compiler and flags and verifies both binaries produce the same output before reporting, but a larger consumer would dilute the ratio. Archive-vs-object bytes are recorded and deliberately not claimed, because a .a and a .o are not the same kind of object.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
+    },
+    {
+      "id": "C-35",
+      "text": "The parser's transition relation is written out as a 10-state specification derived from RFC 8259 and pdjson.h, and the corpus exercises all 54 specified transitions, with 0 transitions observed that the specification does not contain.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/state-machine/coverage.json",
+      "check": {
+        "kind": "equals",
+        "path": "transitions_uncovered",
+        "value": 0
+      },
+      "command": "python3 scripts/state-machine.py",
+      "verified_date": "2026-08-02",
+      "limitation": "Single-step transitions under json_next only. peek does not advance the parser and skip consumes a whole value, so neither forms a single-step successor; those are covered by scripts/api-coverage.py instead. The state is derived from json_get_context's type and count, so it distinguishes an object key from an object value but not, say, one malformed input from another -- ERROR is a single event regardless of cause. 100% transition coverage is not path coverage: reaching every edge says nothing about every sequence of edges.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
+    },
+    {
+      "id": "C-36",
+      "text": "Both implementations cover exactly the same set of state transitions on the same inputs: 0 transitions are reached by one and not the other.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/state-machine/coverage.json",
+      "check": {
+        "kind": "equals",
+        "path": "implementations_differ",
+        "value": 0
+      },
+      "command": "python3 scripts/state-machine.py",
+      "verified_date": "2026-08-02",
+      "limitation": "This follows from the transcripts being byte-identical and is therefore a redundant check rather than independent evidence. It is recorded because it is cheap and because a difference here would mean the byte-identity claim had broken somewhere the diff was not looking.",
       "allowed_in": [
         "readme",
         "devfolio",

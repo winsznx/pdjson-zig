@@ -24,10 +24,10 @@
     "sources_modified": false
   },
   "differential": {
-    "inputs": 215,
-    "comparisons": 5805,
+    "inputs": 218,
+    "comparisons": 6104,
     "divergences": 0,
-    "upstream_ub": 43,
+    "upstream_ub": 45,
     "zig_crashes": 0,
     "timeouts": 0,
     "modes": [
@@ -57,7 +57,8 @@
       "skipuntil:6",
       "skipuntil:7",
       "skipuntil:8",
-      "skipuntil:11"
+      "skipuntil:11",
+      "after-end"
     ]
   },
   "fuzz": {

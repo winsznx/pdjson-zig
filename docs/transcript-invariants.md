@@ -13,7 +13,7 @@ python3 scripts/invariants.py --sweep        # generate and check the whole corp
 make invariants                              # both, and write the artifact
 ```
 
-Current result: **12,792 transcripts, 5,645,337 records, 0 violations** on either
+Current result: **13,936 transcripts, 6,162,897 records, 0 violations** on either
 implementation. Artifact: [`artifacts/invariants/summary.json`](../artifacts/invariants/summary.json).
 
 ## Why Python

@@ -35,7 +35,7 @@ each from a regenerated artifact:
 | Pinned upstream hashes | 9/9 files match |
 | Upstream test suite against the Zig library | **18/18**, unmodified, 0 skipped |
 | `stream.c` / `pretty.c` differential | 0 mismatches over 215 fixtures |
-| Fixed corpus differential | **0 divergences** in 4,085 comparisons, all 3 input sources |
+| Fixed corpus differential | **0 divergences** in 6,104 comparisons, all 4 input sources |
 | JSONTestSuite differential | **0 divergences** in 3,498 comparisons |
 | Oracle determinism | byte-identical over 5 runs × 5 modes, both producers, Linux and macOS |
 | C ABI layout | identical on the host, plus 6 cross targets (32/64-bit, x86, ARM, RISC-V, Windows) |

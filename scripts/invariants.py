@@ -453,7 +453,7 @@ def self_test() -> int:
 # ---------------------------------------------------------------------------
 
 def sweep(out_path: pathlib.Path) -> int:
-    modes = ["next", "nostream", "peek", "skip", "sep",
+    modes = ["next", "nostream", "peek", "skip", "sep", "after-end",
              "stream:next", "stream:peek", "stream:sep",
              "user:next", "user:peek", "user:skip",
              "oom:0", "oom:2"]
