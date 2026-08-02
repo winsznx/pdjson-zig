@@ -39,7 +39,7 @@ git -C . log -1 --format='%H' 2>/dev/null; cat .port-mortem.toml | head -14
 
 **Narration:**
 
-> "pdjson is a streaming JSON parser in C — about 990 lines, no dependencies,
+> "pdjson is a streaming JSON parser in C — 992 lines, no dependencies,
 > public domain. It's pinned here at commit 78fe04b.
 >
 > The claim is not 'I rewrote it in Zig'. It's this: on the original test suite,
@@ -199,7 +199,7 @@ cat artifacts/mutation-report.json | python3 -m json.tool | head -30
 > terminator — and the differential has to catch each one.
 >
 > The first honest run caught eight of twelve. The four survivors were real gaps
-> in my corpus, and it grew from 142 fixtures to 214 to close them.
+> in my corpus, and it grew from 142 fixtures to 218 to close them.
 >
 > Before that, two runs scored a false twelve out of twelve. Both were 'catching'
 > mutants on cases where the C original crashes — so every mutant differed, for
@@ -221,7 +221,7 @@ python3 -c "import json;d=json.load(open('artifacts/differential-summary.json'))
 ```
 
 **Expected:** UBSan "member access within null pointer", ASan SEGV at
-`json_get_context pdjson.c:912`, then `divergences: 0  ... upstream UB: 43`.
+`json_get_context pdjson.c:912`, then `divergences: 0  ... upstream UB: 45`.
 
 **Narration:**
 
@@ -239,7 +239,7 @@ python3 -c "import json;d=json.load(open('artifacts/differential-summary.json'))
 > fires, it's classified as upstream undefined behaviour and counted separately,
 > with the sanitizer output attached.
 >
-> All 43 resolved to one line. That's upstream issue #36. The zero divergences
+> All 45 resolved to one line. That's upstream issue #36. The zero divergences
 > means zero on inputs where the original is actually defined — which is a
 > narrower claim, and a true one.
 >

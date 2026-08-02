@@ -90,6 +90,50 @@ def sections(path: pathlib.Path) -> dict:
     return out
 
 
+def panic_handler_cost(tmp: pathlib.Path) -> dict | None:
+    """What the custom panic handler saves, measured rather than remembered.
+
+    src/root.zig replaces std's default panic handler with a write+abort. The
+    README quoted "4.6 MB before" from a development-time observation that
+    nothing reproduced -- and it does not reproduce: the figure today is
+    2.4 MB. Building both and subtracting is the only honest way to state it.
+    """
+    work = tmp / "default-panic"
+    for item in ("build.zig", "src", "tools", "include"):
+        src, dst = ROOT / item, work / item
+        if src.is_dir():
+            shutil.copytree(src, dst)
+        else:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+    target = work / "src" / "root.zig"
+    text = target.read_text()
+    marker = "pub const panic = std.debug.FullPanic("
+    if marker not in text:
+        return None
+    i = text.index(marker)
+    j = text.index("}.handler);", i) + len("}.handler);")
+    target.write_text(text[:i] + "// std's default panic handler\n" + text[j:])
+
+    build = sh(["zig", "build", "--prefix", str(work / "out")], cwd=work)
+    if build.returncode != 0:
+        return None
+    default_lib = work / "out" / "lib" / "libpdjson.a"
+    if not default_lib.exists():
+        return None
+    a, b = default_lib.stat().st_size, LIB.stat().st_size
+    return {
+        "with_std_default_handler_bytes": a,
+        "with_custom_handler_bytes": b,
+        "saved_bytes": a - b,
+        "ratio": round(a / b, 2) if b else None,
+        "why": ("std's default handler pulls in the unwinder, the DWARF reader "
+                "and symbol tables. A library whose whole job is to parse bytes "
+                "has no Zig caller to catch a panic, so aborting is the right "
+                "behaviour and the machinery is pure cost."),
+    }
+
+
 def main() -> int:
     if not LIB.exists():
         print(f"missing {LIB}; run 'make build' first", file=sys.stderr)
@@ -184,6 +228,7 @@ def main() -> int:
             "read_only_data": section_delta("const", "rodata"),
             "string_data": section_delta("cstring"),
             "unwind_tables": section_delta("eh_frame"),
+            "panic_handler": panic_handler_cost(tmp),
             "detail": results,
             "note": (
                 "The Zig side ships ReleaseSafe, so its machine code carries the "
@@ -191,9 +236,10 @@ def main() -> int:
                 "equivalent of, and it emits unwind tables (eh_frame) that the C "
                 "build does not. src/root.zig replaces std's default panic handler "
                 "with a write+abort specifically to keep std's unwinder, DWARF "
-                "reader and symbol tables out of the artifact; without that the "
-                "archive was 4.6 MB. This is a real cost, reported rather than "
-                "worked around: the port is larger than the original."
+                "reader and symbol tables out of the artifact; the panic_handler "
+                "section below measures what that saves. This is a real cost, "
+                "reported rather than worked around: the port is larger than the "
+                "original."
             ),
         }
 

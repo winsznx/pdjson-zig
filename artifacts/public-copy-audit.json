@@ -1,0 +1,24 @@
+{
+  "schema": "pdjson-zig/public-copy-audit@1",
+  "method": "Every number in outward-facing copy must appear somewhere under artifacts/, or carry a recorded reason for being prose. Claims embargoed from a channel must not be described in that channel's copy. Code blocks, inline code and link targets are stripped first -- a flag or an issue number is not a claim.",
+  "documents": {
+    "docs/devfolio-submission.md": {
+      "channel": "devfolio",
+      "numbers": 13,
+      "unbacked": []
+    },
+    "docs/demo-script.md": {
+      "channel": "video",
+      "numbers": 25,
+      "unbacked": []
+    },
+    "README.md": {
+      "channel": "readme",
+      "numbers": 76,
+      "unbacked": []
+    }
+  },
+  "problems": 0,
+  "problem_detail": [],
+  "limitation": "Presence, not correspondence: a figure passes if it appears anywhere in artifacts/, not necessarily under the label the copy gives it. It catches invented and stale numbers, which are the failures that happen."
+}

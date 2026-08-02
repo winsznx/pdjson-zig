@@ -1,7 +1,9 @@
 {
-  "schema": "pdjson-zig/mutation-report@1",
+  "schema": "pdjson-zig/mutation-report@2",
+  "detector": "full",
+  "detector_note": "'full' is byte-identical transcripts, the comparison the real differential uses. The other detectors are deliberately weaker and exist to show that the strength is doing the work: run with --detector event-only and mutants survive. --self-test checks every comparator field by field.",
   "description": "Deliberate defects injected into the Zig implementation. Each must be detected by comparing against the C oracle over the fixed corpus.",
-  "fixtures": 215,
+  "fixtures": 218,
   "modes": [
     "next",
     "peek",
@@ -11,8 +13,8 @@
     "oom:0",
     "oom:2"
   ],
-  "comparable_cases": 1470,
-  "excluded_cases": 35,
+  "comparable_cases": 1489,
+  "excluded_cases": 37,
   "exclusion_reason": "(mode, fixture) pairs where an ASan+UBSan build of the pinned C original reports an error are excluded. Every mutant trivially differs on those, because the C side crashed or emitted bytes from unallocated memory; counting them would let this script certify itself. The decision is made by a sanitizer, not by judgement.",
   "mutants_defined": 12,
   "caught": 12,

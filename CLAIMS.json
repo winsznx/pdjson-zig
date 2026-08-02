@@ -323,7 +323,7 @@
     },
     {
       "id": "C-17",
-      "text": "A published 30-minute differential fuzz session of 11,812,800 cases, spanning all three input sources, found zero divergences, zero crashes and zero timeouts.",
+      "text": "A published 30-minute differential fuzz session of 11,720,000 cases across 12 drive modes and all three streaming input sources found zero divergences, zero crashes and zero timeouts, with a round-by-round raw trace committed alongside the summary.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/verification-report.json",
@@ -334,7 +334,7 @@
       },
       "command": "make fuzz FUZZ_SECONDS=1800 FUZZ_SEED=20260802",
       "verified_date": "2026-08-02",
-      "limitation": "Exact duration, seed, rounds, case count, rate and mode list are recorded in the session log referenced by artifacts/verification-report.json. Modes cover json_open_buffer, json_open_stream and json_open_user. Allocation-failure modes are excluded from the fuzz defaults because the original crashes constantly there and swamps the signal; they are covered exhaustively by the fixed corpus and by tests/port/allocator_failure.zig. The harness refuses to start unless both binaries produce a valid transcript for a trivial document (DECISIONS.md D-20).",
+      "limitation": "The raw trace records one line per round -- timestamp, mode, cumulative case count, and the sha256 of each implementation's output -- flushed as the session ran, so a session cut short shows it. The sha256 of both binaries under test is recorded in the header, because the 101 false findings this harness once produced came from a stale oracle and nothing in the log said which binary that was. Round times make the file reproducible in content but not byte-identical between runs.",
       "allowed_in": [
         "readme",
         "devfolio",
@@ -384,7 +384,7 @@
     },
     {
       "id": "C-20",
-      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 6,104 fixed-corpus comparisons plus 3,816 JSONTestSuite comparisons plus 11,812,800 published fuzz cases -- 11,822,720 in total, all at zero.",
+      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 6,104 fixed-corpus comparisons plus 3,816 JSONTestSuite comparisons plus 11,720,000 published fuzz cases -- 11,729,920 in total, all at zero.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/verification-report.json",
@@ -536,7 +536,11 @@
       "command": "zig run tests/upstream-bugs/repro_zig_parsefloat.zig",
       "verified_date": "2026-08-02",
       "limitation": "The behaviour is reproduced and judged against an exact-integer reference and against libc, both of which disagree with parseFloat. It is NOT filed: `gh issue create -R ziglang/zig` returns 'Interactions on this repository have been restricted to collaborators only'. There is therefore no issue URL, and no Zig maintainer has confirmed it. Related closed issues (#10737, #20287, #2083, #11477) touch the same area but these cases still fail on master. Because it is unconfirmed by the project, this claim is not permitted in the README, on Devfolio, in the video, or in social copy.",
-      "allowed_in": []
+      "allowed_in": [],
+      "disclosure_in": [
+        "readme"
+      ],
+      "disclosure_note": "May be *disclosed* in the README's known-limitations section as an unfiled, unconfirmed observation that is explicitly not counted among the project's findings. May not be presented as a result in any channel: allowed_in is empty and stays empty until a Zig maintainer confirms it."
     },
     {
       "id": "C-28",

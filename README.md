@@ -10,7 +10,7 @@
 | **Dominant proof** | Two independent programs drive the C original and the Zig port through the same script and emit deterministic NDJSON behaviour transcripts. Equivalence means **byte-identical transcripts**. |
 | **Upstream tests** | **18/18** assertions pass, sources unmodified and hash-pinned, linked against only the Zig library |
 | **Differential** | **0 divergences** in 6,104 fixed-corpus + 3,816 JSONTestSuite comparisons, across all 4 input sources ([matrix](docs/differential-sources.md)) and 28 drive modes |
-| **Fuzzing** | 30-minute published session, **11,812,800 cases, 0 divergences, 0 crashes, 0 timeouts** ([raw trace](fuzz/logs/)) |
+| **Fuzzing** | 30-minute published session, **11,720,000 cases, 0 divergences, 0 crashes, 0 timeouts** ([raw trace](fuzz/logs/session-published-raw.ndjson.gz), 29,302 rounds recorded as it ran) |
 | **Harness self-test** | **12/12** injected defects caught; **54/54 specified state transitions** exercised ([`docs/state-machine.md`](docs/state-machine.md)) |
 | **C ABI** | Identical layout on **6 targets** (32- and 64-bit, x86, ARM, RISC-V, Windows), asserted at compile time across 27 fields so a drift fails `zig build` ([`docs/abi.md`](docs/abi.md)) |
 | **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; **59 escape hatches, each justified individually** ([`docs/safety.md`](docs/safety.md)). Ships **ReleaseSafe** — checks on. |
@@ -83,10 +83,10 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-14 | Both transcript producers are deterministic: five runs over every fixture in five modes produce byte-identical output. | verified | [`artifacts/determinism-report.json`](artifacts/determinism-report.json) |
 | C-15 | The Zig implementation's json_get_number matches C strtod bit for bit across a 661-point exponent sweep, powers of two, digit strings up to 500 digits, and 40,000 randomised lexemes -- 20,000 decimal and 20,000 hex floats. | verified | [`artifacts/number-torture.json`](artifacts/number-torture.json) |
 | C-16 | The Zig implementation is slower than the C original on 9 of the 12 benchmark workload/mode pairs measured, and faster on 3. | verified | [`artifacts/benchmark-summary.json`](artifacts/benchmark-summary.json) |
-| C-17 | A published 30-minute differential fuzz session of 11,812,800 cases, spanning all three input sources, found zero divergences, zero crashes and zero timeouts. | verified | [`artifacts/verification-report.json`](artifacts/verification-report.json) |
+| C-17 | A published 30-minute differential fuzz session of 11,720,000 cases across 12 drive modes and all three streaming input sources found zero divergences, zero crashes and zero timeouts, with a round-by-round raw trace committed alongside the summary. | verified | [`artifacts/verification-report.json`](artifacts/verification-report.json) |
 | C-18 | Behavioural equivalence is demonstrated for all three documented input sources: json_open_buffer, json_open_stream (FILE*) and json_open_user. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-19 | On the independent nst/JSONTestSuite conformance corpus, the Zig port and the pinned C original agree on all 318 parsing cases across 12 drive modes and three input sources -- 3,816 comparisons -- and the original is fully conforming (95/95 must-accept, 188/188 must-reject). | verified | [`artifacts/conformance-report.json`](artifacts/conformance-report.json) |
-| C-20 | No divergence has ever been observed on any input where the pinned original is well defined: 6,104 fixed-corpus comparisons plus 3,816 JSONTestSuite comparisons plus 11,812,800 published fuzz cases -- 11,822,720 in total, all at zero. | verified | [`artifacts/verification-report.json`](artifacts/verification-report.json) |
+| C-20 | No divergence has ever been observed on any input where the pinned original is well defined: 6,104 fixed-corpus comparisons plus 3,816 JSONTestSuite comparisons plus 11,720,000 published fuzz cases -- 11,729,920 in total, all at zero. | verified | [`artifacts/verification-report.json`](artifacts/verification-report.json) |
 | C-21 | Verification found two real defects in this port -- a hex-float rounding error and an uninitialised read inherited from the original -- both fixed, regression-tested and documented. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-22 | Both transcript producers are deterministic on Linux and macOS: five runs over every fixture in five modes produce byte-identical output. | verified | [`artifacts/determinism-report.json`](artifacts/determinism-report.json) |
 | C-23 | The Zig type declarations and the pinned C header describe the same ABI on 6 targets spanning 32- and 64-bit, little-endian ARM, x86, RISC-V and Windows. | verified | [`artifacts/abi/abi-cross-report.json`](artifacts/abi/abi-cross-report.json) |
@@ -159,7 +159,7 @@ independently.
 
 ## Why this migration is worth doing
 
-pdjson is a good C library: ~990 lines, no dependencies, bounded memory, and a
+pdjson is a good C library: 992 lines, no dependencies, bounded memory, and a
 streaming API that handles arbitrarily large documents in space proportional to
 the largest token. It is also a parser for untrusted input written in a language
 with no bounds checking, and it exposes a raw `struct` with a heap pointer and
@@ -258,8 +258,10 @@ reading before trusting this section.
 
 [`fuzz/fuzz.py`](fuzz/fuzz.py) mutates a seed corpus and generates grammar-based
 JSON, number-boundary and Unicode-boundary cases, then runs both implementations
-over batches of ~400 inputs per process pair. That batching is what makes
-~9,000 cases/second possible; per-case process spawning would be ~200× slower.
+over batches of inputs per process pair (the batch size is recorded in each
+session log). That batching is what makes the
+measured rate in `fuzz/logs/` possible; per-case process spawning would be
+orders of magnitude slower.
 
 Before measuring anything it runs a trivial document through both binaries and
 refuses to start unless both produce a valid, identical transcript — because "the
@@ -329,19 +331,39 @@ _One identical C consumer, same compiler and flags, linked twice; both binaries 
 ReleaseSafe carries the bounds and overflow checks the C build has no
 equivalent of, and Zig emits unwind tables the C build does not. `src/root.zig`
 replaces std's default panic handler with a `write`+`abort` precisely to keep
-std's unwinder, DWARF reader and symbol tables out of the artifact — without
-that the archive was 4.6 MB rather than 241 KB.
+std's unwinder, DWARF reader and symbol tables out of the artifact, and the
+report measures what that saves by building both: **2,461,816 bytes with std's
+default handler against 241,248 with the custom one — 10.2×.** That figure used
+to be quoted from memory as "4.6 MB"; it does not reproduce, which is why it is
+now built rather than remembered.
 Artifact: [`artifacts/size-report.json`](artifacts/size-report.json).
 
 **The first optimization guess was wrong, and measuring is what caught it.**
-The initial gap was 0.57×–0.70×. I assumed the null checks the port adds on the
-source function pointers were the cost, built a variant without them, and
-measured **0%** improvement. Leaf-weighted profiles of both binaries then showed
-the real causes: clang inlines `pushchar` into `read_digits` while Zig kept it
-as a separate call (16.6% + 18.2% against C's combined 23%), and the `strchr`
-calls in the number lexer were being served by a generic slice search. Splitting
-`pushchar` into an inline fast path and specialising those two comparisons moved
-`large-mixed` from 0.70× to 0.87× and `flat-ints` from 0.67× to 0.80×.
+I assumed the null checks the port adds on the source function pointers were the
+cost, built a variant without them, and measured **0%** improvement.
+Leaf-weighted profiles of both binaries then showed two different causes: clang
+inlines `pushchar` into `read_digits` while Zig kept it as an out-of-line call,
+and the `strchr` calls in the number lexer were being served by a generic slice
+search.
+
+Both fixes are still measurable, because both are still revertible:
+
+<!-- OPTHISTORY:BEGIN -->
+| workload | before both | today |
+| --- | ---: | ---: |
+| large-mixed/parse | 0.68x | 0.86x |
+| flat-ints/parse | 0.57x | 0.78x |
+| numbers/parse | 0.59x | 0.78x |
+
+_C median / Zig median, so higher is better and below 1.00 means the port is slower. Artifact: [`artifacts/optimization-history.json`](artifacts/optimization-history.json)._
+<!-- OPTHISTORY:END -->
+
+[`scripts/optimization-history.py`](scripts/optimization-history.py) rebuilds
+each "before" state as an exact revert of one change, in a throwaway copy of the
+tree, and refuses to run if the pattern it reverts no longer matches exactly
+once. These figures were originally quoted from memory of the development run;
+[`scripts/audit-public-copy.py`](scripts/audit-public-copy.py) flagged them as
+unbacked, which is what turned them into an artifact.
 
 What remains is not fully explained, and is reported that way rather than
 optimised against a single benchmark. Correctness gated every step: the full
@@ -587,7 +609,7 @@ Stated here rather than left to be discovered.
 - **`nan(...)` payloads that overflow 64 bits are not matched.** C99 §7.20.1.3p4 makes them implementation-defined and libcs disagree. Reachable only by calling `json_get_number()` on a *string* token beginning `nan(`. ([D-09](DECISIONS.md))
 - **The port is slower and larger.** Slower on 9 of 12 workload/mode pairs, and 2.42x the stripped binary in a consumer. Part of the remaining time gap is unexplained.
 - **The 3 upstream issues are filed, not triaged.** No maintainer has confirmed them yet, and the ledger says so. A fourth defect, in Zig's own `std.fmt.parseFloat`, is reproduced but *not filed* -- `ziglang/zig` restricts issue creation to collaborators -- so it is embargoed from every public channel in `CLAIMS.json`.
-- **Equivalence is demonstrated, not proven.** 11,822,720 compared cases and a 30-minute fuzz session is evidence, not a proof of behavioural equality. 100% state-transition coverage is not path coverage, and the hand-written specification agreeing with both implementations would not catch a shared misreading of the grammar.
+- **Equivalence is demonstrated, not proven.** 11,729,920 compared cases and a 30-minute fuzz session is evidence, not a proof of behavioural equality. 100% state-transition coverage is not path coverage, and the hand-written specification agreeing with both implementations would not catch a shared misreading of the grammar.
 - **The corpus is not adversarial to itself.** Fixtures were written by the same person who wrote the port. The independent checks against that are JSONTestSuite, the mutation harness, the invariant rules, and the state-transition specification -- each of which found something the fixtures had missed.
 <!-- LIMITS:END -->
 

@@ -41,6 +41,13 @@
     "ratio": 6.973
   },
   "unwind_tables": null,
+  "panic_handler": {
+    "with_std_default_handler_bytes": 2461816,
+    "with_custom_handler_bytes": 241248,
+    "saved_bytes": 2220568,
+    "ratio": 10.2,
+    "why": "std's default handler pulls in the unwinder, the DWARF reader and symbol tables. A library whose whole job is to parse bytes has no Zig caller to catch a panic, so aborting is the right behaviour and the machinery is pure cost."
+  },
   "detail": {
     "c": {
       "input": "pdjson.o",
@@ -74,5 +81,5 @@
       "consumer_output": "10"
     }
   },
-  "note": "The Zig side ships ReleaseSafe, so its machine code carries the bounds and overflow checks and the panic path the C build has no equivalent of, and it emits unwind tables (eh_frame) that the C build does not. src/root.zig replaces std's default panic handler with a write+abort specifically to keep std's unwinder, DWARF reader and symbol tables out of the artifact; without that the archive was 4.6 MB. This is a real cost, reported rather than worked around: the port is larger than the original."
+  "note": "The Zig side ships ReleaseSafe, so its machine code carries the bounds and overflow checks and the panic path the C build has no equivalent of, and it emits unwind tables (eh_frame) that the C build does not. src/root.zig replaces std's default panic handler with a write+abort specifically to keep std's unwinder, DWARF reader and symbol tables out of the artifact; the panic_handler section below measures what that saves. This is a real cost, reported rather than worked around: the port is larger than the original."
 }

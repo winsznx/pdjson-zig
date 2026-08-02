@@ -17,6 +17,7 @@ from __future__ import annotations
 import datetime
 import json
 import pathlib
+import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -85,9 +86,17 @@ def main() -> int:
     jts = load("differential-jsontestsuite.json")
     fuzz_session = fuzz_data or {}
 
+    # Derived rather than written down, so "23 numbered steps" in the README is
+    # backed by the Makefile it describes.
+    makefile = (ROOT / "Makefile").read_text()
+    steps = re.findall(r'@echo "\[(\d+)/(\d+)\]', makefile)
+    pipeline_steps = int(steps[0][1]) if steps else 0
+
     report = {
-        "schema": "pdjson-zig/verification-report@1",
+        "schema": "pdjson-zig/verification-report@2",
         "generated": datetime.date.today().isoformat(),
+        "pipeline_steps": pipeline_steps,
+        "pipeline_steps_numbered": len(steps),
         "upstream": {
             "url": dig(manifest, "upstream_url"),
             "commit": dig(manifest, "commit"),
@@ -136,6 +145,10 @@ def main() -> int:
             "elapsed_seconds": dig(fuzz_data, "elapsed_seconds"),
             "cases": dig(fuzz_data, "cases"),
             "cases_per_second": dig(fuzz_data, "cases_per_second"),
+            "batch_size": dig(fuzz_data, "batch_size"),
+            "raw_log": dig(fuzz_data, "raw_log"),
+            "raw_log_lines": dig(fuzz_data, "raw_log_lines"),
+            "raw_log_uncompressed_sha256": dig(fuzz_data, "raw_log_uncompressed_sha256"),
             "divergences": dig(fuzz_data, "divergences"),
             "zig_crashes": dig(fuzz_data, "zig_crashes"),
             "timeouts": dig(fuzz_data, "timeouts"),
@@ -297,6 +310,8 @@ def main() -> int:
                           render_claim_block(json.loads(claims_path.read_text())))
         text = splice(text, "BENCH", render_bench_block(bench))
         text = splice(text, "SIZE", render_size_block(size))
+        text = splice(text, "OPTHISTORY", render_opthistory_block(
+            load("optimization-history.json")))
         text = splice(text, "LIMITS", render_limits_block(
             report, bench, load("abi/abi-cross-report.json"), abi, fuzz_data, size))
         text = splice(text, "SUMMARY", render_summary_block(
@@ -373,7 +388,7 @@ def render_summary_block(v, diff, jts, fuzz_data, tests, bench, size, safety,
         "| **Dominant proof** | Two independent programs drive the C original and the Zig port through the same script and emit deterministic NDJSON behaviour transcripts. Equivalence means **byte-identical transcripts**. |",
         f"| **Upstream tests** | **{dig(v, 'original_tests.assertions_passed')}/{dig(v, 'original_tests.assertions_total')}** assertions pass, sources unmodified and hash-pinned, linked against only the Zig library |",
         f"| **Differential** | **0 divergences** in {n(dig(diff, 'comparisons'))} fixed-corpus + {n(dig(jts, 'comparisons'))} JSONTestSuite comparisons, across all {sources} input sources ([matrix](docs/differential-sources.md)) and {len(dig(diff, 'modes', []) or [])} drive modes |",
-        f"| **Fuzzing** | {int(dig(fuzz, 'elapsed_seconds', 0) // 60)}-minute published session, **{n(dig(fuzz, 'cases'))} cases, {dig(fuzz, 'divergences')} divergences, {dig(fuzz, 'zig_crashes')} crashes, {dig(fuzz, 'timeouts')} timeouts** ([raw trace]({dig(fuzz, 'raw_log', 'fuzz/logs/')})) |",
+        f"| **Fuzzing** | {int(dig(fuzz, 'elapsed_seconds', 0) // 60)}-minute published session, **{n(dig(fuzz, 'cases'))} cases, {dig(fuzz, 'divergences')} divergences, {dig(fuzz, 'zig_crashes')} crashes, {dig(fuzz, 'timeouts')} timeouts** ([raw trace]({dig(fuzz, 'raw_log', 'fuzz/logs/')}), {n(dig(fuzz, 'raw_log_lines'))} rounds recorded as it ran) |",
         f"| **Harness self-test** | **{dig(load('mutation-report.json'), 'caught')}/{dig(load('mutation-report.json'), 'mutants_defined')}** injected defects caught; **{dig(state, 'transitions_covered')}/{dig(state, 'transitions_specified')} specified state transitions** exercised ([`docs/state-machine.md`](docs/state-machine.md)) |",
         f"| **C ABI** | Identical layout on **{dig(cross, 'targets_checked')} targets** (32- and 64-bit, x86, ARM, RISC-V, Windows), asserted at compile time across {dig(load('abi/abi-report.json'), 'compile_time_contract_fields')} fields so a drift fails `zig build` ([`docs/abi.md`](docs/abi.md)) |",
         f"| **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; **{dig(load('safety/inventory.json'), 'shipped_occurrences')} escape hatches, each justified individually** ([`docs/safety.md`](docs/safety.md)). Ships **ReleaseSafe** — checks on. |",
@@ -434,6 +449,20 @@ def render_limits_block(v, bench, cross, abi, fuzz_data, size) -> str:
         "state-transition specification -- each of which found something the "
         "fixtures had missed.",
     ]
+    return "\n".join(rows) + "\n"
+
+
+def render_opthistory_block(hist) -> str:
+    if not hist:
+        return "_No optimization history. Run `python3 scripts/optimization-history.py`._\n"
+    rows = ["| workload | before both | today |", "| --- | ---: | ---: |"]
+    for r in dig(hist, "both_reverted", []) or []:
+        rows.append(f"| {r['workload']} | {r['ratio_before_both']:.2f}x | "
+                    f"{r['ratio_now']:.2f}x |")
+    rows.append("")
+    rows.append("_C median / Zig median, so higher is better and below 1.00 means "
+                "the port is slower. Artifact: "
+                "[`artifacts/optimization-history.json`](artifacts/optimization-history.json)._")
     return "\n".join(rows) + "\n"
 
 

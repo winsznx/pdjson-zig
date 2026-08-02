@@ -1,0 +1,75 @@
+{
+  "schema": "pdjson-zig/optimization-history@1",
+  "method": "Each variant is an exact revert of one optimization, built ReleaseSafe in a throwaway copy of the tree and benchmarked with the same harness and workloads as everything else. A revert pattern that no longer matches exactly once is a hard failure, so this cannot silently measure something other than the change it names.",
+  "ratio_definition": "C median / Zig median, so below 1.00 means the Zig build is slower. 'improvement' is the variant's time divided by the current build's.",
+  "iterations_per_sample": 40,
+  "repetitions": 3,
+  "variants": [
+    {
+      "variant": "no-inline-pushchar",
+      "reverts": "the token-buffer store is an out-of-line call again",
+      "workloads": [
+        {
+          "workload": "large-mixed/parse",
+          "ratio_before": 0.687,
+          "ratio_after": 0.857,
+          "improvement": 1.247
+        },
+        {
+          "workload": "flat-ints/parse",
+          "ratio_before": 0.654,
+          "ratio_after": 0.779,
+          "improvement": 1.191
+        },
+        {
+          "workload": "numbers/parse",
+          "ratio_before": 0.643,
+          "ratio_after": 0.783,
+          "improvement": 1.218
+        }
+      ]
+    },
+    {
+      "variant": "generic-scan",
+      "reverts": "the number lexer's two byte tests go back to a generic slice search",
+      "workloads": [
+        {
+          "workload": "large-mixed/parse",
+          "ratio_before": 0.828,
+          "ratio_after": 0.857,
+          "improvement": 1.035
+        },
+        {
+          "workload": "flat-ints/parse",
+          "ratio_before": 0.658,
+          "ratio_after": 0.779,
+          "improvement": 1.184
+        },
+        {
+          "workload": "numbers/parse",
+          "ratio_before": 0.705,
+          "ratio_after": 0.783,
+          "improvement": 1.111
+        }
+      ]
+    }
+  ],
+  "both_reverted": [
+    {
+      "workload": "large-mixed/parse",
+      "ratio_before_both": 0.68,
+      "ratio_now": 0.857
+    },
+    {
+      "workload": "flat-ints/parse",
+      "ratio_before_both": 0.568,
+      "ratio_now": 0.779
+    },
+    {
+      "workload": "numbers/parse",
+      "ratio_before_both": 0.593,
+      "ratio_now": 0.783
+    }
+  ],
+  "limitation": "Measured on the machine and at the moment this ran; the figures in bench/results/ are the authoritative benchmark. This exists so the README's account of what the optimizations achieved is reproducible rather than remembered, not as a second benchmark."
+}

@@ -13,7 +13,7 @@
         report abi abi-generate diagnose conformance safety size state-machine fmt \
         clean distclean \
         docker-verify mutation mutation-weakened release-gate claims invariants \
-        hexfloat api-coverage
+        hexfloat api-coverage opt-history
 
 CC       = cc
 CFLAGS   = -std=c99 -pedantic -Wall -Wextra -Wno-missing-field-initializers -O2
@@ -145,6 +145,12 @@ claims:
 	$(PYTHON) scripts/validate-claims.py
 	@echo "==> Claim ledger audit (the prose, not just the checks)"
 	$(PYTHON) scripts/audit-claims.py
+	@echo "==> Every figure in outward-facing copy is backed by an artifact"
+	$(PYTHON) scripts/audit-public-copy.py
+
+opt-history: build
+	@echo "==> Re-measure both optimizations by reverting each one"
+	$(PYTHON) scripts/optimization-history.py
 
 report: build
 	$(PYTHON) scripts/report.py
@@ -234,6 +240,7 @@ verify:
 	@echo "[23/23] validate and audit CLAIMS.json against the artifacts just produced"
 	@$(PYTHON) scripts/validate-claims.py
 	@$(PYTHON) scripts/audit-claims.py
+	@$(PYTHON) scripts/audit-public-copy.py
 	@echo
 	@echo "=============================================================="
 	@echo " VERIFY OK"
