@@ -4,8 +4,9 @@ Performed as a skeptical reader who assumes every README sentence is marketing
 until a command proves otherwise. Each check below was executed; the commands are
 included so they can be re-run rather than trusted.
 
-**Verdict: CONDITIONAL PASS** — see [Verdict](#verdict) for exactly what the
-condition is.
+**Verdict: CONDITIONAL PASS** — every technical claim has executable evidence
+and CI is green on Linux and macOS. The outstanding conditions are the demo
+video and the Devfolio submission; see [Verdict](#verdict).
 
 ---
 
@@ -102,6 +103,33 @@ the fixtures are regenerable.
 
 **PASS**, with the scope correctly narrowed: 0 divergences means 0 on inputs
 where the original has defined behaviour.
+
+## 4b. Is the *oracle* itself trustworthy?
+
+The comparison is worthless if either side is nondeterministic, so
+`scripts/oracle-determinism.sh` runs each producer five times over every fixture
+in five modes and requires byte-identical output.
+
+**This gate failed**, and the failure was real. On macOS it passed; in CI on
+x86-64 Linux the C reference produced different transcripts between runs of the
+same binary. Reproduced in a Debian container and tracked to a single field on
+input `-`: the number token pushes one byte and errors before pushing its
+terminator, so `strtod` reads into uninitialised heap — `0.0` on one run, `-1.0`
+on the next.
+
+That is upstream issue [#38](https://github.com/skeeto/pdjson/issues/38), filed
+with a deterministic reproducer. The port now reads only `string_fill` bytes, and
+both transcript producers record `num` as null where the original's value is
+indeterminate — by a rule computed from the public API alone and applied
+identically on both sides, so it cannot mask a real difference.
+
+Two things worth noting about this. First, it means the differential result
+before this point was resting on an assumption that happened to hold on one
+platform. Second, it is the only check in the project that would have caught it —
+neither the upstream suite, nor the fixed corpus, nor 30 million fuzz cases on
+macOS did.
+
+**PASS**, after a real failure.
 
 ## 5. Does the fuzzing prove anything?
 
@@ -260,7 +288,7 @@ the ABI requirement, and it is argued for in D-02 rather than glossed over.
 
 ## Findings from this audit
 
-Two things were changed as a direct result:
+Four things were changed as a direct result:
 
 1. **1,242 JSONTestSuite files had been committed**, contradicting `LICENSES.md`,
    which states the corpus is fetched rather than vendored. Removed from the
@@ -268,6 +296,12 @@ Two things were changed as a direct result:
    push that timed out to 1.43 MiB.
 2. **An avoidable `undefined` local in the parser** was removed, so the shipped
    parser now has zero.
+3. **The static archive could not be linked by a system C compiler on Linux.**
+   `zig cc` supplies `compiler_rt` itself and hid the problem, which is exactly
+   why the ABI check has to use a system compiler to mean anything.
+   `bundle_compiler_rt` fixes it; a C-appropriate panic handler also took the
+   archive from 4.6 MB to 2.2 MB with 11 standard libc imports.
+4. **The C oracle was nondeterministic on Linux** — upstream #38, above.
 
 One process failure worth recording: during audit check 3, the mutant binary was
 copied over `zig-out/bin/transcript_zig` while a fuzz session was running against
@@ -287,10 +321,12 @@ from a clean checkout with no network.
 The conditions are the things that are genuinely not done yet, and they are not
 evidence problems:
 
-- [ ] **CI must be green.** The first run failed inside the third-party
-      `setup-zig` action — not in any verification step — and hung for 20+
-      minutes on both runners. Replaced with a pinned direct download; the
-      re-run must be confirmed green before tagging.
+- [x] **CI is green on Linux and macOS.** Getting there took three real fixes,
+      all of them findings rather than paperwork: the third-party `setup-zig`
+      action hung for 20+ minutes on both runners (replaced with a pinned direct
+      download); the static archive would not link against a system `cc` on
+      Linux because Zig's `compiler_rt` was not bundled; and the determinism
+      gate exposed upstream #38.
 - [ ] **The demo video does not exist.** `docs/demo-script.md` is written with
       exact commands and expected output, but nothing has been recorded. The
       README carries a placeholder, not a link.
@@ -306,6 +342,10 @@ claimed as done anywhere in the repository.
 
 If I were trying to break this submission, I would attack here:
 
+0. **Three of the four audit findings were platform-specific**, and all three
+   were invisible on the development machine. That is a warning about how much
+   single-platform evidence is worth, and the reason CI runs two targets. A
+   third target would probably find a fourth thing.
 1. **The differential corpus only drives `json_open_buffer`.** The `FILE *` and
    user-callback sources are implemented and exercised by the upstream suite and
    the ABI consumer, but never compared transcript by transcript. Since upstream
