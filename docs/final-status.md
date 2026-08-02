@@ -42,6 +42,8 @@ each from a regenerated artifact:
 | No upstream parser code in the artifact | 1 Zig object, 22/22 exports, 0 `json_*` imports |
 | Escape-hatch scan | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 asm |
 | Harness mutation testing | **12/12** injected defects caught |
+| Published fuzz session | 1800s, **11,812,800 cases**, 0 divergences |
+| Valgrind memcheck vs the original | both known defects reproduced, no new ones |
 | Zig-native tests | 74 passing |
 | Claim ledger | 24/24 validate against artifacts |
 
@@ -56,7 +58,7 @@ Green on both targets, from a clean checkout:
 | full verification (macos-latest, arm64) | success |
 | sanitizers on the C oracle (ASan, UBSan, Valgrind) | success |
 
-Latest run: <https://github.com/winsznx/pdjson-zig/actions>
+Latest run: <https://github.com/winsznx/pdjson-zig/actions/runs/30749888524> (commit `6b71420`)
 
 ## Bugs found in the original
 
@@ -117,6 +119,7 @@ test: verify the ABI on six targets, including 32-bit and Windows
 test: add valgrind memcheck against the pinned original
 fuzz: refuse to run against binaries that do not work
 docs: record the four measurement artifacts and their guards
+test: publish an 11.8M-case fuzz session across all three input sources
 ```
 
 
