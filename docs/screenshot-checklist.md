@@ -86,24 +86,41 @@ diff <(./build/transcript_c        next tests/conformance/fixtures/nul-bare.json
 
 Shows the actual proof mechanism, on a surrogate pair and on an embedded NUL.
 
-## 6. The honest benchmark
+## 6. The honest costs
 
 ```sh
-clear && sed -n '/BENCH:BEGIN/,/BENCH:END/p' README.md
+clear
+sed -n '/BENCH:BEGIN/,/BENCH:END/p' README.md
+sed -n '/SIZE:BEGIN/,/SIZE:END/p'   README.md
 ```
 
-The generated table, showing the port is slower on 9 of 12 workloads. Including
-this rather than hiding it is the point.
+Both generated tables in one frame: slower on 9 of 12 workloads, and 2.42x the
+stripped binary in a consumer. Including these rather than hiding them is the
+point, and both are spliced from artifacts so they cannot drift.
 
 ---
 
 ## Optional seventh, if you have room
 
+Pick whichever of these reads best on your terminal:
+
 ```sh
-clear && python3 -m json.tool artifacts/mutation-report.json | head -40
+# The compile-time ABI contract, proven able to fail
+clear && sh scripts/abi-contract-negative.sh 2>&1 | tail -22
 ```
 
-12/12 injected defects caught — evidence that the comparison harness can fail.
+Ten injected layout drifts, each caught by `zig build`, with a control that must
+still build and a 32-bit deferral check. This is the clearest single image of the
+project's habit of testing its own checks.
+
+```sh
+# Or: what this build decided about the target
+clear && zig build diagnose
+```
+
+`char` signedness, the 0xFF/EOF mode, and whether the compile-time ABI contract
+applies here — the two target-dependent decisions that are invisible in the
+source.
 
 ---
 

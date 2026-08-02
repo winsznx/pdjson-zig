@@ -77,7 +77,7 @@ Recommended: the first.
 ## The problem
 
 ```
-pdjson is a good C library: ~990 lines, no dependencies, bounded memory, and a
+pdjson is a good C library: 992 lines, no dependencies, bounded memory, and a
 streaming API that parses arbitrarily large documents in space proportional to
 the largest token. It is also a parser for untrusted input written in a language
 with no bounds checking, and it exposes a raw struct containing a heap pointer
@@ -89,7 +89,7 @@ reads memory that was never allocated.
 
 The harder problem, though, is not rewriting a JSON parser. It is proving that
 your rewrite behaves the same. "The tests pass" is a sample, not a proof —
-especially when the upstream suite is 18 assertions over 990 lines and never
+especially when the upstream suite is 18 assertions over 992 lines and never
 touches byte positions, depth, json_skip, json_get_number, the allocator hooks,
 invalid UTF-8, or any allocation-failure path.
 ```
@@ -164,10 +164,11 @@ Results:
   - 18/18 assertions in the UNMODIFIED upstream test suite, compiled in place
     from the pinned tree and linked against only the Zig static library
   - 0 divergences in 6,104 fixed-corpus comparisons (218 inputs x 28 modes),
-    covering all three documented input sources: json_open_buffer,
-    json_open_stream (FILE*) and json_open_user
-  - 0 divergences in 3,498 JSONTestSuite comparisons (318 cases x 11 modes)
-  - 43 cases where the pinned original invokes undefined behaviour, every one
+    covering all four documented input sources: json_open_buffer,
+    json_open_string, json_open_stream (FILE*) and json_open_user, with a
+    per-source comparison count for each
+  - 0 divergences in 3,816 JSONTestSuite comparisons (318 cases x 12 modes)
+  - 45 cases where the pinned original invokes undefined behaviour, every one
     sanitizer-confirmed and all resolving to a single line, pdjson.c:912
 ```
 
@@ -175,8 +176,9 @@ Results:
 
 ```
 fuzz/fuzz.py mutates a seed corpus and generates grammar-based JSON plus number-
-and Unicode-boundary cases, running both implementations over batches of ~400
-inputs per process pair — batching is what makes ~9,000 cases/second possible.
+and Unicode-boundary cases, running both implementations over batches of
+inputs per process pair; the batch size and the measured rate are recorded in
+each session log.
 Findings are isolated to a single input, minimized by delta debugging, and
 written to fuzz/minimized/ with both transcripts.
 
@@ -194,7 +196,7 @@ both caught and both documented in DECISIONS.md D-17: they were "catching"
 mutants on cases where the C original crashes or reads out of bounds, so every
 mutant differed for reasons unrelated to the mutation. And the first sound run
 caught only 8/12 — the four survivors were real gaps in the corpus, which grew
-from 142 to 214 fixtures to close them (215 today, after a later fuzz finding).
+from 142 to 214 fixtures to close them (218 today).
 ```
 
 ## Benchmark evidence
@@ -204,7 +206,7 @@ The Zig port is SLOWER than the C original on 9 of 12 workload/mode pairs, and
 faster on 3. This is reported as a result rather than buried.
 
 Ratios are C median / Zig median, so below 1.00 means Zig is slower. Most
-workloads land between 0.79 and 0.93. Full table, raw per-iteration samples, and
+workloads land between 0.78 and 0.96. Full table, raw per-iteration samples, and
 methodology are in the repository; the README table is generated from the
 artifact so it cannot drift.
 
@@ -220,7 +222,7 @@ other, so the gap is not the cost of safety checks. And my first explanation for
 the gap was wrong: I assumed the null checks the port adds on the source
 callbacks were the cost, removed them, and measured 0% improvement. Profiling
 both binaries showed the real cause — clang inlines a byte-append helper that Zig
-kept out of line — and fixing it moved large-mixed from 0.70x to 0.87x. The
+kept out of line — and reverting it now to re-measure puts large-mixed at 0.68x against 0.86x today. The
 remainder is unexplained and reported as such, rather than optimised against one
 benchmark.
 ```
@@ -311,11 +313,20 @@ Stated rather than left to be discovered:
 - nan(...) payloads that overflow 64 bits are not matched. C99 7.20.1.3p4 makes
   them implementation-defined and libcs disagree. Reachable only by calling
   json_get_number() on a string token beginning "nan(".
-- The Zig port is slower than C on 9 of 12 workloads, and part of the remaining
-  gap is unexplained.
-- The two upstream issues are filed, not triaged.
-- This is demonstrated equivalence, not proven equivalence. ~3,500 compared cases
-  plus a fuzz session is evidence, not a proof of behavioural equality.
+- The Zig port is slower than C on 9 of 12 workload/mode pairs, and 2.42x the
+  stripped binary size in a consumer. Part of the remaining time gap is
+  unexplained.
+- The three upstream issues are filed, not triaged. No maintainer has confirmed
+  them.
+- This is demonstrated equivalence, not proven equivalence. 11,729,920 compared
+  cases is evidence, not a proof of behavioural equality. 100% state-transition
+  coverage is not path coverage, and the hand-written transition specification
+  agreeing with both implementations would not catch a shared misreading of the
+  grammar.
+- The fixture corpus was written by the same person who wrote the port. The
+  independent checks against that bias are JSONTestSuite, the mutation harness,
+  the invariant rules and the transition specification -- each of which found
+  something the fixtures had missed.
 ```
 
 ## Demo video

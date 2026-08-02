@@ -27,11 +27,18 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ARTIFACTS = ROOT / "artifacts"
 
-# document -> the CLAIMS.json channel it belongs to
+# document -> (channel, whether fenced blocks are content or commands)
+#
+# The distinction matters more than it looks. In the README a fenced block is a
+# shell command, and its flags and paths are not claims. In the staged Devfolio
+# copy the fenced blocks ARE the submission text -- they are fenced so they can
+# be pasted into the form -- and stripping them made this audit blind to exactly
+# the document it exists to check. It reported "0 unbacked" for a file whose
+# every figure it had thrown away.
 DOCUMENTS = {
-    "docs/devfolio-submission.md": "devfolio",
-    "docs/demo-script.md": "video",
-    "README.md": "readme",
+    "docs/devfolio-submission.md": ("devfolio", True),
+    "docs/demo-script.md": ("video", True),
+    "README.md": ("readme", False),
 }
 
 # Numbers that are not measurements. Each carries its reason so the list cannot
@@ -78,10 +85,26 @@ EMBARGO_MARKERS = {
 }
 
 
-def numbers_in(text: str) -> set[str]:
+def numbers_in(text: str, fenced_is_content: bool = False) -> set[str]:
     out = set()
-    # Strip fenced code blocks: a shell command's flags and paths are not claims.
-    text = re.sub(r"```.*?```", "", text, flags=re.S)
+    if fenced_is_content:
+        # Keep the block's prose, drop only lines that are plainly shell:
+        # a leading $, or a command this repository actually runs.
+        def keep(block: str) -> str:
+            lines = []
+            for line in block.split("\n"):
+                t = line.strip()
+                if t.startswith(("$", "#", "```")):
+                    continue
+                if re.match(r"^(make|python3|sh|zig|cc|clear|git|ar |nm |diff|ASAN|\./|docker)\b", t):
+                    continue
+                lines.append(line)
+            return "\n".join(lines)
+        text = re.sub(r"```[^\n]*\n(.*?)```", lambda m: keep(m.group(1)),
+                      text, flags=re.S)
+    else:
+        # A shell command's flags and paths are not claims.
+        text = re.sub(r"```.*?```", "", text, flags=re.S)
     # Strip inline code for the same reason.
     text = re.sub(r"`[^`]*`", "", text)
     # Strip link targets, which carry issue numbers and anchors.
@@ -92,6 +115,9 @@ def numbers_in(text: str) -> set[str]:
     text = re.sub(r"#\d+", "", text)
     text = re.sub(r"\b\d{1,2}:\d{2}\b", "", text)
     text = re.sub(r"\b\d{4}-\d{2}-\d{2}\b", "", text)
+    # A trailing "(46)" on a line of staged copy is that field's character
+    # count against the platform's limit, not a measurement.
+    text = re.sub(r"\(\d{1,3}\)\s*$", "", text, flags=re.M)
     for raw in re.findall(r"\b\d[\d,]*(?:\.\d+)?\b", text):
         n = raw.replace(",", "")
         if n.endswith(".0"):
@@ -148,7 +174,7 @@ def main() -> int:
     problems: list[str] = []
     checked = {}
 
-    for doc, channel in DOCUMENTS.items():
+    for doc, (channel, fenced) in DOCUMENTS.items():
         path = ROOT / doc
         if not path.exists():
             problems.append(f"{doc}: missing")
@@ -156,7 +182,7 @@ def main() -> int:
         text = path.read_text()
 
         unbacked = []
-        for n in sorted(numbers_in(text), key=lambda x: (len(x), x)):
+        for n in sorted(numbers_in(text, fenced), key=lambda x: (len(x), x)):
             if n in PROSE_NUMBERS or n in corpus:
                 continue
             unbacked.append(n)
@@ -181,7 +207,9 @@ def main() -> int:
                     problems.append(
                         f"{doc}: mentions {marker!r}, but {c['id']} is neither "
                         f"allowed nor disclosable in the {channel!r} channel")
-        checked[doc] = {"channel": channel, "numbers": len(numbers_in(text)),
+        checked[doc] = {"channel": channel,
+                        "fenced_blocks_are_content": fenced,
+                        "numbers": len(numbers_in(text, fenced)),
                         "unbacked": unbacked}
 
     report = {

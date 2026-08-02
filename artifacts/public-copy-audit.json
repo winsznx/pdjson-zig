@@ -4,16 +4,19 @@
   "documents": {
     "docs/devfolio-submission.md": {
       "channel": "devfolio",
-      "numbers": 13,
+      "fenced_blocks_are_content": true,
+      "numbers": 40,
       "unbacked": []
     },
     "docs/demo-script.md": {
       "channel": "video",
-      "numbers": 25,
+      "fenced_blocks_are_content": true,
+      "numbers": 33,
       "unbacked": []
     },
     "README.md": {
       "channel": "readme",
+      "fenced_blocks_are_content": false,
       "numbers": 76,
       "unbacked": []
     }
