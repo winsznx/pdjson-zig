@@ -11,7 +11,7 @@
     "schema": "pdjson-zig/toolchain@1",
     "zig": "0.16.0",
     "c_compiler": "Apple clang version 21.0.0 (clang-2100.1.1.101)",
-    "python": "Python 3.11.7",
+    "python": "Python 3.14.5",
     "uname": "Darwin Winszns-MacBook-Pro.local 27.0.0 Darwin Kernel Version 27.0.0: Tue Jul 14 21:53:38 PDT 2026; root:xnu-13432.0.94.501.4~1/RELEASE_ARM64_T6000 arm64"
   },
   "original_tests": {
@@ -45,9 +45,9 @@
   "fuzz": {
     "log": "fuzz/logs/session-verify.json",
     "seed": 1,
-    "elapsed_seconds": 60.01,
-    "cases": 1285200,
-    "cases_per_second": 21416.7,
+    "elapsed_seconds": 60.0,
+    "cases": 1222800,
+    "cases_per_second": 20379.8,
     "divergences": 0,
     "zig_crashes": 0,
     "timeouts": 0,
@@ -80,7 +80,7 @@
       "bitCast": 13,
       "truncate": 4,
       "force_unwrap": 0,
-      "undefined_initializers": 8,
+      "undefined_initializers": 7,
       "unreachable": 0,
       "setRuntimeSafety": 0,
       "inline_asm": 0,

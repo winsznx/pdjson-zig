@@ -27,7 +27,7 @@ artifacts in `artifacts/`. Every number here is read out of a file that
 ## Differential fuzzing
 
 - Session: `fuzz/logs/session-verify.json` (seed 1)
-- Duration: 60.01s, 1285200 cases (21416.7/s)
+- Duration: 60.0s, 1222800 cases (20379.8/s)
 - Divergences: **0**, crashes: 0, timeouts: 0
 
 ## Harness self-test (mutation)
@@ -47,7 +47,7 @@ artifacts in `artifacts/`. Every number here is read out of a file that
 
 - Scan result: pass
 - Shipped mode: ReleaseSafe -- bounds checks, overflow checks and illegal-behaviour detection are active in the artifact this project distributes, including in the benchmark numbers reported as 'zig-safe'.
-- Counts: `{"ptrCast": 10, "alignCast": 1, "constCast": 0, "intCast": 15, "bitCast": 13, "truncate": 4, "force_unwrap": 0, "undefined_initializers": 8, "unreachable": 0, "setRuntimeSafety": 0, "inline_asm": 0, "volatile": 0}`
+- Counts: `{"ptrCast": 10, "alignCast": 1, "constCast": 0, "intCast": 15, "bitCast": 13, "truncate": 4, "force_unwrap": 0, "undefined_initializers": 7, "unreachable": 0, "setRuntimeSafety": 0, "inline_asm": 0, "volatile": 0}`
 
 ## Benchmark
 

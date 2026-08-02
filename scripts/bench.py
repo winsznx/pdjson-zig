@@ -236,7 +236,7 @@ def main() -> int:
               f"{c.get('speedup_zig-fast_vs_c',0):>8.2f}")
     print(f"\n(values are median milliseconds per iteration; "
           f"ratio > 1 means Zig is faster)")
-    print(f"wrote {out.relative_to(ROOT)} and bench/results/raw.json")
+    print(f"wrote {out.relative_to(ROOT)} and bench/results/{raw_name}")
     return 0
 
 
