@@ -104,6 +104,7 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-36 | Both implementations cover exactly the same set of state transitions on the same inputs: 0 transitions are reached by one and not the other. | verified | [`artifacts/state-machine/coverage.json`](artifacts/state-machine/coverage.json) |
 | C-37 | All four documented input sources are exercised with real comparison counts, not asserted: json_open_buffer 3,270, json_open_stream 1,090 (a real FILE*), json_open_user 1,090 (caller callbacks), json_open_string 654 -- each at 0 divergences. | verified | [`artifacts/differential/source-matrix-fixed-corpus.json`](artifacts/differential/source-matrix-fixed-corpus.json) |
 | C-38 | The differential's comparison is demonstrated to be sensitive to every field a transcript record carries -- event, token bytes, token length, number bits, line, position, depth, context, context count, error text, operation and sequence -- by perturbing each field and requiring the comparison to notice. | verified | [`artifacts/mutation/detector-selftest.json`](artifacts/mutation/detector-selftest.json) |
+| C-39 | The differential's strength is shown to be load-bearing: the same 12 injected defects over the same 1,489 comparable cases go from 12 caught to 4 when only the comparison is weakened to the event sequence, so 8 are detected solely by the fields beyond it. | verified | [`artifacts/mutation-report-weakened.json`](artifacts/mutation-report-weakened.json) |
 <!-- CLAIMS:END -->
 
 Every row is checked against a generated artifact by

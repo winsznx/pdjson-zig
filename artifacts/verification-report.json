@@ -132,8 +132,8 @@
     "defined": 12,
     "caught": 12,
     "survived": 0,
-    "comparable_cases": 1470,
-    "excluded_cases": 35
+    "comparable_cases": 1489,
+    "excluded_cases": 37
   },
   "determinism": {
     "runs_per_mode": 5,

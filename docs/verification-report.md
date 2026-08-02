@@ -33,7 +33,7 @@ artifacts in `artifacts/`. Every number here is read out of a file that
 ## Harness self-test (mutation)
 
 - Mutants: 12/12 caught, 0 survived
-- Comparable cases: 1470 (35 excluded as upstream UB)
+- Comparable cases: 1489 (37 excluded as upstream UB)
 
 ## C ABI
 

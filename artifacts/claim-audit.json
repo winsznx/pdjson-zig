@@ -1,7 +1,7 @@
 {
   "schema": "pdjson-zig/claim-audit@1",
   "method": "Audits the ledger as a document, which validate-claims.py does not: every number in a claim's English text must appear in the artifact it cites, every artifact must exist and parse, every check path must resolve, ids must be unique and contiguous, every claim must carry a limitation, and a claim embargoed from public copy must not be in the README.",
-  "claims": 38,
+  "claims": 39,
   "problems": 0,
   "problem_detail": [],
   "notes": [],

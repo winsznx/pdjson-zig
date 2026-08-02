@@ -22,7 +22,7 @@ echo "=============================================================="
 
 # ---------------------------------------------------------------- provenance
 echo
-echo "[1/10] pinned upstream is untouched"
+echo "[1/12] pinned upstream is untouched"
 if sh scripts/verify-upstream-hashes.sh >/dev/null 2>&1; then
     note "9 files match artifacts/upstream-manifest.json"
 else
@@ -39,11 +39,18 @@ fi
 
 # ------------------------------------------------------------------ artifacts
 echo
-echo "[2/10] required artifacts are present"
+echo "[2/12] required artifacts are present"
 for a in upstream-manifest.json original-test-report.json differential-summary.json \
-         abi/abi-report.json linkage-report.json safety-report.json \
-         benchmark-summary.json mutation-report.json determinism-report.json \
-         verification-report.json upstream-issues.json toolchain.json; do
+         abi/abi-report.json abi/abi-cross-report.json abi/contract-negative.json \
+         abi/exported-symbols.txt linkage-report.json safety-report.json \
+         safety/inventory.json benchmark-summary.json size-report.json \
+         mutation-report.json mutation/detector-selftest.json \
+         determinism-report.json state-machine/coverage.json \
+         invariants/summary.json hex-float/property-summary.json \
+         number-torture.json differential/api-coverage.json \
+         differential/source-matrix-fixed-corpus.json claim-audit.json \
+         public-copy-audit.json verification-report.json upstream-issues.json \
+         toolchain.json; do
     if [ -f "artifacts/$a" ]; then
         note "artifacts/$a"
     else
@@ -52,7 +59,7 @@ for a in upstream-manifest.json original-test-report.json differential-summary.j
 done
 
 echo
-echo "[3/10] benchmark raw data is committed"
+echo "[3/12] benchmark raw data is committed"
 if [ -f bench/results/raw.json ]; then
     SAMPLES=$(python3 -c "import json;d=json.load(open('bench/results/raw.json'));print(sum(len(r['samples_ns']) for r in d))" 2>/dev/null || echo 0)
     if [ "$SAMPLES" -gt 100 ]; then
@@ -65,7 +72,7 @@ else
 fi
 
 echo
-echo "[4/10] a published fuzz session exists and is long enough"
+echo "[4/12] a published fuzz session exists and is long enough"
 PUBLISHED=$(python3 - <<'PY' 2>/dev/null || echo "0 0 0"
 import json, pathlib
 best = (0, 0, 0)
@@ -93,7 +100,7 @@ fi
 
 # ------------------------------------------------------------------- results
 echo
-echo "[5/10] no unexplained divergences"
+echo "[5/12] no unexplained divergences"
 python3 - <<'PY' || fail=1
 import json, pathlib, sys
 bad = 0
@@ -119,7 +126,7 @@ sys.exit(bad)
 PY
 
 echo
-echo "[6/10] test pass rate has not regressed"
+echo "[6/12] test pass rate has not regressed"
 python3 - <<'PY' || fail=1
 import json, pathlib, sys
 p = pathlib.Path("artifacts/original-test-report.json")
@@ -147,7 +154,7 @@ sys.exit(0 if ok else 1)
 PY
 
 echo
-echo "[7/10] the Zig artifact links no upstream parser code"
+echo "[7/12] the Zig artifact links no upstream parser code"
 if sh scripts/verify-no-c-linkage.sh >/dev/null 2>&1; then
     note "linkage check passes"
 else
@@ -156,7 +163,7 @@ else
 fi
 
 echo
-echo "[8/10] escape-hatch budget and formatting"
+echo "[8/12] escape-hatch budget and formatting"
 if sh scripts/safety-scan.sh >/dev/null 2>&1; then
     note "safety scan passes"
 else
@@ -169,7 +176,7 @@ else
 fi
 
 echo
-echo "[9/10] the harness still catches injected defects"
+echo "[9/12] the harness still catches injected defects"
 python3 - <<'PY' || fail=1
 import json, pathlib, sys
 p = pathlib.Path("artifacts/mutation-report.json")
@@ -186,12 +193,75 @@ print(f"  {d['caught']}/{d['mutants_defined']} mutants caught, "
 PY
 
 echo
-echo "[10/10] public copy matches the claim ledger"
+echo "[10/12] the checks are themselves able to fail"
+python3 - <<'GATEPY' || fail=1
+import json, pathlib, sys
+bad = 0
+checks = [
+    ("abi/contract-negative.json", "missed", 0,
+     "the compile-time ABI contract's negative test"),
+    ("mutation/detector-selftest.json", "failures", 0,
+     "the differential comparison's field-sensitivity self-test"),
+    ("state-machine/coverage.json", "transitions_uncovered", 0,
+     "state-transition coverage"),
+    ("state-machine/coverage.json", "transitions_unspecified_but_observed", 0,
+     "transitions observed outside the specification"),
+    ("invariants/summary.json", "violations_total", 0, "transcript invariants"),
+    ("safety/inventory.json", "unclassified", 0, "unclassified escape hatches"),
+    ("safety/inventory.json", "forbidden_present", 0,
+     "forbidden operations in the shipped library"),
+    ("differential/api-coverage.json", "classification.untested", 0,
+     "untested exported functions"),
+    ("hex-float/property-summary.json", "oracle_vs_zig_disagreements", 0,
+     "hex-float disagreements with the exact-integer reference"),
+]
+for name, path, want, what in checks:
+    p = pathlib.Path("artifacts") / name
+    if not p.exists():
+        print("GATE FAIL: missing artifacts/" + name, file=sys.stderr)
+        bad = 1
+        continue
+    cur = json.loads(p.read_text())
+    for part in path.split("."):
+        cur = cur.get(part) if isinstance(cur, dict) else None
+    if cur != want:
+        print("GATE FAIL: %s: %s = %s, expected %s" % (what, path, cur, want),
+              file=sys.stderr)
+        bad = 1
+    else:
+        print("  %s: %s = %s" % (what, path, cur))
+
+# A negative test that ran zero cases would also report 0 missed.
+neg = json.loads(pathlib.Path("artifacts/abi/contract-negative.json").read_text())
+if neg.get("detected", 0) < 10 or neg.get("control_unmodified_build") != "pass":
+    print("GATE FAIL: the ABI negative test did not run a full set of cases "
+          "with a passing control", file=sys.stderr)
+    bad = 1
+sys.exit(bad)
+GATEPY
+
+echo
+echo "[11/12] public copy matches the claim ledger"
 if python3 scripts/validate-claims.py >/dev/null 2>&1; then
     note "CLAIMS.json validates and README blocks are current"
 else
     bad "claim validation failed"
     python3 scripts/validate-claims.py || true
+fi
+
+echo
+echo "[12/12] every figure in outward-facing copy is backed"
+if python3 scripts/audit-claims.py >/dev/null 2>&1; then
+    note "every number in every claim's text is in the artifact it cites"
+else
+    bad "the claim ledger audit failed"
+    python3 scripts/audit-claims.py || true
+fi
+if python3 scripts/audit-public-copy.py >/dev/null 2>&1; then
+    note "README, Devfolio copy and demo script carry no unbacked figure"
+else
+    bad "outward-facing copy contains a figure with no artifact behind it"
+    python3 scripts/audit-public-copy.py || true
 fi
 
 if command -v git >/dev/null 2>&1 && [ -d .git ]; then

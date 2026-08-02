@@ -761,6 +761,26 @@
         "devfolio",
         "video"
       ]
+    },
+    {
+      "id": "C-39",
+      "text": "The differential's strength is shown to be load-bearing: the same 12 injected defects over the same 1,489 comparable cases go from 12 caught to 4 when only the comparison is weakened to the event sequence, so 8 are detected solely by the fields beyond it.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/mutation-report-weakened.json",
+      "check": {
+        "kind": "at_least",
+        "path": "survived",
+        "value": 1
+      },
+      "command": "make mutation-weakened",
+      "verified_date": "2026-08-02",
+      "limitation": "The weakened comparator is one of several possible weakenings; a different one would split the mutants differently. One of the four the weak comparator still catches (position-not-advanced-on-peek) is caught by timeout rather than by comparison, so the true comparison-only figure is 3 of 12. The corpus is identical between the two runs, so the split is attributable to the comparison alone.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
     }
   ]
 }

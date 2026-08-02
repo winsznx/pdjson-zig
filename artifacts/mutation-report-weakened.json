@@ -1,0 +1,93 @@
+{
+  "schema": "pdjson-zig/mutation-report@2",
+  "detector": "event-only",
+  "detector_note": "'full' is byte-identical transcripts, the comparison the real differential uses. The other detectors are deliberately weaker and exist to show that the strength is doing the work: run with --detector event-only and mutants survive. --self-test checks every comparator field by field.",
+  "description": "Deliberate defects injected into the Zig implementation. Each must be detected by comparing against the C oracle over the fixed corpus.",
+  "fixtures": 218,
+  "modes": [
+    "next",
+    "peek",
+    "nostream",
+    "skip",
+    "sep",
+    "oom:0",
+    "oom:2"
+  ],
+  "comparable_cases": 1489,
+  "excluded_cases": 37,
+  "exclusion_reason": "(mode, fixture) pairs where an ASan+UBSan build of the pinned C original reports an error are excluded. Every mutant trivially differs on those, because the C side crashed or emitted bytes from unallocated memory; counting them would let this script certify itself. The decision is made by a sanitizer, not by judgement.",
+  "mutants_defined": 12,
+  "caught": 4,
+  "survived": 8,
+  "not_evaluated": 0,
+  "results": [
+    {
+      "mutant": "lineno-not-counted",
+      "status": "survived"
+    },
+    {
+      "mutant": "depth-off-by-one",
+      "status": "survived"
+    },
+    {
+      "mutant": "oom-message-typo",
+      "status": "survived"
+    },
+    {
+      "mutant": "escape-b-wrong",
+      "status": "survived"
+    },
+    {
+      "mutant": "surrogate-high-range",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "uni-escaped-pair-hi-end.json",
+        "mode": "next",
+        "how": "transcript differs"
+      }
+    },
+    {
+      "mutant": "utf8-accept-overlong",
+      "status": "survived"
+    },
+    {
+      "mutant": "number-no-terminator",
+      "status": "survived"
+    },
+    {
+      "mutant": "control-char-allowed",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "ctrl-raw-1f.json",
+        "mode": "next",
+        "how": "transcript differs"
+      }
+    },
+    {
+      "mutant": "position-not-advanced-on-peek",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "arr-flat.json",
+        "mode": "next",
+        "how": "timeout"
+      }
+    },
+    {
+      "mutant": "strtod-no-conversion-value",
+      "status": "survived"
+    },
+    {
+      "mutant": "errmsg-truncation",
+      "status": "survived"
+    },
+    {
+      "mutant": "buffer-peek-unsigned",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "ff-after-number.json",
+        "mode": "next",
+        "how": "transcript differs"
+      }
+    }
+  ]
+}

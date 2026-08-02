@@ -23,9 +23,10 @@ make mutation-weakened                         # the same mutants, weaker compar
 
 "12/12 mutants caught" is only meaningful if the comparison doing the catching is
 actually looking at everything it says it is. A harness that compared **only the
-event sequence** would still catch most of these mutants and report the same
-12/12 — while being blind to token bytes, number values, line numbers, byte
-positions, container depths and error text.
+event sequence** would still catch some of these mutants while being blind to
+token bytes, number values, line numbers, byte positions, container depths and
+error text — and it turns out to catch 4 of 12, which the section below measures
+rather than guesses at.
 
 So the comparison is a named, swappable function, and the self-test perturbs
 every field a transcript record carries, one at a time, and requires it to
@@ -128,9 +129,42 @@ A strong comparison with a narrow *corpus* reports success because the defect is
 never reached. Checking only one leaves the other free to be wrong, and both
 produce the same clean output.
 
-Running the same mutants under `--detector event-only` shows the split
-concretely: the corpus is unchanged, only the comparison is weakened, and mutants
-that the full comparison catches survive.
+Running the same twelve mutants over the same 1,489 comparable cases, changing
+**only** the comparison, splits them:
+
+```
+$ make mutation            # detector: full
+mutation testing: 12 caught, 0 survived, 0 not evaluated (of 12)
+
+$ make mutation-weakened   # detector: event-only
+MUTANT lineno-not-counted:         SURVIVED
+MUTANT depth-off-by-one:           SURVIVED
+MUTANT oom-message-typo:           SURVIVED
+MUTANT escape-b-wrong:             SURVIVED
+MUTANT surrogate-high-range:       CAUGHT
+MUTANT utf8-accept-overlong:       SURVIVED
+MUTANT number-no-terminator:       SURVIVED
+MUTANT control-char-allowed:       CAUGHT
+MUTANT position-not-advanced-on-peek: CAUGHT
+MUTANT strtod-no-conversion-value: SURVIVED
+MUTANT errmsg-truncation:          SURVIVED
+MUTANT buffer-peek-unsigned:       CAUGHT
+mutation testing: 4 caught, 8 survived, 0 not evaluated (of 12)
+```
+
+**Eight of the twelve are caught only because the comparison looks past the
+event sequence** — at line numbers, container depth, diagnostic text, escape
+decoding, the NUL terminator on a number token, and the value a failed
+conversion returns. A harness that compared events alone would have reported the
+same clean 12/12 while being blind to all of it.
+
+Worth noting about the four the weak comparison still catches:
+`position-not-advanced-on-peek` is recorded as caught *by timeout*, not by a
+transcript difference. A mutant that stops terminating is a detected mutant, but
+it is detected by the harness's clock rather than by its comparison — which is
+another reason the split matters.
+
+Artifact: [`artifacts/mutation-report-weakened.json`](../artifacts/mutation-report-weakened.json).
 
 ## Limits
 
