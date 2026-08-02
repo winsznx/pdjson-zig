@@ -1,0 +1,62 @@
+[
+ {
+  "impl": "c",
+  "workload": "/Users/mac/pdjson-zig/bench/workloads/large-mixed.json",
+  "mode": "parse",
+  "bytes": 867544,
+  "iterations": 3,
+  "inner": 1,
+  "cold_ns": 3922000,
+  "alloc_count": 2,
+  "alloc_bytes": 1088,
+  "peak_rss_kb": 2512,
+  "checksum": 1082104,
+  "samples_ns": [
+   3943000,
+   3914000,
+   3919000
+  ],
+  "repetition": 0,
+  "workload_name": "large-mixed"
+ },
+ {
+  "impl": "zig-safe",
+  "workload": "/Users/mac/pdjson-zig/bench/workloads/large-mixed.json",
+  "mode": "parse",
+  "bytes": 867544,
+  "iterations": 3,
+  "inner": 1,
+  "cold_ns": 4499000,
+  "alloc_count": 2,
+  "alloc_bytes": 1088,
+  "peak_rss_kb": 3824,
+  "checksum": 1082104,
+  "samples_ns": [
+   4542000,
+   4516000,
+   4580000
+  ],
+  "repetition": 0,
+  "workload_name": "large-mixed"
+ },
+ {
+  "impl": "zig-fast",
+  "workload": "/Users/mac/pdjson-zig/bench/workloads/large-mixed.json",
+  "mode": "parse",
+  "bytes": 867544,
+  "iterations": 3,
+  "inner": 1,
+  "cold_ns": 4549000,
+  "alloc_count": 2,
+  "alloc_bytes": 1088,
+  "peak_rss_kb": 2752,
+  "checksum": 1082104,
+  "samples_ns": [
+   4458000,
+   4393000,
+   4601000
+  ],
+  "repetition": 0,
+  "workload_name": "large-mixed"
+ }
+]

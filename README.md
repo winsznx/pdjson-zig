@@ -8,7 +8,7 @@
 | **Upstream** | `skeeto/pdjson` @ [`78fe04b`](https://github.com/skeeto/pdjson/commit/78fe04b820dc8817f540bdd87fb22887e0ef3981) (master, 2024-02-22, Unlicense) |
 | **Dominant proof** | Two independent programs drive the C original and the Zig port through the same script and emit deterministic NDJSON behaviour transcripts. Equivalence means **byte-identical transcripts**. |
 | **Upstream tests** | **18/18** assertions pass, sources unmodified and hash-pinned, linked against only the Zig library |
-| **Differential** | **0 divergences** in 1,926 fixed-corpus comparisons + 1,590 JSONTestSuite comparisons |
+| **Differential** | **0 divergences** in 1,935 fixed-corpus comparisons + 1,590 JSONTestSuite comparisons |
 | **Fuzzing** | 25-minute published session, **0 divergences, 0 crashes, 0 timeouts** |
 | **Harness self-test** | **12/12** injected defects caught (its first sound run found 4 real gaps in the corpus) |
 | **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; 10 pointer casts, each enumerated. Ships **ReleaseSafe** — checks on. |
@@ -56,7 +56,7 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-01 | All 18 assertions in the unmodified upstream test suite pass against the Zig library. | verified | [`artifacts/original-test-report.json`](artifacts/original-test-report.json) |
 | C-02 | Zero assertions in the upstream suite are skipped, adapted, or marked unsupported. | verified | [`artifacts/original-test-report.json`](artifacts/original-test-report.json) |
 | C-03 | The upstream source tree is byte-identical to commit 78fe04b across all 9 files. | verified | [`artifacts/upstream-manifest.json`](artifacts/upstream-manifest.json) |
-| C-04 | Across 1,926 differential comparisons on the fixed corpus, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
+| C-04 | Across 1,935 differential comparisons on the fixed corpus, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-05 | The differential comparison covers 9 drive modes including peek, skip, reset, the separator API, strict mode, and 4 deterministic allocation-failure schedules. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-06 | Differential testing found a null-pointer dereference and an out-of-bounds read in the pinned original, both at pdjson.c:912, reachable through the public API under allocation failure. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-07 | The memory-buffer source in the pinned original treats byte 0xFF as end-of-input on signed-char targets, disagreeing with its own FILE* source on identical input. | verified | [`artifacts/upstream-issues.json`](artifacts/upstream-issues.json) |
@@ -67,12 +67,13 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-12 | The shipped artifact is built in ReleaseSafe, so bounds checks and overflow checks are active at runtime, including in the reported benchmark figures. | verified | [`artifacts/safety-report.json`](artifacts/safety-report.json) |
 | C-13 | All 12 deliberately injected defects in the Zig implementation are detected by the fixed-corpus differential, with zero survivors. | verified | [`artifacts/mutation-report.json`](artifacts/mutation-report.json) |
 | C-14 | Both transcript producers are deterministic: five runs over every fixture in five modes produce byte-identical output. | verified | [`artifacts/determinism-report.json`](artifacts/determinism-report.json) |
-| C-15 | The Zig implementation's json_get_number matches C strtod bit for bit across a 661-point exponent sweep, powers of two, digit strings up to 500 digits, and 20,000 randomised lexemes. | verified | [`artifacts/original-test-report.json`](artifacts/original-test-report.json) |
+| C-15 | The Zig implementation's json_get_number matches C strtod bit for bit across a 661-point exponent sweep, powers of two, digit strings up to 500 digits, 20,000 randomised decimal lexemes and 20,000 randomised hex floats. | verified | [`artifacts/original-test-report.json`](artifacts/original-test-report.json) |
 | C-16 | The Zig implementation is slower than the C original on 9 of the 12 benchmark workload/mode pairs measured, and faster on 3. | verified | [`artifacts/benchmark-summary.json`](artifacts/benchmark-summary.json) |
 | C-17 | A published differential fuzz session found zero divergences, zero crashes and zero timeouts. | verified | [`artifacts/verification-report.json`](artifacts/verification-report.json) |
 | C-18 | Behavioural equivalence has been demonstrated for the buffer input source; the FILE* and user-callback sources are covered by the API surface but not by the differential corpus. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-19 | On the independent nst/JSONTestSuite conformance corpus, the Zig port and the pinned C original agree on all 318 parsing cases across 5 drive modes, and the original is fully conforming (95/95 must-accept, 188/188 must-reject). | verified | [`artifacts/conformance-report.json`](artifacts/conformance-report.json) |
-| C-20 | No divergence has ever been observed on any input where the pinned original is well defined: 1,926 fixed-corpus comparisons plus 1,590 JSONTestSuite comparisons plus the published fuzz session, all at zero. | verified | [`artifacts/differential-jsontestsuite.json`](artifacts/differential-jsontestsuite.json) |
+| C-20 | No divergence has ever been observed on any input where the pinned original is well defined: 1,935 fixed-corpus comparisons plus 1,590 JSONTestSuite comparisons plus the published fuzz session, all at zero. | verified | [`artifacts/differential-jsontestsuite.json`](artifacts/differential-jsontestsuite.json) |
+| C-21 | Differential fuzzing found a real defect in this port -- a one-ULP hex-float rounding error in json_get_number -- which is fixed, regression-tested, and documented. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 <!-- CLAIMS:END -->
 
 Every row is checked against a generated artifact by
@@ -208,7 +209,7 @@ buffer reads — rebuilds, and requires the differential to catch each one.
 Its first sound run caught 8 of 12. The four survivors were **real gaps**: no
 fixture had an escaped surrogate pair at the top of the range, none had a raw
 control byte at the 0x1F boundary, and allocation-failure diagnostics were not
-covered at all. The corpus grew from 142 to 214 fixtures to close them.
+covered at all. The corpus grew from 142 to 214 fixtures to close them (215 today, after a later fuzz finding).
 
 Two earlier runs also produced **false 12/12 scores**, both caught and both
 fixed. Details in [`DECISIONS.md` D-17](DECISIONS.md) — that entry is worth
@@ -240,16 +241,16 @@ Ratios are C median / Zig median, so **below 1.00 means Zig is slower**.
 | workload | mode | ReleaseSafe (shipped) | ReleaseFast |
 | --- | --- | --- | --- |
 | large-mixed | parse | 0.87x | 0.89x |
-| large-mixed | strings | 1.04x | 1.08x |
-| numbers | parse | 0.79x | 0.82x |
-| numbers | strings | 0.95x | 0.99x |
-| strings-ascii | strings | 0.91x | 0.92x |
-| strings-unicode | strings | 1.02x | 1.07x |
+| large-mixed | strings | 1.04x | 1.07x |
+| numbers | parse | 0.78x | 0.82x |
+| numbers | strings | 0.96x | 1.00x |
+| strings-ascii | strings | 0.91x | 0.93x |
+| strings-unicode | strings | 1.02x | 1.06x |
 | deep-nesting | parse | 0.84x | 0.85x |
-| many-small-docs | parse | 0.88x | 0.91x |
-| malformed-early | parse | 1.89x | 5.62x |
+| many-small-docs | parse | 0.89x | 0.91x |
+| malformed-early | parse | 1.89x | 5.61x |
 | malformed-late | parse | 0.87x | 0.89x |
-| whitespace-heavy | parse | 0.94x | 0.94x |
+| whitespace-heavy | parse | 0.93x | 0.94x |
 | flat-ints | parse | 0.79x | 0.82x |
 
 _9 of 12 workload/mode pairs are slower in Zig. Median ratios, 5 repetitions, raw samples in `bench/results/raw.json`._
@@ -393,7 +394,7 @@ while (true) switch (try p.next()) {
 | `tools/` | Zig counterparts, plus the ABI probe. |
 | `tests/original/` | A C consumer using the pinned header. Upstream's own tests are used in place. |
 | `tests/port/` | Zig-native tests: behaviour, number torture, allocator failure, regressions. |
-| `tests/conformance/fixtures/` | 214 generated edge-case inputs. |
+| `tests/conformance/fixtures/` | 215 generated edge-case inputs. |
 | `tests/upstream-bugs/` | Minimal reproducers for #36 and #37. |
 | `fuzz/` | Fuzzer, corpus, minimized findings, session logs. |
 | `bench/` | Workloads, methodology, raw results. |

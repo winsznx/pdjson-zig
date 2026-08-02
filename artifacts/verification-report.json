@@ -24,8 +24,8 @@
     "sources_modified": false
   },
   "differential": {
-    "inputs": 214,
-    "comparisons": 1926,
+    "inputs": 215,
+    "comparisons": 1935,
     "divergences": 0,
     "upstream_ub": 43,
     "zig_crashes": 0,
@@ -43,15 +43,21 @@
     ]
   },
   "fuzz": {
-    "log": null,
-    "seed": null,
-    "elapsed_seconds": null,
-    "cases": null,
-    "cases_per_second": null,
-    "divergences": null,
-    "zig_crashes": null,
-    "timeouts": null,
-    "modes": null
+    "log": "fuzz/logs/session-verify.json",
+    "seed": 1,
+    "elapsed_seconds": 60.01,
+    "cases": 1285200,
+    "cases_per_second": 21416.7,
+    "divergences": 0,
+    "zig_crashes": 0,
+    "timeouts": 0,
+    "modes": [
+      "next",
+      "nostream",
+      "peek",
+      "skip",
+      "sep"
+    ]
   },
   "abi": {
     "comparison": "identical",
@@ -70,7 +76,7 @@
       "ptrCast": 10,
       "alignCast": 1,
       "constCast": 0,
-      "intCast": 11,
+      "intCast": 15,
       "bitCast": 13,
       "truncate": 4,
       "force_unwrap": 0,
@@ -94,81 +100,87 @@
     "c_oracle_deterministic": true,
     "zig_deterministic": true
   },
+  "benchmark_smoke": {
+    "ran": true,
+    "workloads": 1
+  },
   "benchmark": {
     "smoke": false,
+    "workloads_zig_slower": 9,
+    "workloads_zig_faster_or_equal": 3,
     "repetitions": 5,
     "cases": [
       {
         "workload": "large-mixed",
         "mode": "parse",
-        "speedup_safe_vs_c": 0.868,
-        "speedup_fast_vs_c": 0.885
+        "speedup_safe_vs_c": 0.869,
+        "speedup_fast_vs_c": 0.887
       },
       {
         "workload": "large-mixed",
         "mode": "strings",
         "speedup_safe_vs_c": 1.041,
-        "speedup_fast_vs_c": 1.076
+        "speedup_fast_vs_c": 1.075
       },
       {
         "workload": "numbers",
         "mode": "parse",
-        "speedup_safe_vs_c": 0.793,
-        "speedup_fast_vs_c": 0.825
+        "speedup_safe_vs_c": 0.784,
+        "speedup_fast_vs_c": 0.819
       },
       {
         "workload": "numbers",
         "mode": "strings",
-        "speedup_safe_vs_c": 0.948,
-        "speedup_fast_vs_c": 0.99
+        "speedup_safe_vs_c": 0.958,
+        "speedup_fast_vs_c": 1.001
       },
       {
         "workload": "strings-ascii",
         "mode": "strings",
-        "speedup_safe_vs_c": 0.905,
-        "speedup_fast_vs_c": 0.922
+        "speedup_safe_vs_c": 0.908,
+        "speedup_fast_vs_c": 0.929
       },
       {
         "workload": "strings-unicode",
         "mode": "strings",
-        "speedup_safe_vs_c": 1.021,
-        "speedup_fast_vs_c": 1.068
+        "speedup_safe_vs_c": 1.018,
+        "speedup_fast_vs_c": 1.064
       },
       {
         "workload": "deep-nesting",
         "mode": "parse",
-        "speedup_safe_vs_c": 0.837,
+        "speedup_safe_vs_c": 0.841,
         "speedup_fast_vs_c": 0.848
       },
       {
         "workload": "many-small-docs",
         "mode": "parse",
-        "speedup_safe_vs_c": 0.884,
-        "speedup_fast_vs_c": 0.911
+        "speedup_safe_vs_c": 0.887,
+        "speedup_fast_vs_c": 0.91
       },
       {
         "workload": "malformed-early",
         "mode": "parse",
-        "speedup_safe_vs_c": 1.891,
-        "speedup_fast_vs_c": 5.622
+        "speedup_safe_vs_c": 1.886,
+        "speedup_fast_vs_c": 5.608
       },
       {
         "workload": "malformed-late",
         "mode": "parse",
-        "speedup_safe_vs_c": 0.868,
-        "speedup_fast_vs_c": 0.887
+        "speedup_safe_vs_c": 0.87,
+        "speedup_fast_vs_c": 0.886
       },
       {
         "workload": "whitespace-heavy",
         "mode": "parse",
-        "speedup_safe_vs_c": 0.935,
+        "speedup_safe_vs_c": 0.932,
         "speedup_fast_vs_c": 0.935
       },
       {
         "workload": "flat-ints",
         "mode": "parse",
-        "speedup_safe_vs_c": 0.792,
-        "speedup_fast_vs_c": 0.819
+        "speedup_safe_vs_c": 0.794,
+        "speedup_fast_vs_c": 0.821
       }
     ]
   }

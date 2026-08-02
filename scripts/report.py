@@ -73,6 +73,7 @@ def main() -> int:
     safety = load("safety-report.json")
     linkage = load("linkage-report.json")
     bench = load("benchmark-summary.json")
+    bench_smoke = load("benchmark-smoke.json")
     mutation = load("mutation-report.json")
     determinism = load("determinism-report.json")
     toolchain = load("toolchain.json")
@@ -148,8 +149,14 @@ def main() -> int:
             "c_oracle_deterministic": dig(determinism, "c_oracle_deterministic"),
             "zig_deterministic": dig(determinism, "zig_deterministic"),
         },
+        "benchmark_smoke": {
+            "ran": bench_smoke is not None,
+            "workloads": dig(bench_smoke, "workloads_measured"),
+        },
         "benchmark": {
             "smoke": dig(bench, "smoke"),
+            "workloads_zig_slower": dig(bench, "workloads_zig_slower"),
+            "workloads_zig_faster_or_equal": dig(bench, "workloads_zig_faster_or_equal"),
             "repetitions": dig(bench, "repetitions"),
             "cases": [
                 {

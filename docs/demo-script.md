@@ -356,7 +356,7 @@ means the transcripts are byte-identical.
 Results, all reproducible with one command:
   - 18/18 assertions in the UNMODIFIED upstream test suite, linked against only
     the Zig library
-  - 0 divergences across 1,926 fixed-corpus + 1,590 JSONTestSuite comparisons
+  - 0 divergences across 1,935 fixed-corpus + 1,590 JSONTestSuite comparisons
   - 0 divergences in a published differential fuzz session
   - 12/12 deliberately injected defects caught by the harness
   - 2 real bugs found in the original, filed with minimal reproducers

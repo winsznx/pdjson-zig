@@ -247,7 +247,7 @@ uncounted newline — rebuild, and require the differential to catch it.
 The first sound run caught **8 of 12**. The four survivors were real gaps: no
 fixture had an escaped surrogate pair at the top of the range, none had a raw
 control byte at the `0x1F` boundary, and allocation-failure diagnostics were not
-covered at all. The corpus grew from 142 to 214 fixtures.
+covered at all. The corpus grew from 142 to 214 fixtures (215 today, after a later fuzz finding).
 
 But before that run, there were two that scored a false 12/12.
 

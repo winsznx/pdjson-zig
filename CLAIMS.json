@@ -67,7 +67,7 @@
     },
     {
       "id": "C-04",
-      "text": "Across 1,926 differential comparisons on the fixed corpus, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences.",
+      "text": "Across 1,935 differential comparisons on the fixed corpus, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-summary.json",
@@ -78,7 +78,7 @@
       },
       "command": "make differential",
       "verified_date": "2026-08-02",
-      "limitation": "214 inputs x 9 drive modes. Counts only inputs where the original has defined behaviour; the 43 cases where an ASan+UBSan build of the original reports an error are counted separately as upstream_ub (see C-06) and are not folded into this number.",
+      "limitation": "215 inputs x 9 drive modes. Counts only inputs where the original has defined behaviour; the 43 cases where an ASan+UBSan build of the original reports an error are counted separately as upstream_ub (see C-06) and are not folded into this number.",
       "allowed_in": [
         "readme",
         "devfolio",
@@ -385,7 +385,7 @@
     },
     {
       "id": "C-20",
-      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 1,926 fixed-corpus comparisons plus 1,590 JSONTestSuite comparisons plus the published fuzz session, all at zero.",
+      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 1,935 fixed-corpus comparisons plus 1,590 JSONTestSuite comparisons plus the published fuzz session, all at zero.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-jsontestsuite.json",

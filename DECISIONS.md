@@ -509,7 +509,7 @@ the fixed-corpus differential to catch each one.
 had no fixture with an escaped surrogate pair at the top of the range, none with
 a raw control byte at the 0x1F boundary, and no coverage of allocation-failure
 messages. Those gaps were real, and the fixture corpus grew from 142 to 214 to
-close them.
+close them (215 today, after a later fuzz finding).
 
 **Two false-positive traps, both hit and both fixed.** An earlier version scored
 12/12 — every mutant "caught" on the same `oom:0` case, because the C oracle

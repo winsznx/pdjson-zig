@@ -121,7 +121,7 @@ broken.
 Results:
   - 18/18 assertions in the UNMODIFIED upstream test suite, compiled in place
     from the pinned tree and linked against only the Zig static library
-  - 0 divergences in 1,926 fixed-corpus comparisons (214 inputs x 9 modes)
+  - 0 divergences in 1,935 fixed-corpus comparisons (215 inputs x 9 modes)
   - 0 divergences in 1,590 JSONTestSuite comparisons (318 cases x 5 modes)
   - 43 cases where the pinned original invokes undefined behaviour, every one
     sanitizer-confirmed and all resolving to a single line, pdjson.c:912

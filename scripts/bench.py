@@ -116,8 +116,13 @@ def main() -> int:
                 raw.append(r)
         print(f"  {workload} [{mode}] done", file=sys.stderr)
 
+    # A smoke run measures one workload and is only there to prove the
+    # benchmark harness still executes. It must never overwrite the
+    # authoritative full-run artifacts, or `make verify` would quietly replace
+    # published figures with a single-workload sample.
     RESULTS.mkdir(parents=True, exist_ok=True)
-    (RESULTS / "raw.json").write_text(json.dumps(raw, indent=1) + "\n")
+    raw_name = "raw-smoke.json" if args.smoke else "raw.json"
+    (RESULTS / raw_name).write_text(json.dumps(raw, indent=1) + "\n")
 
     # ---- summarise -------------------------------------------------------
     cases = []
@@ -173,7 +178,7 @@ def main() -> int:
     summary = {
         "schema": "pdjson-zig/benchmark-summary@1",
         "generated_by": "scripts/bench.py",
-        "raw_data": "bench/results/raw.json",
+        "raw_data": f"bench/results/{raw_name}",
         "methodology": "bench/methodology.md",
         "repetitions": reps,
         "smoke": args.smoke,
@@ -212,7 +217,8 @@ def main() -> int:
         "cases": cases,
     }
 
-    out = ROOT / "artifacts" / "benchmark-summary.json"
+    out = ROOT / "artifacts" / (
+        "benchmark-smoke.json" if args.smoke else "benchmark-summary.json")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(summary, indent=2) + "\n")
 

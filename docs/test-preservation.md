@@ -110,12 +110,12 @@ stdin, `pretty.c` re-indents a document. Neither asserts anything, so "it passes
 would be meaningless.
 
 They are used as differential oracles instead. Each is built **twice** — once
-against the pinned C, once against Zig — and run over all 214 fixtures with
+against the pinned C, once against Zig — and run over all 215 fixtures with
 their output compared byte for byte, including exit status and stderr.
 
 ```
-stream.c differential over 214 fixtures: 0 mismatches
-pretty.c differential over 214 fixtures: 0 mismatches
+stream.c differential over 215 fixtures: 0 mismatches
+pretty.c differential over 215 fixtures: 0 mismatches
 ```
 
 `pretty.c` earns its place here: it drives `json_peek` and `json_get_depth`
@@ -132,7 +132,7 @@ link against only the Zig archive, and behave identically.
 
 It does not prove behavioural equivalence in general. 18 assertions over ~990
 lines of parser is thin coverage, and the two tools exercise a wide but shallow
-path. The transcript differential (1,926 fixed-corpus comparisons + 1,590
+path. The transcript differential (1,935 fixed-corpus comparisons + 1,590
 JSONTestSuite comparisons + the fuzz session) is what carries that claim; the
 upstream suite is the part a reader can check in ten seconds without trusting
 any of this project's own tooling.

@@ -104,14 +104,14 @@ test "hex floats match libc strtod, including past 53 bits of mantissa" {
     // rounding here (src/strtod.zig parseHexFloat). These are the cases that
     // differed, plus the boundaries around them.
     const cases = [_][:0]const u8{
-        "0x634922337286237e3",   "0x1234567890abcdef",  "0xfffffffffffffffff",
-        "0x1.fffffffffffffp0",   "0x123456789abcdef01", "0x8000000000000001",
-        "0x10000000000000801",   "0x1p0",               "0x1p-1074",
-        "0x1p-1075",             "0x1p1024",            "0x1p1023",
-        "0x1.fffffffffffff8p0",  "0x1.fffffffffffff7p0", "0x0.0000000000001p-1022",
-        "0x10000000000000",      "0x20000000000001",    "0x20000000000003",
-        "0xabcdef0123456789abcdef", "0X1P+3",           "0x.8p1",
-        "0x1.p3",                "0x0p0",               "0x0.0p0",
+        "0x634922337286237e3",      "0x1234567890abcdef",   "0xfffffffffffffffff",
+        "0x1.fffffffffffffp0",      "0x123456789abcdef01",  "0x8000000000000001",
+        "0x10000000000000801",      "0x1p0",                "0x1p-1074",
+        "0x1p-1075",                "0x1p1024",             "0x1p1023",
+        "0x1.fffffffffffff8p0",     "0x1.fffffffffffff7p0", "0x0.0000000000001p-1022",
+        "0x10000000000000",         "0x20000000000001",     "0x20000000000003",
+        "0xabcdef0123456789abcdef", "0X1P+3",               "0x.8p1",
+        "0x1.p3",                   "0x0p0",                "0x0.0p0",
     };
     for (cases) |c| try expectMatchesC(c);
 }

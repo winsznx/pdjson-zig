@@ -1,7 +1,7 @@
 {
   "schema": "pdjson-zig/determinism-report@1",
   "runs_per_mode": 5,
-  "fixtures": 214,
+  "fixtures": 215,
   "modes": ["next", "nostream", "peek", "skip", "sep"],
   "c_oracle_deterministic": true,
   "zig_deterministic": true,
