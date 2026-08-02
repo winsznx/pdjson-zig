@@ -163,7 +163,7 @@ broken.
 Results:
   - 18/18 assertions in the UNMODIFIED upstream test suite, compiled in place
     from the pinned tree and linked against only the Zig static library
-  - 0 divergences in 6,104 fixed-corpus comparisons (218 inputs x 28 modes),
+  - 0 divergences in 6,272 fixed-corpus comparisons (224 inputs x 28 modes),
     covering all four documented input sources: json_open_buffer,
     json_open_string, json_open_stream (FILE*) and json_open_user, with a
     per-source comparison count for each
@@ -318,7 +318,7 @@ Stated rather than left to be discovered:
   unexplained.
 - The three upstream issues are filed, not triaged. No maintainer has confirmed
   them.
-- This is demonstrated equivalence, not proven equivalence. 11,729,920 compared
+- This is demonstrated equivalence, not proven equivalence. 11,730,088 compared
   cases is evidence, not a proof of behavioural equality. 100% state-transition
   coverage is not path coverage, and the hand-written transition specification
   agreeing with both implementations would not catch a shared misreading of the

@@ -67,7 +67,7 @@
     },
     {
       "id": "C-04",
-      "text": "Across 6,104 differential comparisons on the fixed corpus, spanning all four documented input sources and every exported function, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences.",
+      "text": "Across 6,272 differential comparisons on the fixed corpus, spanning all four documented input sources and every exported function, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-summary.json",
@@ -95,7 +95,7 @@
       "check": {
         "kind": "at_least",
         "path": "comparisons",
-        "value": 6100
+        "value": 6270
       },
       "command": "make differential",
       "verified_date": "2026-08-02",
@@ -384,7 +384,7 @@
     },
     {
       "id": "C-20",
-      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 6,104 fixed-corpus comparisons plus 3,816 JSONTestSuite comparisons plus 11,720,000 published fuzz cases -- 11,729,920 in total, all at zero.",
+      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 6,272 fixed-corpus comparisons plus 3,816 JSONTestSuite comparisons plus 11,720,000 published fuzz cases -- 11,730,088 in total, all at zero.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/verification-report.json",
@@ -485,7 +485,7 @@
     },
     {
       "id": "C-25",
-      "text": "An implementation-independent invariant checker validates 13,936 transcripts and 6,162,897 records from both implementations against 13 rules, with zero violations on either side.",
+      "text": "An implementation-independent invariant checker validates 14,092 transcripts and 6,164,316 records from both implementations against 13 rules, with zero violations on either side.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/invariants/summary.json",
@@ -724,7 +724,7 @@
     },
     {
       "id": "C-37",
-      "text": "All four documented input sources are exercised with real comparison counts, not asserted: json_open_buffer 3,270, json_open_stream 1,090 (a real FILE*), json_open_user 1,090 (caller callbacks), json_open_string 654 -- each at 0 divergences.",
+      "text": "All four documented input sources are exercised with real comparison counts, not asserted: json_open_buffer 3,360, json_open_stream 1,120 (a real FILE*), json_open_user 1,120 (caller callbacks), json_open_string 672 -- each at 0 divergences.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential/source-matrix-fixed-corpus.json",
@@ -776,6 +776,26 @@
       "command": "make mutation-weakened",
       "verified_date": "2026-08-02",
       "limitation": "The weakened comparator is one of several possible weakenings; a different one would split the mutants differently. One of the four the weak comparator still catches (position-not-advanced-on-peek) is caught by timeout rather than by comparison, so the true comparison-only figure is 3 of 12. The corpus is identical between the two runs, so the split is attributable to the comparison alone.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
+    },
+    {
+      "id": "C-40",
+      "text": "The committed fixture corpus reaches all 54 specified state transitions on its own, without the on-demand JSONTestSuite corpus or the accumulated minimized fuzz findings.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/state-machine/coverage.json",
+      "check": {
+        "kind": "equals",
+        "path": "transitions_uncovered_by_fixtures_alone",
+        "value": 0
+      },
+      "command": "python3 scripts/state-machine.py",
+      "verified_date": "2026-08-02",
+      "limitation": "This is a property of the corpus, not of the parser: it says a clean checkout with no network reaches every specified transition, which is what makes the coverage number meaningful to someone who just cloned the repository. It says nothing further about path coverage. The check was added because `make verify` passed in the development tree at 54/54 while a clean clone reached 48/54 and failed.",
       "allowed_in": [
         "readme",
         "devfolio",

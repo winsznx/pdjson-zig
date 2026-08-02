@@ -184,6 +184,11 @@ def main() -> int:
     corpora = {
         "fixtures": sorted((ROOT / "tests" / "conformance" / "fixtures").glob("*.json")),
     }
+    # The fixture corpus alone has to reach full coverage. JSONTestSuite is
+    # fetched on demand and the minimized fuzz findings accumulate over time, so
+    # leaning on either would mean `make verify` passing here and failing in a
+    # clean checkout -- which is exactly what it did.
+    fixtures_only = dict(corpora)
     jts = ROOT / "tests" / "conformance" / "JSONTestSuite" / "test_parsing"
     if jts.is_dir():
         corpora["jsontestsuite"] = sorted(jts.glob("*.json"))
@@ -198,6 +203,7 @@ def main() -> int:
     listfile = work / "state-machine-list.txt"
 
     per_impl = {"c": collections.Counter(), "zig": collections.Counter()}
+    fixtures_observed: collections.Counter = collections.Counter()
     examples: dict = {}
     transcripts = records = 0
 
@@ -207,12 +213,19 @@ def main() -> int:
         listfile.write_text("\n".join(str(f) for f in files) + "\n")
         for mode in modes:
             for impl, binary in (("c", C_BIN), ("zig", ZIG_BIN)):
-                t, n = walk(run(binary, mode, listfile), per_impl[impl], examples)
+                out = run(binary, mode, listfile)
+                t, n = walk(out, per_impl[impl], examples)
                 if impl == "zig":
                     transcripts += t
                     records += n
+                    if corpus in fixtures_only:
+                        walk(out, fixtures_observed, {})
 
     specified = {(s, e) for s, evs in SPEC.items() for e in evs}
+    # Coverage that depends on a corpus a clean checkout does not have is not
+    # coverage. This was 48/54 on fixtures alone while reporting 54/54 here,
+    # and `make verify` failed in a fresh clone because of it.
+    uncovered_fixtures_only = sorted(specified - set(fixtures_observed))
     observed_zig = set(per_impl["zig"])
     observed_c = set(per_impl["c"])
 
@@ -258,6 +271,14 @@ def main() -> int:
         "transitions_unspecified_but_observed": len(unspecified),
         "coverage_percent": round(100 * len(covered) / len(specified), 1),
         "implementations_differ": len(only_c) + len(only_zig),
+        "transitions_uncovered_by_fixtures_alone": len(uncovered_fixtures_only),
+        "fixtures_only_note": (
+            "The committed fixture corpus must reach every specified transition "
+            "on its own. JSONTestSuite is fetched on demand and the minimized "
+            "fuzz findings accumulate over time, so leaning on either would mean "
+            "this passing here and failing in a clean checkout."),
+        "uncovered_by_fixtures_alone": [
+            {"state": s, "event": e} for s, e in uncovered_fixtures_only],
         "uncovered": [{"state": s, "event": e} for s, e in uncovered],
         "unspecified_but_observed": [
             {"state": s, "event": e, "count": per_impl["zig"][(s, e)],
@@ -284,6 +305,10 @@ def main() -> int:
           f"{len(modes)} modes, {sum(len(v) for v in corpora.values())} inputs")
     print(f"  covered {len(covered)}/{len(specified)} "
           f"({summary['coverage_percent']}%)")
+    print(f"  covered by the committed fixtures alone: "
+          f"{len(specified) - len(uncovered_fixtures_only)}/{len(specified)}")
+    for st, ev in uncovered_fixtures_only:
+        print(f"    NOT REACHED WITHOUT A FETCHED CORPUS: {st} -> {ev}")
     if unspecified:
         print(f"  OBSERVED BUT NOT SPECIFIED: {len(unspecified)}")
         for s, e in unspecified:
@@ -303,7 +328,8 @@ def main() -> int:
     # implementations covering different sets, are both hard failures. An
     # uncovered transition is reported, and the gate on it lives in CLAIMS.json
     # so the number is visible rather than buried in an exit code.
-    return 1 if (unspecified or only_c or only_zig) else 0
+    return 1 if (unspecified or only_c or only_zig
+                 or uncovered_fixtures_only) else 0
 
 
 if __name__ == "__main__":

@@ -107,13 +107,33 @@ jobs:
         run: python3 scripts/api-coverage.py
 
       - name: hex-float correctness (exact-integer reference)
-        run: python3 scripts/hexfloat_oracle.py --compare 50000 --seed 20260802
+        run: |
+          python3 scripts/hexfloat_oracle.py --compare 50000 --seed 20260802 \
+            --out artifacts/hex-float/property-smoke.json
 
       - name: transcript invariants
         run: python3 scripts/invariants.py --sweep
 
+      - name: the differential's comparison notices every transcript field
+        run: python3 scripts/mutation-test.py --self-test
+
+      - name: escape-hatch inventory
+        run: python3 scripts/safety-inventory.py
+
+      - name: number-conversion torture coverage
+        run: python3 scripts/number-torture-report.py
+
       - name: differential, fixed corpus
         run: python3 scripts/differential.py --label fixed-corpus --quiet
+
+      # Runs BEFORE JSONTestSuite is fetched, deliberately. The committed
+      # fixture corpus has to reach every specified transition on its own; when
+      # this ran after the fetch it passed at 54/54 while a clean clone reached
+      # 48/54 and failed.
+      - name: state-transition coverage (no fetched corpus available yet)
+        run: |
+          python3 scripts/state-machine.py --self-test
+          python3 scripts/state-machine.py
 
       - name: fetch JSONTestSuite
         run: sh scripts/fetch-conformance.sh
@@ -130,8 +150,14 @@ jobs:
       - name: reports
         run: python3 scripts/report.py
 
+      - name: artifact size a consumer pays
+        run: python3 scripts/size-report.py
+
       - name: claim ledger
-        run: python3 scripts/validate-claims.py
+        run: |
+          python3 scripts/validate-claims.py
+          python3 scripts/audit-claims.py
+          python3 scripts/audit-public-copy.py
 
       - name: upload artifacts
         if: always()

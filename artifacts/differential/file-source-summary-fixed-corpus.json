@@ -10,8 +10,8 @@
     "stream:skip",
     "stream:sep"
   ],
-  "inputs": 218,
-  "comparisons": 1090,
+  "inputs": 224,
+  "comparisons": 1120,
   "divergences": 0,
   "upstream_ub": 0,
   "timeouts": 0,

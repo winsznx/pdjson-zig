@@ -19,9 +19,9 @@ artifacts in `artifacts/`. Every number here is read out of a file that
 
 ## Differential (fixed corpus)
 
-- 218 inputs x 28 modes = 6104 comparisons
+- 224 inputs x 28 modes = 6272 comparisons
 - Divergences: **0**
-- Upstream undefined behaviour (sanitizer-confirmed): 45
+- Upstream undefined behaviour (sanitizer-confirmed): 51
 - Zig crashes: 0, timeouts: 0
 
 ## Differential fuzzing

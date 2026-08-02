@@ -162,6 +162,34 @@ stating plainly.
   suffixes and two steps out of order. Renumbered, and the README's count is
   spliced from the Makefile rather than typed.
 
+### The clean clone caught what the development tree could not
+
+`make verify` passed in the working tree at 54/54 transitions. In a fresh
+`git clone` it **failed** at 48/54.
+
+The six missing transitions were all first-element-of-array (`[false,…]`,
+`[null,…]`, `[{…},…]`, `["x",…]`, `[true,…]`) and a string value directly after
+an object key. The fixture corpus had never contained `{"key":"value"}` — the
+most common shape in JSON — and nobody noticed because JSONTestSuite covered it.
+JSONTestSuite is fetched on demand and is absent in a clean checkout.
+
+Coverage that depends on a corpus a fresh clone does not have is not coverage. So
+six fixtures close the gap, and the analysis now reports and gates on the
+fixtures-only figure separately from the full one. Claim C-40 exists solely
+because this failure mode is invisible from inside a working tree.
+
+That is the argument for running the clean-clone check at all, and it only came
+up because it was run last rather than assumed.
+
+**CI had the same blind spot, for a different reason.** It runs the pipeline's
+steps individually rather than through `make verify`, and it had never run
+`scripts/state-machine.py` at all — so it was green while a clean clone failed.
+It also fetched JSONTestSuite *before* the checks that must not depend on it, and
+its hex-float run wrote to the published artifact path rather than a smoke path,
+the same overwrite defect the Makefile had. All three are fixed: the
+state-transition check now runs deliberately before the fetch step, and both
+ledger audits run alongside claim validation.
+
 ---
 
 ## What a hostile reviewer still gets
