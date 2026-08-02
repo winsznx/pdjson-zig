@@ -1,0 +1,28 @@
+{
+  "schema": "pdjson-zig/detector-selftest@1",
+  "method": "Each transcript field is perturbed in a synthetic record and the comparison is required to notice. Each deliberately weakened comparator is then required to be blind to what it ignores -- a weakening that changed nothing would mean the strength was never there.",
+  "fields_checked": [
+    "ctx",
+    "ctxn",
+    "depth",
+    "err",
+    "event",
+    "line",
+    "num",
+    "op",
+    "pos",
+    "seq",
+    "tok",
+    "toklen"
+  ],
+  "fields_detected": 12,
+  "comparators": [
+    "event-only",
+    "first-record",
+    "full",
+    "record-count"
+  ],
+  "weakenings_checked": 8,
+  "failures": 0,
+  "limitation": "Synthetic transcripts, not parser output: this proves the comparison notices a changed field, not that the parser can produce every such change."
+}

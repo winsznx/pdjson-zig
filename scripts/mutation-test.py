@@ -233,6 +233,26 @@ def detector_self_test() -> int:
             print(f"  ok    {name} is blind to {what}")
 
     print(f"\ndetector self-test: {failures} failure(s)")
+
+    out = ROOT / "artifacts" / "mutation" / "detector-selftest.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps({
+        "schema": "pdjson-zig/detector-selftest@1",
+        "method": ("Each transcript field is perturbed in a synthetic record and "
+                   "the comparison is required to notice. Each deliberately "
+                   "weakened comparator is then required to be blind to what it "
+                   "ignores -- a weakening that changed nothing would mean the "
+                   "strength was never there."),
+        "fields_checked": sorted(FIELD_PERTURBATIONS),
+        "fields_detected": len(FIELD_PERTURBATIONS) - failures,
+        "comparators": sorted(DETECTORS),
+        "weakenings_checked": len(weakenings),
+        "failures": failures,
+        "limitation": ("Synthetic transcripts, not parser output: this proves the "
+                       "comparison notices a changed field, not that the parser "
+                       "can produce every such change."),
+    }, indent=2) + "\n")
+    print(f"  wrote {out.relative_to(ROOT)}")
     return 1 if failures else 0
 
 

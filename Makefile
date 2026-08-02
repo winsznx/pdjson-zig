@@ -215,6 +215,9 @@ verify:
 	@echo "[12/16] formatting"
 	@$(ZIG) fmt --check build.zig src tools tests/port
 	@echo
+	@echo "[12b/16] the differential's comparison notices every transcript field"
+	@$(PYTHON) scripts/mutation-test.py --self-test
+	@echo
 	@echo "[13/16] escape-hatch scan and per-occurrence inventory"
 	@sh scripts/safety-scan.sh
 	@echo
