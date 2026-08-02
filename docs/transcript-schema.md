@@ -99,9 +99,27 @@ Recording these would produce differences that mean nothing:
 
 Everything else reachable through `pdjson.h` is recorded.
 
+## Input sources
+
+A mode may be prefixed with the source the parser reads from. The three are
+documented as interchangeable, and upstream issue
+[#37](https://github.com/skeeto/pdjson/issues/37) is precisely a case where two
+of them disagree on identical bytes -- so comparing only one would leave the most
+interesting class of difference untested.
+
+| Prefix | Opened with | Notes |
+| --- | --- | --- |
+| *(none)* | `json_open_buffer` | A byte array. Where the `0xFF`/EOF confusion lives. |
+| `stream:` | `json_open_stream` | A `FILE *`; reads go through `fgetc`/`ungetc`, which report bytes as `unsigned char`. |
+| `user:` | `json_open_user` | Caller-supplied `get`/`peek` callbacks over the same bytes, matching `fgetc` conventions. |
+
+Both producers create the `FILE *` with `tmpfile()` and write the input to it, so
+the byte stream is identical to the buffer case.
+
 ## Drive modes
 
-One input yields nine transcripts, because the same bytes exercise different
+One input yields 19 transcripts -- three sources crossed with five drives, plus
+four allocation-failure schedules -- because the same bytes exercise different
 paths depending on how the caller drives the parser.
 
 | Mode | What it exercises |

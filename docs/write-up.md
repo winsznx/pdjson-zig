@@ -310,12 +310,11 @@ each other. The safety checks are close to free here.
 
 ## What remains imperfect
 
-- **The differential corpus drives `json_open_buffer` only.** `json_open_stream`
-  and `json_open_user` are implemented and exercised by the upstream suite and
-  the ABI consumer, but not compared transcript by transcript. This is the
-  largest hole and the obvious next step — and given that the `0xFF` bug is
-  precisely a *disagreement between two sources*, it is the hole most likely to
-  hold something.
+- **~~The differential corpus drives `json_open_buffer` only.~~** Closed. All
+  three sources — buffer, `FILE *`, and user callbacks — are now compared
+  transcript by transcript, 4,085 comparisons, zero divergences. This was the
+  largest hole, and it mattered specifically because the `0xFF` bug *is* a
+  disagreement between two sources.
 - **ABI equivalence is verified on two targets**, not asserted universally.
 - **`nan(...)` payloads that overflow 64 bits are not matched**, because C99
   makes them implementation-defined and libcs disagree.

@@ -25,7 +25,7 @@
   },
   "differential": {
     "inputs": 215,
-    "comparisons": 1935,
+    "comparisons": 4085,
     "divergences": 0,
     "upstream_ub": 43,
     "zig_crashes": 0,
@@ -39,15 +39,25 @@
       "oom:0",
       "oom:1",
       "oom:2",
-      "oom:5"
+      "oom:5",
+      "stream:next",
+      "stream:nostream",
+      "stream:peek",
+      "stream:skip",
+      "stream:sep",
+      "user:next",
+      "user:nostream",
+      "user:peek",
+      "user:skip",
+      "user:sep"
     ]
   },
   "fuzz": {
     "log": "fuzz/logs/session-published.json",
     "seed": 20260802,
-    "elapsed_seconds": 90.02,
-    "cases": 1834800,
-    "cases_per_second": 20383.2,
+    "elapsed_seconds": 1800.0,
+    "cases": 34595200,
+    "cases_per_second": 19219.5,
     "divergences": 0,
     "zig_crashes": 0,
     "timeouts": 0,

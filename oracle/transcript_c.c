@@ -28,6 +28,15 @@
  *                                     fuzzer so throughput is not dominated by
  *                                     process startup.
  * Modes: next nostream peek skip sep oom:<n>
+ *
+ * A mode may be prefixed with an input source:
+ *   (none)   json_open_buffer  -- a byte array
+ *   stream:  json_open_stream  -- a FILE*, so reads go through fgetc/ungetc
+ *   user:    json_open_user    -- caller-supplied get/peek callbacks
+ *
+ * The three sources are documented as interchangeable, and upstream issue #37
+ * is precisely a case where two of them disagree, so comparing the port against
+ * the original on all three is worth more than comparing on one.
  */
 #define _POSIX_C_SOURCE 200112L
 #include <stdio.h>
@@ -114,20 +123,66 @@ emit_source(size_t seq, const char *op, int c, json_stream *json)
            (unsigned long)json_get_position(json));
 }
 
+/* ------------------------------------------------------------- user source */
+
+/* A get/peek pair over a byte array, matching what fgetc does: a byte is
+ * reported as an unsigned char widened to int, and EOF is -1. */
+struct user_src {
+    const unsigned char *buf;
+    size_t len;
+    size_t pos;
+};
+
+static int user_io_get(void *p)
+{
+    struct user_src *u = (struct user_src *)p;
+    return u->pos < u->len ? (int)u->buf[u->pos++] : EOF;
+}
+
+static int user_io_peek(void *p)
+{
+    struct user_src *u = (struct user_src *)p;
+    return u->pos < u->len ? (int)u->buf[u->pos] : EOF;
+}
+
 /* ---------------------------------------------------------------- transcribe */
 
 static void
 transcribe(const char *mode, const char *buf, size_t len)
 {
+    /* Split an optional "<source>:" prefix off the mode. */
+    const char *source = "buffer";
+    const char *m = mode;
+    if (strncmp(m, "stream:", 7) == 0) { source = "stream"; m += 7; }
+    else if (strncmp(m, "user:", 5) == 0) { source = "user"; m += 5; }
+
     alloc_budget = -1;
-    if (strncmp(mode, "oom:", 4) == 0)
-        alloc_budget = strtol(mode + 4, NULL, 10);
+    if (strncmp(m, "oom:", 4) == 0)
+        alloc_budget = strtol(m + 4, NULL, 10);
 
     printf("{\"schema\":\"%s\",\"mode\":\"%s\",\"bytes\":%lu}\n",
            TR_SCHEMA, mode, (unsigned long)len);
 
     json_stream json[1];
-    json_open_buffer(json, buf, len);
+    FILE *fp = NULL;
+    struct user_src usrc;
+
+    if (strcmp(source, "stream") == 0) {
+        fp = tmpfile();
+        if (fp == NULL) { printf("{\"error\":\"tmpfile failed\"}\n"); return; }
+        if (len) fwrite(buf, 1, len, fp);
+        rewind(fp);
+        json_open_stream(json, fp);
+    } else if (strcmp(source, "user") == 0) {
+        usrc.buf = (const unsigned char *)buf;
+        usrc.len = len;
+        usrc.pos = 0;
+        json_open_user(json, user_io_get, user_io_peek, &usrc);
+    } else {
+        json_open_buffer(json, buf, len);
+    }
+
+    mode = m; /* the rest of this function switches on the bare mode */
 
     if (alloc_budget >= 0) {
         json_allocator a;
@@ -191,6 +246,7 @@ transcribe(const char *mode, const char *buf, size_t len)
         printf("{\"end\":true,\"records\":%lu}\n", (unsigned long)seq);
 
     json_close(json);
+    if (fp != NULL) fclose(fp);
 }
 
 /* --------------------------------------------------------------------- main */

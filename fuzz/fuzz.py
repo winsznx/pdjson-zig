@@ -42,7 +42,11 @@ WORK = ROOT / "fuzz" / "work"
 # confirmed null/out-of-bounds read there (docs/upstream-bug-oom-stack.md), so
 # it crashes constantly and swamps the signal. Pass --modes explicitly to
 # include them when hunting for more upstream defects.
-DEFAULT_MODES = ["next", "nostream", "peek", "skip", "sep"]
+DEFAULT_MODES = [
+    "next", "nostream", "peek", "skip", "sep",
+    "stream:next", "stream:peek", "stream:sep",
+    "user:next", "user:peek", "user:skip",
+]
 
 BATCH = 400
 MAX_INPUT = 4096

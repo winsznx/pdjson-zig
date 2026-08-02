@@ -67,7 +67,7 @@
     },
     {
       "id": "C-04",
-      "text": "Across 1,935 differential comparisons on the fixed corpus, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences.",
+      "text": "Across 4,085 differential comparisons on the fixed corpus, spanning all three documented input sources, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-summary.json",
@@ -78,7 +78,7 @@
       },
       "command": "make differential",
       "verified_date": "2026-08-02",
-      "limitation": "215 inputs x 9 drive modes. Counts only inputs where the original has defined behaviour; the 43 cases where an ASan+UBSan build of the original reports an error are counted separately as upstream_ub (see C-06) and are not folded into this number.",
+      "limitation": "215 inputs x 19 drive modes, covering json_open_buffer, json_open_stream (FILE*) and json_open_user. Counts only inputs where the original has defined behaviour; the 43 cases where an ASan+UBSan build of the original reports an error are counted separately as upstream_ub (see C-06).",
       "allowed_in": [
         "readme",
         "devfolio",
@@ -88,18 +88,18 @@
     },
     {
       "id": "C-05",
-      "text": "The differential comparison covers 9 drive modes including peek, skip, reset, the separator API, strict mode, and 4 deterministic allocation-failure schedules.",
+      "text": "The differential comparison covers 19 drive modes: three input sources crossed with peek, skip, reset, the separator API and strict mode, plus 4 deterministic allocation-failure schedules.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-summary.json",
       "check": {
-        "kind": "equals",
-        "path": "modes.8",
-        "value": "oom:5"
+        "kind": "at_least",
+        "path": "comparisons",
+        "value": 4000
       },
       "command": "make differential",
       "verified_date": "2026-08-02",
-      "limitation": "Modes are next, nostream, peek, skip, sep, oom:0, oom:1, oom:2, oom:5. Documented in docs/transcript-schema.md.",
+      "limitation": "Sources: json_open_buffer, json_open_stream (FILE*), json_open_user. Modes: next, nostream, peek, skip, sep, oom:0/1/2/5. Documented in docs/transcript-schema.md.",
       "allowed_in": [
         "readme",
         "devfolio"
@@ -344,18 +344,18 @@
     },
     {
       "id": "C-18",
-      "text": "Behavioural equivalence has been demonstrated for the buffer input source; the FILE* and user-callback sources are covered by the API surface but not by the differential corpus.",
+      "text": "Behavioural equivalence is demonstrated for all three documented input sources: json_open_buffer, json_open_stream (FILE*) and json_open_user.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-summary.json",
       "check": {
         "kind": "equals",
-        "path": "schema",
-        "value": "pdjson-zig/differential-summary@2"
+        "path": "divergences",
+        "value": 0
       },
       "command": "make differential",
       "verified_date": "2026-08-02",
-      "limitation": "Stated as a limitation rather than a strength. Both transcript producers drive json_open_buffer, because it is the source that takes a fixed byte array and is therefore reproducible. json_open_stream and json_open_user are implemented, exported, and exercised by tests/original/abi_consumer.c and the upstream suite, but not compared transcript-by-transcript. Extending the harness to the FILE* source is the most valuable next step.",
+      "limitation": "This was the project's largest gap and is now closed. Both transcript producers select the source by a mode prefix and drive the identical script through each. It matters because upstream issue #37 is precisely a case where two sources disagree on identical bytes, so a single-source comparison would have missed that entire class. Remaining scope: verified on arm64 macOS and x86-64 Linux.",
       "allowed_in": [
         "readme",
         "devfolio"
@@ -363,7 +363,7 @@
     },
     {
       "id": "C-19",
-      "text": "On the independent nst/JSONTestSuite conformance corpus, the Zig port and the pinned C original agree on all 318 parsing cases across 5 drive modes, and the original is fully conforming (95/95 must-accept, 188/188 must-reject).",
+      "text": "On the independent nst/JSONTestSuite conformance corpus, the Zig port and the pinned C original agree on all 318 parsing cases across 11 drive modes and all three input sources, and the original is fully conforming (95/95 must-accept, 188/188 must-reject).",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/conformance-report.json",
@@ -384,7 +384,7 @@
     },
     {
       "id": "C-20",
-      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 1,935 fixed-corpus comparisons plus 1,590 JSONTestSuite comparisons plus the published fuzz session, all at zero.",
+      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 4,085 fixed-corpus comparisons plus 3,498 JSONTestSuite comparisons plus a 30-minute 34.6-million-case fuzz session, all at zero.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/differential-jsontestsuite.json",

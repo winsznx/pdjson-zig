@@ -19,7 +19,7 @@ artifacts in `artifacts/`. Every number here is read out of a file that
 
 ## Differential (fixed corpus)
 
-- 215 inputs x 9 modes = 1935 comparisons
+- 215 inputs x 19 modes = 4085 comparisons
 - Divergences: **0**
 - Upstream undefined behaviour (sanitizer-confirmed): 43
 - Zig crashes: 0, timeouts: 0
@@ -27,7 +27,7 @@ artifacts in `artifacts/`. Every number here is read out of a file that
 ## Differential fuzzing
 
 - Session: `fuzz/logs/session-published.json` (seed 20260802)
-- Duration: 90.02s, 1834800 cases (20383.2/s)
+- Duration: 1800.0s, 34595200 cases (19219.5/s)
 - Divergences: **0**, crashes: 0, timeouts: 0
 
 ## Harness self-test (mutation)

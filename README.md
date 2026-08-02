@@ -8,8 +8,8 @@
 | **Upstream** | `skeeto/pdjson` @ [`78fe04b`](https://github.com/skeeto/pdjson/commit/78fe04b820dc8817f540bdd87fb22887e0ef3981) (master, 2024-02-22, Unlicense) |
 | **Dominant proof** | Two independent programs drive the C original and the Zig port through the same script and emit deterministic NDJSON behaviour transcripts. Equivalence means **byte-identical transcripts**. |
 | **Upstream tests** | **18/18** assertions pass, sources unmodified and hash-pinned, linked against only the Zig library |
-| **Differential** | **0 divergences** in 1,935 fixed-corpus comparisons + 1,590 JSONTestSuite comparisons |
-| **Fuzzing** | 25-minute published session, **0 divergences, 0 crashes, 0 timeouts** |
+| **Differential** | **0 divergences** in 4,085 fixed-corpus + 3,498 JSONTestSuite comparisons, across all three input sources |
+| **Fuzzing** | 30-minute published session, **0 divergences, 0 crashes, 0 timeouts** |
 | **Harness self-test** | **12/12** injected defects caught (its first sound run found 4 real gaps in the corpus) |
 | **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; 10 pointer casts, each enumerated. Ships **ReleaseSafe** — checks on. |
 | **Benchmark** | **Slower on 9 of 12** workload/mode pairs, faster on 3. Full table below, generated from the artifact. |
@@ -56,8 +56,8 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-01 | All 18 assertions in the unmodified upstream test suite pass against the Zig library. | verified | [`artifacts/original-test-report.json`](artifacts/original-test-report.json) |
 | C-02 | Zero assertions in the upstream suite are skipped, adapted, or marked unsupported. | verified | [`artifacts/original-test-report.json`](artifacts/original-test-report.json) |
 | C-03 | The upstream source tree is byte-identical to commit 78fe04b across all 9 files. | verified | [`artifacts/upstream-manifest.json`](artifacts/upstream-manifest.json) |
-| C-04 | Across 1,935 differential comparisons on the fixed corpus, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
-| C-05 | The differential comparison covers 9 drive modes including peek, skip, reset, the separator API, strict mode, and 4 deterministic allocation-failure schedules. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
+| C-04 | Across 4,085 differential comparisons on the fixed corpus, spanning all three documented input sources, the Zig implementation and the pinned C original produce byte-identical behaviour transcripts, with 0 divergences. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
+| C-05 | The differential comparison covers 19 drive modes: three input sources crossed with peek, skip, reset, the separator API and strict mode, plus 4 deterministic allocation-failure schedules. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-06 | Differential testing and the oracle determinism gate found three defects in the pinned original, all reported upstream with minimal public-API reproducers: a null dereference and an out-of-bounds read at pdjson.c:912, a 0xFF/EOF confusion in the buffer source, and an uninitialised read in json_get_number. | verified | [`artifacts/upstream-issues.json`](artifacts/upstream-issues.json) |
 | C-07 | The memory-buffer source in the pinned original treats byte 0xFF as end-of-input on signed-char targets, disagreeing with its own FILE* source on identical input. | verified | [`artifacts/upstream-issues.json`](artifacts/upstream-issues.json) |
 | C-08 | The Zig static library is built only from Zig-produced objects, exports all 22 public symbols from the pinned header, and contains no upstream parser code. | verified | [`artifacts/linkage-report.json`](artifacts/linkage-report.json) |
@@ -70,9 +70,9 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-15 | The Zig implementation's json_get_number matches C strtod bit for bit across a 661-point exponent sweep, powers of two, digit strings up to 500 digits, 20,000 randomised decimal lexemes and 20,000 randomised hex floats. | verified | [`artifacts/original-test-report.json`](artifacts/original-test-report.json) |
 | C-16 | The Zig implementation is slower than the C original on 9 of the 12 benchmark workload/mode pairs measured, and faster on 3. | verified | [`artifacts/benchmark-summary.json`](artifacts/benchmark-summary.json) |
 | C-17 | A published differential fuzz session found zero divergences, zero crashes and zero timeouts. | verified | [`artifacts/verification-report.json`](artifacts/verification-report.json) |
-| C-18 | Behavioural equivalence has been demonstrated for the buffer input source; the FILE* and user-callback sources are covered by the API surface but not by the differential corpus. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
-| C-19 | On the independent nst/JSONTestSuite conformance corpus, the Zig port and the pinned C original agree on all 318 parsing cases across 5 drive modes, and the original is fully conforming (95/95 must-accept, 188/188 must-reject). | verified | [`artifacts/conformance-report.json`](artifacts/conformance-report.json) |
-| C-20 | No divergence has ever been observed on any input where the pinned original is well defined: 1,935 fixed-corpus comparisons plus 1,590 JSONTestSuite comparisons plus the published fuzz session, all at zero. | verified | [`artifacts/differential-jsontestsuite.json`](artifacts/differential-jsontestsuite.json) |
+| C-18 | Behavioural equivalence is demonstrated for all three documented input sources: json_open_buffer, json_open_stream (FILE*) and json_open_user. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
+| C-19 | On the independent nst/JSONTestSuite conformance corpus, the Zig port and the pinned C original agree on all 318 parsing cases across 11 drive modes and all three input sources, and the original is fully conforming (95/95 must-accept, 188/188 must-reject). | verified | [`artifacts/conformance-report.json`](artifacts/conformance-report.json) |
+| C-20 | No divergence has ever been observed on any input where the pinned original is well defined: 4,085 fixed-corpus comparisons plus 3,498 JSONTestSuite comparisons plus a 30-minute 34.6-million-case fuzz session, all at zero. | verified | [`artifacts/differential-jsontestsuite.json`](artifacts/differential-jsontestsuite.json) |
 | C-21 | Verification found two real defects in this port -- a hex-float rounding error and an uninitialised read inherited from the original -- both fixed, regression-tested and documented. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-22 | Both transcript producers are deterministic on Linux and macOS: five runs over every fixture in five modes produce byte-identical output. | verified | [`artifacts/determinism-report.json`](artifacts/determinism-report.json) |
 <!-- CLAIMS:END -->
@@ -177,11 +177,19 @@ Tokens are hex because they legitimately contain NUL, invalid UTF-8, and control
 bytes. Numbers are IEEE-754 bit patterns because `-0.0`, infinities and NaN
 payloads all matter. Schema and rationale: [`docs/transcript-schema.md`](docs/transcript-schema.md).
 
-Every input runs through **nine drive modes**, because the same bytes exercise
-different code depending on how the caller drives the parser: `next`, `nostream`
-(strict), `peek`, `skip`, `sep` (the README's separator loop via
-`json_source_get`/`json_source_peek`), and four deterministic allocation-failure
-schedules `oom:0/1/2/5`. The `oom:*` modes are how bug #36 surfaced.
+Every input runs through **19 drive modes** — three input sources crossed with
+five ways of driving the parser, plus four allocation-failure schedules.
+
+The *sources* are `json_open_buffer` (a byte array), `json_open_stream` (a
+`FILE *`, so reads go through `fgetc`/`ungetc`) and `json_open_user` (caller
+callbacks). Comparing all three matters more than it might look: upstream issue
+[#37](https://github.com/skeeto/pdjson/issues/37) is precisely a case where two
+of them disagree on identical bytes, so a single-source comparison would have
+missed that entire class of difference.
+
+The *drives* are `next`, `nostream` (strict), `peek`, `skip`, `sep` (the README's
+separator loop via `json_source_get`/`json_source_peek`), and the deterministic
+allocation-failure schedules `oom:0/1/2/5` that surfaced bug #36.
 
 ### Test preservation
 
@@ -423,13 +431,10 @@ while (true) switch (try p.next()) {
 
 Stated here rather than left to be discovered.
 
-- **The differential corpus drives `json_open_buffer` only.** `json_open_stream`
-  (`FILE *`) and `json_open_user` are implemented, exported, and exercised by the
-  upstream suite and `abi_consumer.c`, but are not compared transcript by
-  transcript. Extending the harness to the `FILE *` source is the most valuable
-  next step. (Claim C-18.)
 - **ABI equivalence is verified on two targets**, arm64 macOS and x86-64 Linux,
-  not asserted universally.
+  not asserted universally. Three of the four findings in the final audit were
+  platform-specific and invisible on the development machine, so a third target
+  would likely find a fourth thing.
 - **`nan(...)` payloads that overflow 64 bits are not matched.** C99 §7.20.1.3p4
   makes them implementation-defined and libcs disagree. Reachable only by calling
   `json_get_number()` on a *string* token beginning `nan(`. ([D-09](DECISIONS.md))

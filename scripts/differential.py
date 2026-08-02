@@ -31,7 +31,13 @@ C_BIN = ROOT / "build" / "transcript_c"
 C_SAN_BIN = ROOT / "build" / "transcript_c_asan"
 ZIG_BIN = ROOT / "zig-out" / "bin" / "transcript_zig"
 
+# Drive modes, optionally prefixed with an input source.
+#
+# The three sources are documented as interchangeable, and upstream issue #37 is
+# precisely a case where two of them disagree on identical bytes, so comparing
+# only one would leave the most interesting class of difference untested.
 DEFAULT_MODES = [
+    # json_open_buffer -- a byte array
     "next",      # the plain streaming event loop with reset between values
     "nostream",  # strict mode: trailing data is an error
     "peek",      # peek before every next, exercising the buffered-event path
@@ -41,6 +47,10 @@ DEFAULT_MODES = [
     "oom:1",     # the first allocation succeeds, the rest fail
     "oom:2",
     "oom:5",
+    # json_open_stream -- a FILE*, so reads go through fgetc/ungetc
+    "stream:next", "stream:nostream", "stream:peek", "stream:skip", "stream:sep",
+    # json_open_user -- caller-supplied get/peek callbacks
+    "user:next", "user:nostream", "user:peek", "user:skip", "user:sep",
 ]
 
 TIMEOUT = 20

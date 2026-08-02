@@ -12,6 +12,36 @@ const abi = pdjson.abi;
 const core = pdjson.parser;
 
 const schema = "pdjson-zig/transcript@2";
+
+// A get/peek pair over a byte array for json_open_user, matching what fgetc
+// does: a byte is an unsigned char widened to int, EOF is -1. Mirrors
+// oracle/transcript_c.c's user_src exactly.
+const UserSrc = struct {
+    buf: []const u8,
+    pos: usize = 0,
+
+    var instance: UserSrc = .{ .buf = &.{} };
+
+    fn get(p: ?*anyopaque) callconv(.c) c_int {
+        _ = p;
+        const u = &instance;
+        if (u.pos >= u.buf.len) return -1;
+        defer u.pos += 1;
+        return u.buf[u.pos];
+    }
+
+    fn peek(p: ?*anyopaque) callconv(.c) c_int {
+        _ = p;
+        const u = &instance;
+        if (u.pos >= u.buf.len) return -1;
+        return u.buf[u.pos];
+    }
+};
+
+extern "c" fn tmpfile() ?*anyopaque;
+extern "c" fn fwrite(ptr: [*]const u8, size: usize, n: usize, stream: ?*anyopaque) usize;
+extern "c" fn rewind(stream: ?*anyopaque) void;
+extern "c" fn fclose(stream: ?*anyopaque) c_int;
 const max_records = 200000;
 
 fn typeName(t: abi.Type) []const u8 {
@@ -183,17 +213,44 @@ pub fn main(p: std.process.Init) !void {
     try stdout.flush();
 }
 
-fn transcribe(e: Emitter, mode: []const u8, input: []const u8) !void {
+fn transcribe(e: Emitter, full_mode: []const u8, input: []const u8) !void {
+    // Split an optional "<source>:" prefix off the mode, same as the C oracle.
+    var source: []const u8 = "buffer";
+    var mode = full_mode;
+    if (std.mem.startsWith(u8, mode, "stream:")) {
+        source = "stream";
+        mode = mode["stream:".len..];
+    } else if (std.mem.startsWith(u8, mode, "user:")) {
+        source = "user";
+        mode = mode["user:".len..];
+    }
+
     alloc_budget = -1;
     if (std.mem.startsWith(u8, mode, "oom:")) {
         alloc_budget = std.fmt.parseInt(i64, mode[4..], 10) catch -1;
     }
 
-    try e.out.print("{{\"schema\":\"{s}\",\"mode\":\"{s}\",\"bytes\":{d}}}\n", .{ schema, mode, input.len });
+    try e.out.print("{{\"schema\":\"{s}\",\"mode\":\"{s}\",\"bytes\":{d}}}\n", .{ schema, full_mode, input.len });
 
     var stream: abi.Stream = undefined;
     const s = &stream;
-    core.openBuffer(s, input.ptr, input.len);
+    var fp: ?*anyopaque = null;
+
+    if (std.mem.eql(u8, source, "stream")) {
+        fp = tmpfile();
+        if (fp == null) {
+            try e.out.writeAll("{\"error\":\"tmpfile failed\"}\n");
+            return;
+        }
+        if (input.len != 0) _ = fwrite(input.ptr, 1, input.len, fp);
+        rewind(fp);
+        core.openStream(s, fp);
+    } else if (std.mem.eql(u8, source, "user")) {
+        UserSrc.instance = .{ .buf = input };
+        core.openUser(s, UserSrc.get, UserSrc.peek, null);
+    } else {
+        core.openBuffer(s, input.ptr, input.len);
+    }
 
     if (alloc_budget >= 0) {
         core.setAllocator(s, &.{
@@ -257,4 +314,5 @@ fn transcribe(e: Emitter, mode: []const u8, input: []const u8) !void {
     }
 
     core.close(s);
+    if (fp != null) _ = fclose(fp);
 }
