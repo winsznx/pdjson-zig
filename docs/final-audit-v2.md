@@ -232,6 +232,20 @@ figure as though it were universal. It now names the platform, quotes both, and
 the Linux measurement is committed as an artifact so the comparison is backed
 rather than asserted.
 
+**Eighth: platform-specific numbers stated as if fixed.** Two CI jobs failed for
+the same underlying reason, in opposite directions. C-34's text quoted `2.42x`
+and `3.29x` — true on macOS, false on Linux where the artifact says 12.51 and
+23.42. And the README's cross-platform sentence, which I had *typed* into a
+generated block, was wrong on any host whose own figures differed — including
+CI's macOS runner, whose toolchain gives different section sizes from mine.
+
+The rule that came out of it: **a claim about a platform-specific measurement must
+not quote the number in its text.** C-34 now states the property and direction and
+leaves both figures to the artifacts; the README renders the Linux comparison
+from a committed Linux artifact instead of from memory; and the generated line
+naming the measurement host meant kernel versions started appearing as figures,
+so the audit now excludes the exact platform identifiers the artifacts declare.
+
 **CI had the same blind spot, for a different reason.** It runs the pipeline's
 steps individually rather than through `make verify`, and it had never run
 `scripts/state-machine.py` at all — so it was green while a clean clone failed.

@@ -664,7 +664,7 @@
     },
     {
       "id": "C-34",
-      "text": "The Zig port costs a consumer more space than the original: linking one identical C program against the Zig archive rather than the pinned original's object grows the stripped executable 2.42x and the machine-code section 3.29x.",
+      "text": "The Zig port costs a consumer more space than the original: linking one identical C program against the Zig archive rather than the pinned original's object grows both the stripped executable and the machine-code section, by a factor the artifact records for the host it was measured on.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/size-report.json",
@@ -675,7 +675,7 @@
       },
       "command": "python3 scripts/size-report.py",
       "verified_date": "2026-08-02",
-      "limitation": "Measured on arm64 macOS with Apple clang; section names and page rounding differ on ELF, which the script handles but which has not been cross-checked on every target. The comparison links the same consumer source with the same compiler and flags and verifies both binaries produce the same output before reporting, but a larger consumer would dilute the ratio. Archive-vs-object bytes are recorded and deliberately not claimed, because a .a and a .o are not the same kind of object.",
+      "limitation": "The ratio is deliberately not quoted here because it is strongly platform-specific -- roughly 2.4x the stripped binary on arm64 macOS against roughly 12.5x on x86-64 Linux, where Zig emits far more unwind and read-only data -- and it varies between machines of the same OS with the toolchain version. Both measurements are committed: artifacts/size-report.json for the host that last ran it and artifacts/size/size-report-linux-x86_64.json for Linux. The comparison links the same consumer source with the same compiler and flags and verifies both binaries produce the same output before reporting, but a larger consumer would dilute the ratio.",
       "allowed_in": [
         "readme",
         "devfolio",

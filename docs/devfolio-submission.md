@@ -313,9 +313,11 @@ Stated rather than left to be discovered:
 - nan(...) payloads that overflow 64 bits are not matched. C99 7.20.1.3p4 makes
   them implementation-defined and libcs disagree. Reachable only by calling
   json_get_number() on a string token beginning "nan(".
-- The Zig port is slower than C on 9 of 12 workload/mode pairs, and 2.42x the
-  stripped binary size in a consumer. Part of the remaining time gap is
-  unexplained.
+- The Zig port is slower than C on 9 of 12 workload/mode pairs, and larger in a
+  consumer's binary. The size cost is strongly platform-specific -- roughly 2.4x
+  the stripped binary on arm64 macOS against roughly 12.5x on x86-64 Linux -- so
+  the exact ratio is left to the committed artifacts rather than quoted as one
+  number. Part of the remaining time gap is unexplained.
 - The three upstream issues are filed, not triaged. No maintainer has confirmed
   them.
 - This is demonstrated equivalence, not proven equivalence. 11,730,088 compared

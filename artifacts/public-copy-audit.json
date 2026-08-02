@@ -17,10 +17,22 @@
     "README.md": {
       "channel": "readme",
       "fenced_blocks_are_content": false,
-      "numbers": 104,
+      "numbers": 103,
       "unbacked": []
     }
   },
+  "platform_identifiers_excluded": [
+    "0.16.0 (pinned download, not a marketplace action)",
+    "Apple clang version 21.0.0 (clang-2100.1.1.101)",
+    "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+    "macOS-27.0-arm64-arm-64bit-Mach-O",
+    "macOS-27.0-arm64-arm-64bit",
+    "Apple M1 Pro",
+    "2026-08-02",
+    "x86_64",
+    "0.16.0",
+    "arm64"
+  ],
   "problems": 0,
   "problem_detail": [],
   "limitation": "Presence, not correspondence: a figure passes if it appears anywhere in artifacts/, not necessarily under the label the copy gives it. It catches invented and stale numbers, which are the failures that happen."

@@ -80,6 +80,8 @@ PROSE_NUMBERS = {
     "4.6": "a figure quoted as not reproducing, with the measurement that replaces it",
     "78": "the pinned upstream commit prefix, 78fe04b",
     "720": "a video resolution in the demo-recording checklist",
+    "2.4": "a size ratio rounded to one place and labelled approximate, because the exact figure is platform-specific",
+    "12.5": "the same, for x86-64 Linux",
 }
 
 # Phrases that identify an embargoed subject in prose. Keyed by claim id.
@@ -88,8 +90,43 @@ EMBARGO_MARKERS = {
 }
 
 
-def numbers_in(text: str, fenced_is_content: bool = False) -> set[str]:
+def platform_strings() -> list[str]:
+    """Platform identifiers the artifacts record, so they can be excluded.
+
+    A generated line reading "Measured on Linux-6.17.0-1020-azure-x86_64" puts a
+    kernel version into outward-facing copy. It is an identifier, not a figure,
+    but it looks like one -- and it is not knowable in advance, since it comes
+    from whichever host ran the measurement. Taking the exact strings from the
+    artifacts is precise; a regex for "things that look like versions" would
+    also swallow real ratios.
+    """
+    found: list[str] = []
+
+    def walk(obj):
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if k in ("platform", "machine", "processor", "zig_version",
+                         "c_compiler", "generated") and isinstance(v, str):
+                    found.append(v)
+                else:
+                    walk(v)
+        elif isinstance(obj, list):
+            for v in obj:
+                walk(v)
+
+    for path in sorted(ARTIFACTS.rglob("*.json")):
+        try:
+            walk(json.loads(path.read_text()))
+        except (OSError, json.JSONDecodeError):
+            continue
+    return sorted(set(found), key=len, reverse=True)
+
+
+def numbers_in(text: str, fenced_is_content: bool = False,
+               identifiers: list[str] | None = None) -> set[str]:
     out = set()
+    for ident in identifiers or []:
+        text = text.replace(ident, "")
     if fenced_is_content:
         # Keep the block's prose, drop only lines that are plainly shell:
         # a leading $, or a command this repository actually runs.
@@ -178,6 +215,7 @@ def artifact_corpus() -> set[str]:
 def main() -> int:
     claims = json.loads((ROOT / "CLAIMS.json").read_text())["claims"]
     corpus = artifact_corpus()
+    identifiers = platform_strings()
     problems: list[str] = []
     checked = {}
 
@@ -189,7 +227,8 @@ def main() -> int:
         text = path.read_text()
 
         unbacked = []
-        for n in sorted(numbers_in(text, fenced), key=lambda x: (len(x), x)):
+        for n in sorted(numbers_in(text, fenced, identifiers),
+                        key=lambda x: (len(x), x)):
             if n in PROSE_NUMBERS or n in corpus:
                 continue
             unbacked.append(n)
@@ -216,7 +255,7 @@ def main() -> int:
                         f"allowed nor disclosable in the {channel!r} channel")
         checked[doc] = {"channel": channel,
                         "fenced_blocks_are_content": fenced,
-                        "numbers": len(numbers_in(text, fenced)),
+                        "numbers": len(numbers_in(text, fenced, identifiers)),
                         "unbacked": unbacked}
 
     report = {
@@ -228,6 +267,7 @@ def main() -> int:
                    "and link targets are stripped first -- a flag or an issue "
                    "number is not a claim."),
         "documents": checked,
+        "platform_identifiers_excluded": identifiers,
         "problems": len(problems),
         "problem_detail": problems,
         "limitation": ("Presence, not correspondence: a figure passes if it "
