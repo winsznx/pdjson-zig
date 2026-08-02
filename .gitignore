@@ -10,3 +10,7 @@ bench/results/*.tmp
 # Fetched on demand by scripts/fetch-conformance.sh, not vendored.
 # It is a separate MIT-licensed project; see LICENSES.md.
 tests/conformance/JSONTestSuite/
+
+# Python bytecode from the verification scripts.
+__pycache__/
+*.pyc

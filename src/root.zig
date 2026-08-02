@@ -13,6 +13,7 @@
 const std = @import("std");
 
 pub const abi = @import("abi.zig");
+pub const abi_contract = @import("abi_contract.zig");
 pub const parser = @import("parser.zig");
 pub const strtod = @import("strtod.zig");
 pub const errmsg = @import("errmsg.zig");
@@ -52,9 +53,14 @@ pub const panic = std.debug.FullPanic(struct {
 comptime {
     // Emit the C ABI surface as part of the library.
     _ = @import("c_api.zig");
+
+    // Assert this library's struct layout against the layout the C compiler
+    // reads out of the pinned header. Building at all is the check.
+    _ = @import("abi_contract.zig");
 }
 
 test {
     @import("std").testing.refAllDecls(@This());
     _ = @import("api.zig");
+    _ = @import("abi_contract.zig");
 }

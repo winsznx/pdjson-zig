@@ -11,7 +11,7 @@
 | **Differential** | **0 divergences** in 4,085 fixed-corpus + 3,498 JSONTestSuite comparisons, across all three input sources |
 | **Fuzzing** | 30-minute published session, **11.8M cases, 0 divergences, 0 crashes, 0 timeouts** |
 | **Harness self-test** | **12/12** injected defects caught (its first sound run found 4 real gaps in the corpus) |
-| **C ABI** | Identical layout on **6 targets** (32- and 64-bit, x86, ARM, RISC-V, Windows); a C consumer using the pinned header links against the Zig archive alone |
+| **C ABI** | Identical layout on **6 targets** (32- and 64-bit, x86, ARM, RISC-V, Windows), asserted at compile time so a drift fails `zig build`; a C consumer using the pinned header links against the Zig archive alone |
 | **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; 10 pointer casts, each enumerated. Ships **ReleaseSafe** — checks on. |
 | **Benchmark** | **Slower on 9 of 12** workload/mode pairs, faster on 3. Full table below, generated from the artifact. |
 | **Upstream bugs found** | 3, all filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38). Two independently confirmed by Valgrind. |
@@ -62,8 +62,8 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-06 | Differential testing and the oracle determinism gate found three defects in the pinned original, all reported upstream with minimal public-API reproducers: a null dereference and an out-of-bounds read at pdjson.c:912, a 0xFF/EOF confusion in the buffer source, and an uninitialised read in json_get_number. | verified | [`artifacts/upstream-issues.json`](artifacts/upstream-issues.json) |
 | C-07 | The memory-buffer source in the pinned original treats byte 0xFF as end-of-input on signed-char targets, disagreeing with its own FILE* source on identical input. | verified | [`artifacts/upstream-issues.json`](artifacts/upstream-issues.json) |
 | C-08 | The Zig static library is built only from Zig-produced objects, exports all 22 public symbols from the pinned header, and contains no upstream parser code. | verified | [`artifacts/linkage-report.json`](artifacts/linkage-report.json) |
-| C-09 | The Zig declarations and the pinned C header agree on every struct offset, size, alignment and enumerator, with sizeof(struct json_stream) == 272 on this target. | verified | [`artifacts/abi-report.json`](artifacts/abi-report.json) |
-| C-10 | A C program that includes the pinned public header and declares struct json_stream by value links against only the Zig archive and passes its checks. | verified | [`artifacts/abi-report.json`](artifacts/abi-report.json) |
+| C-09 | The Zig declarations and the pinned C header agree on every struct offset, size, alignment and enumerator, with sizeof(struct json_stream) == 272 on this target. | verified | [`artifacts/abi/abi-report.json`](artifacts/abi/abi-report.json) |
+| C-10 | A C program that includes the pinned public header and declares struct json_stream by value links against only the Zig archive and passes its checks. | verified | [`artifacts/abi/abi-report.json`](artifacts/abi/abi-report.json) |
 | C-11 | The shipped library uses no @constCast, no inline assembly, no @setRuntimeSafety, no unreachable, and no force-unwraps; its 10 pointer casts are confined to the C allocator and char* boundaries and are individually enumerated. | verified | [`artifacts/safety-report.json`](artifacts/safety-report.json) |
 | C-12 | The shipped artifact is built in ReleaseSafe, so bounds checks and overflow checks are active at runtime, including in the reported benchmark figures. | verified | [`artifacts/safety-report.json`](artifacts/safety-report.json) |
 | C-13 | All 12 deliberately injected defects in the Zig implementation are detected by the fixed-corpus differential, with zero survivors. | verified | [`artifacts/mutation-report.json`](artifacts/mutation-report.json) |
@@ -76,11 +76,14 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-20 | No divergence has ever been observed on any input where the pinned original is well defined: 5,805 fixed-corpus comparisons plus 3,498 JSONTestSuite comparisons plus an 11.8-million-case fuzz session, all at zero. | verified | [`artifacts/differential-jsontestsuite.json`](artifacts/differential-jsontestsuite.json) |
 | C-21 | Verification found two real defects in this port -- a hex-float rounding error and an uninitialised read inherited from the original -- both fixed, regression-tested and documented. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-22 | Both transcript producers are deterministic on Linux and macOS: five runs over every fixture in five modes produce byte-identical output. | verified | [`artifacts/determinism-report.json`](artifacts/determinism-report.json) |
-| C-23 | The Zig type declarations and the pinned C header describe the same ABI on 6 targets spanning 32- and 64-bit, little-endian ARM, x86, RISC-V and Windows. | verified | [`artifacts/abi-cross-report.json`](artifacts/abi-cross-report.json) |
+| C-23 | The Zig type declarations and the pinned C header describe the same ABI on 6 targets spanning 32- and 64-bit, little-endian ARM, x86, RISC-V and Windows. | verified | [`artifacts/abi/abi-cross-report.json`](artifacts/abi/abi-cross-report.json) |
 | C-24 | Valgrind memcheck independently confirms both memory defects in the pinned original and finds no further ones; the upstream test suite itself is clean under memcheck. | verified | [`artifacts/valgrind-report.json`](artifacts/valgrind-report.json) |
 | C-25 | An implementation-independent invariant checker validates 12,792 transcripts and 5,645,337 records from both implementations against 13 rules, with zero violations on either side. | verified | [`artifacts/invariants/summary.json`](artifacts/invariants/summary.json) |
 | C-26 | Hex-float conversion in this port is correctly rounded under IEEE-754, verified against an exact-integer reference that shares no code with it, over 200,017 literals concentrated at the rounding boundaries. | verified | [`artifacts/hex-float/property-summary.json`](artifacts/hex-float/property-summary.json) |
 | C-28 | All 22 exported functions have their behaviour compared between the two implementations; none is untested. | verified | [`artifacts/differential/api-coverage.json`](artifacts/differential/api-coverage.json) |
+| C-29 | The struct layout the C compiler reads out of the pinned header is asserted against src/abi.zig at compile time, so a layout drift fails `zig build` itself: 27 field offsets and sizes, 11 enumerators, 7 struct size and alignment values. | verified | [`artifacts/abi/abi-report.json`](artifacts/abi/abi-report.json) |
+| C-30 | The compile-time ABI contract is demonstrated to be capable of failing: 10 injected layout drifts -- 6 in the recorded C layout, 4 in the port's own declarations -- are each caught by the build, with an unmodified control that builds clean. | verified | [`artifacts/abi/contract-negative.json`](artifacts/abi/contract-negative.json) |
+| C-31 | The Zig archive exports exactly the 22 functions the pinned header declares -- none missing, none extra -- compared as a set rather than as a count. | verified | [`artifacts/abi/abi-report.json`](artifacts/abi/abi-report.json) |
 <!-- CLAIMS:END -->
 
 Every row is checked against a generated artifact by
@@ -153,7 +156,8 @@ from "silent memory read" to "checked at runtime".
 
 ```
 src/abi.zig      C-layout types. Written independently of the header, then
-                 proved equivalent to it by two probes that emit the same table.
+                 proved equivalent to it by two probes and by a comptime
+                 contract generated from the header (src/abi_contract.zig).
 src/parser.zig   The state machine. Event-pull, iterative, heap container stack.
 src/errmsg.zig   Byte-exact reconstruction of pdjson's diagnostics.
 src/strtod.zig   A locale-independent strtod (upstream #27 is that libc's is not).
@@ -336,6 +340,32 @@ It asserts field *sizes* as well as offsets: a shorter trailing array can be
 absorbed by padding, leaving `sizeof` and every offset identical. That gap was in
 the first version of the check and was found by deliberately breaking it.
 
+Both of those run from a script, though, and a consumer who runs `zig build` and
+links the archive never invokes either. So the layout is also asserted **inside
+the build**: a C probe emits what the pinned header dictates into
+[`src/abi_generated.zig`](src/abi_generated.zig), and
+[`src/abi_contract.zig`](src/abi_contract.zig) checks `src/abi.zig` against all
+27 field offsets and sizes, 11 enumerators and 7 struct size and alignment
+values at `comptime`. A drift fails `zig build`, naming the field.
+
+Ten deliberate drifts — six in the recorded C layout, four in the port's own
+declarations — confirm those assertions can fail, alongside a control that must
+still build and a check that the 32-bit guard genuinely disengages rather than
+the assertions being dead everywhere.
+
+```
+$ sh scripts/abi-contract-negative.sh
+contract negative test: 10 detected, 0 missed
+```
+
+`zig build diagnose` reports the two target-dependent decisions that are
+invisible in the source: whether this target's C `char` is signed (which decides
+whether `0xFF` collides with `EOF`), and whether the compile-time contract is
+active here or deferred to the cross-target check.
+
+Full account: [`docs/abi.md`](docs/abi.md), including the one blind spot no
+layout table can cover.
+
 ## Bugs found in the original
 
 Both were found by the verification pipeline, not by reading the code. Both have
@@ -450,7 +480,7 @@ while (true) switch (try p.next()) {
 | `src/` | The Zig implementation. |
 | `include/pdjson.h` | Byte-identical to upstream's header. |
 | `oracle/` | C harnesses that link the original: transcript oracle, benchmark. |
-| `tools/` | Zig counterparts, plus the ABI probe. |
+| `tools/` | Zig counterparts, the ABI probe, and `zig build diagnose`. |
 | `tests/original/` | A C consumer using the pinned header. Upstream's own tests are used in place. |
 | `tests/port/` | Zig-native tests: behaviour, number torture, allocator failure, regressions. |
 | `tests/conformance/fixtures/` | 215 generated edge-case inputs. |

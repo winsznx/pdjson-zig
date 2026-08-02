@@ -69,7 +69,7 @@ def newest_fuzz_session():
 def main() -> int:
     tests = load("original-test-report.json")
     diff = load("differential-summary.json")
-    abi = load("abi-report.json")
+    abi = load("abi/abi-report.json")
     safety = load("safety-report.json")
     linkage = load("linkage-report.json")
     bench = load("benchmark-summary.json")

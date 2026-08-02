@@ -87,7 +87,7 @@
     "comparison": "identical",
     "c_consumer_link": "linked_and_ran",
     "sizeof_json_stream": 272,
-    "exported_symbols": 22
+    "exported_symbols": null
   },
   "linkage": {
     "result": "pass",

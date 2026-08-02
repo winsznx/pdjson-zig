@@ -21,7 +21,7 @@
 set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-OUT="$ROOT/artifacts/abi-cross-report.json"
+OUT="$ROOT/artifacts/abi/abi-cross-report.json"
 
 TARGETS=${TARGETS:-"x86_64-linux-gnu x86-linux-gnu aarch64-linux-gnu arm-linux-gnueabihf x86_64-windows-gnu riscv64-linux-gnu"}
 
@@ -125,7 +125,7 @@ for target in $TARGETS; do
     fi
 done
 
-mkdir -p "$ROOT/artifacts"
+mkdir -p "$ROOT/artifacts/abi"
 cat > "$OUT" <<EOF
 {
   "schema": "pdjson-zig/abi-cross-report@1",
@@ -139,5 +139,5 @@ EOF
 
 echo
 echo "cross-target ABI: $checked target(s) checked, $failed mismatch(es)"
-echo "wrote artifacts/abi-cross-report.json"
+echo "wrote artifacts/abi/abi-cross-report.json"
 [ "$failed" -eq 0 ]

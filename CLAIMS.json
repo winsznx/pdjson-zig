@@ -170,7 +170,7 @@
       "text": "The Zig declarations and the pinned C header agree on every struct offset, size, alignment and enumerator, with sizeof(struct json_stream) == 272 on this target.",
       "status": "verified",
       "proof_level": "executable",
-      "artifact": "artifacts/abi-report.json",
+      "artifact": "artifacts/abi/abi-report.json",
       "check": {
         "kind": "equals",
         "path": "comparison",
@@ -190,7 +190,7 @@
       "text": "A C program that includes the pinned public header and declares struct json_stream by value links against only the Zig archive and passes its checks.",
       "status": "verified",
       "proof_level": "executable",
-      "artifact": "artifacts/abi-report.json",
+      "artifact": "artifacts/abi/abi-report.json",
       "check": {
         "kind": "equals",
         "path": "c_consumer_link",
@@ -448,7 +448,7 @@
       "text": "The Zig type declarations and the pinned C header describe the same ABI on 6 targets spanning 32- and 64-bit, little-endian ARM, x86, RISC-V and Windows.",
       "status": "verified",
       "proof_level": "executable",
-      "artifact": "artifacts/abi-cross-report.json",
+      "artifact": "artifacts/abi/abi-cross-report.json",
       "check": {
         "kind": "equals",
         "path": "mismatches",
@@ -552,6 +552,66 @@
       "command": "python3 scripts/api-coverage.py",
       "verified_date": "2026-08-02",
       "limitation": "Classification is derived by reading the harness and test sources, not asserted. Running it the first time found json_skip_until untested -- exported, symbol-checked and ABI-checked, but never behaviourally compared, and not called by upstream's own tests either. Closed with five new drive modes and five Zig tests. Coverage is not exhaustiveness: every export is exercised, but a driven function can still have untested edge cases.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
+    },
+    {
+      "id": "C-29",
+      "text": "The struct layout the C compiler reads out of the pinned header is asserted against src/abi.zig at compile time, so a layout drift fails `zig build` itself: 27 field offsets and sizes, 11 enumerators, 7 struct size and alignment values.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/abi/abi-report.json",
+      "check": {
+        "kind": "at_least",
+        "path": "compile_time_contract_fields",
+        "value": 27
+      },
+      "command": "sh scripts/abi-generate.sh --check && zig build",
+      "verified_date": "2026-08-02",
+      "limitation": "The contract compares against a recorded layout, so on its own it cannot notice the recorded layout going stale; scripts/abi-generate.sh --check re-derives it from the header and runs inside scripts/abi-check.sh. It asserts only when the build target is in the ABI class it was generated for (LP64 here); off-class targets are covered by scripts/abi-cross-check.sh instead, and `zig build diagnose` reports which case applies. No layout table can detect two adjacent same-width fields swapped with each other; that case is covered by the behavioural differential.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
+    },
+    {
+      "id": "C-30",
+      "text": "The compile-time ABI contract is demonstrated to be capable of failing: 10 injected layout drifts -- 6 in the recorded C layout, 4 in the port's own declarations -- are each caught by the build, with an unmodified control that builds clean.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/abi/contract-negative.json",
+      "check": {
+        "kind": "equals",
+        "path": "missed",
+        "value": 0
+      },
+      "command": "sh scripts/abi-contract-negative.sh",
+      "verified_date": "2026-08-02",
+      "limitation": "Ten specific drifts, not an exhaustive space of them. The control build and the off-class deferral check are both recorded in the same artifact, because 10/10 would also be the score of a permanently broken build or of a guard that never disengages.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
+    },
+    {
+      "id": "C-31",
+      "text": "The Zig archive exports exactly the 22 functions the pinned header declares -- none missing, none extra -- compared as a set rather than as a count.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/abi/abi-report.json",
+      "check": {
+        "kind": "equals",
+        "path": "symbol_check",
+        "value": "exact_match"
+      },
+      "command": "sh scripts/abi-check.sh",
+      "verified_date": "2026-08-02",
+      "limitation": "Symbol names and presence only; it says nothing about signatures, which the C consumer link in the same report covers by compiling against the pinned header. Both sides are required to be non-empty, because two empty sets would compare equal.",
       "allowed_in": [
         "readme",
         "devfolio",

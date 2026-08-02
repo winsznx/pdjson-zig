@@ -41,7 +41,7 @@ fi
 echo
 echo "[2/10] required artifacts are present"
 for a in upstream-manifest.json original-test-report.json differential-summary.json \
-         abi-report.json linkage-report.json safety-report.json \
+         abi/abi-report.json linkage-report.json safety-report.json \
          benchmark-summary.json mutation-report.json determinism-report.json \
          verification-report.json upstream-issues.json toolchain.json; do
     if [ -f "artifacts/$a" ]; then

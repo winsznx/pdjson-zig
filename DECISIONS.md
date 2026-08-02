@@ -70,7 +70,7 @@ tracks the platform's C ABI instead of hard-coding one target's answer.
 matching. `include/pdjson.h` is byte-identical to upstream's
 (`sha256:724f8ad9…dac6`).
 **Performance impact.** None; it is the same state any implementation needs.
-**Verification.** `artifacts/abi-report.json`. Beyond the table,
+**Verification.** `artifacts/abi/abi-report.json`. Beyond the table,
 `tests/original/abi_consumer.c` includes the *pinned* header, declares the struct
 by value, links against only `libpdjson.a`, and exercises events, depth, context,
 number values, error text, line numbers, streaming, reset and skip.
@@ -643,3 +643,58 @@ reachable boundary.
 score assembled from invalid comparisons is worse than none.
 **Verification.** `artifacts/mutation-report.json` records every mutant, how it
 was caught, and how many cases were excluded and why.
+
+---
+
+## D-21 — The ABI check moved into the build, and had to be proven capable of failing
+
+**Chosen design.** A C probe that includes only the pinned `pdjson.h` emits the
+layout that header dictates. `scripts/abi-generate.sh` turns that into
+`src/abi_generated.zig`; `src/abi_contract.zig` asserts `src/abi.zig` against
+every entry at `comptime`; `src/root.zig` imports it. A drift now fails
+`zig build` and names the field.
+
+**Reason.** Both existing ABI checks were external — a script someone might
+never run. A layout drift would produce a library that built and installed
+cleanly and only failed later, in a consumer's process. The check belongs where
+the artifact is produced.
+
+**Two things kept out of the generated file, deliberately.** The compiler triple
+and `char` signedness. Neither is a layout property and both differ between
+hosts that share a layout, so including them would have macOS CI declaring the
+Linux copy stale and vice versa. The file is keyed by *ABI class* — pointer and
+`size_t` width — and the contract asserts only when the build target is in that
+class. Off-class targets stay covered by `scripts/abi-cross-check.sh`.
+
+**Why `zig build diagnose` rather than `@compileLog`.** `char` signedness and
+the selected 0xFF mode are comptime-known, so `@compileLog` would report them
+with much less machinery. It is the wrong tool: `@compileLog` *fails the
+compilation it reports on*, so a build could be described or produce a library,
+never both. A build step that runs a small executable prints and exits 0. The
+tool also *observes* rather than restates — it pushes a one-byte `0xFF` buffer
+through `parser.bufferPeek` and prints what comes back.
+
+**The part that took the work.** An assertion that is silently vacuous looks
+exactly like one that is satisfied, and this repository has already been
+embarrassed four times by a check that measured itself rather than its subject.
+So `scripts/abi-contract-negative.sh` injects ten drifts — six into the recorded
+C layout, four into `src/abi.zig` itself — and requires the build to stop on
+each, with an unmodified control that must still build. It also confirms a
+32-bit build passes *through a corrupted table*, proving the ABI-class guard
+disengages off-class rather than the assertions being dead everywhere.
+
+**A blind spot, recorded rather than glossed over.** Two adjacent fields of the
+same width swapped with each other leave every offset and size unchanged. No
+layout table can see it — not this one, not `_Static_assert`. `next` and `flags`
+are such a pair. The behavioural differential covers it: reading a flag word as
+an event type does not survive comparing depth, context, lineno and error text
+on 5,805 records.
+
+**Also tightened here.** The symbol check compared a *count* against a number.
+It now compares the archive's exported `json_*` set against every
+`PDJSON_SYMEXPORT` declaration in the header, in both directions, and refuses to
+conclude anything if either side is empty — two empty sets compare equal.
+
+**Verification.** `artifacts/abi/abi-report.json` (layout, contract freshness,
+symbol set, C consumer link), `artifacts/abi/contract-negative.json` (10
+detected, 0 missed), `artifacts/abi/exported-symbols.txt`, and `docs/abi.md`.

@@ -74,8 +74,10 @@ pub fn build(b: *std.Build) void {
         .{ .name = "transcript_zig", .src = "tools/transcript_zig.zig" },
         .{ .name = "bench_zig", .src = "tools/bench_zig.zig" },
         .{ .name = "hexprobe", .src = "tools/hexprobe.zig" },
+        .{ .name = "diagnose", .src = "tools/diagnose.zig" },
     };
 
+    var diagnose_exe: *std.Build.Step.Compile = undefined;
     for (tools) |t| {
         const mod = b.createModule(.{
             .root_source_file = b.path(t.src),
@@ -86,7 +88,24 @@ pub fn build(b: *std.Build) void {
         mod.addImport("pdjson", pdjson_mod);
         const exe = b.addExecutable(.{ .name = t.name, .root_module = mod });
         b.installArtifact(exe);
+        if (std.mem.eql(u8, t.name, "diagnose")) diagnose_exe = exe;
     }
+
+    // `zig build diagnose` — report, do not assert.
+    //
+    // The facts it prints (target `char` signedness, the 0xFF/EOF mode, whether
+    // the compile-time ABI contract applies here) are all comptime-known, so
+    // @compileLog would surface them with less machinery. It is the wrong tool:
+    // @compileLog fails the compilation it reports on, which would mean the
+    // library could be described or built but never both. Running a built
+    // executable reports and exits 0.
+    const diagnose_step = b.step(
+        "diagnose",
+        "Report target char signedness, the 0xFF/EOF mode, and ABI contract status",
+    );
+    const diagnose_run = b.addRunArtifact(diagnose_exe);
+    if (b.args) |args| diagnose_run.addArgs(args);
+    diagnose_step.dependOn(&diagnose_run.step);
 
     // ------------------------------------------------------------------ tests
 

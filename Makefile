@@ -10,8 +10,8 @@
 
 .POSIX:
 .PHONY: all build verify test test-original test-zig differential fuzz bench \
-        report abi conformance safety fmt clean distclean docker-verify \
-        mutation release-gate claims invariants hexfloat api-coverage
+        report abi abi-generate diagnose conformance safety fmt clean distclean \
+        docker-verify mutation release-gate claims invariants hexfloat api-coverage
 
 CC       = cc
 CFLAGS   = -std=c99 -pedantic -Wall -Wextra -Wno-missing-field-initializers -O2
@@ -69,6 +69,16 @@ abi: build
 	@sh scripts/abi-check.sh
 	@echo "==> C ABI layout equivalence (cross-target, compile-time)"
 	@sh scripts/abi-cross-check.sh
+	@echo "==> the compile-time ABI contract can actually fail"
+	@sh scripts/abi-contract-negative.sh
+
+abi-generate:
+	@echo "==> Regenerate the compile-time ABI contract from the pinned header"
+	@sh scripts/abi-generate.sh
+
+diagnose: build
+	@echo "==> Target-dependent build decisions"
+	@$(ZIG) build diagnose
 
 api-coverage:
 	@echo "==> Exported API behaviour coverage"
@@ -142,6 +152,12 @@ verify:
 	@echo "[5/16] C ABI layout equivalence (host + 6 cross targets)"
 	@sh scripts/abi-check.sh
 	@sh scripts/abi-cross-check.sh
+	@echo
+	@echo "[5b/16] the compile-time ABI contract can fail (10 injected drifts)"
+	@sh scripts/abi-contract-negative.sh
+	@echo
+	@echo "[5c/16] target-dependent build decisions"
+	@$(ZIG) build diagnose
 	@echo
 	@echo "[6/16] C oracle determinism"
 	@sh scripts/oracle-determinism.sh

@@ -180,7 +180,7 @@ fabricates that.
 
 ## 7. Are the ABI claims real?
 
-`artifacts/abi-report.json` shows `"comparison": "identical"` across every
+`artifacts/abi/abi-report.json` shows `"comparison": "identical"` across every
 offset, size, alignment and enumerator, plus `"c_consumer_link":
 "linked_and_ran"` — a C program including the *pinned* header and declaring
 `struct json_stream` by value on its own stack, linked against only the Zig
