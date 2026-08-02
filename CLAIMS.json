@@ -485,7 +485,7 @@
     },
     {
       "id": "C-25",
-      "text": "An implementation-independent invariant checker validates 14,092 transcripts and 6,164,316 records from both implementations against 13 rules, with zero violations on either side.",
+      "text": "An implementation-independent invariant checker validates every transcript both implementations produce against 13 rules that reference neither of them, with zero violations on either side -- 5,824 transcripts and 203,433 records from the committed corpus alone, and more when the optional standards corpus is present.",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/invariants/summary.json",
@@ -496,7 +496,7 @@
       },
       "command": "python3 scripts/invariants.py --sweep",
       "verified_date": "2026-08-02",
-      "limitation": "Complements rather than replaces the C-vs-Zig comparison: equality catches the two disagreeing, invariants catch both being wrong the same way. Written in Python so it shares no code with either implementation. Each of the 14 violation classes is proved able to fail by a deliberately malformed fixture, checked by --self-test before every sweep. Rules were developed against the C original's output first -- two candidate rules fired on unmodified upstream output and were corrected as wrong rules, not reported as findings. Allocation-failure modes are not run against the C binary because it crashes there (#36).",
+      "limitation": "The figures quoted are the ones a clean checkout with no network also produces. The totals in the artifact include JSONTestSuite and any minimized fuzz findings when those are present, so they vary between trees; quoting them in the claim made `make verify` pass in a developed tree and fail in a fresh clone. Each rule is a promise the pdjson API actually makes, and each was developed against the C original's output first -- a rule that fires on unmodified upstream output is a wrong rule, not a finding. Rules that turned out to be assumptions rather than promises are recorded in docs/transcript-invariants.md rather than encoded.",
       "allowed_in": [
         "readme",
         "devfolio",

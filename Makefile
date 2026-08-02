@@ -13,7 +13,7 @@
         report abi abi-generate diagnose conformance safety size state-machine fmt \
         clean distclean \
         docker-verify mutation mutation-weakened release-gate claims invariants \
-        hexfloat api-coverage opt-history number-torture
+        hexfloat api-coverage opt-history number-torture clean-clone-verify
 
 CC       = cc
 CFLAGS   = -std=c99 -pedantic -Wall -Wextra -Wno-missing-field-initializers -O2
@@ -257,6 +257,20 @@ release-gate: verify
 	@sh scripts/release-gate.sh
 
 # --------------------------------------------------------------------- docker
+
+clean-clone-verify:
+	@echo "==> Verify from a fresh clone: no fetched corpora, no build cache"
+	@echo "    This is the only check that sees what a judge sees. It has found"
+	@echo "    two defects that were invisible from inside a developed tree:"
+	@echo "    a coverage figure and a claim's counts that both leaned on"
+	@echo "    JSONTestSuite, which a fresh clone does not have."
+	@tmp=$$(mktemp -d) && \
+	  git clone -q . "$$tmp/clone" && \
+	  ( cd "$$tmp/clone" && $(MAKE) verify ) ; \
+	  rc=$$? ; rm -rf "$$tmp" ; \
+	  if [ $$rc -eq 0 ]; then echo "  CLEAN-CLONE VERIFY OK"; else \
+	    echo "  CLEAN-CLONE VERIFY FAILED -- something depends on this working directory" >&2; fi ; \
+	  exit $$rc
 
 docker-verify:
 	docker build -t pdjson-zig-verify .

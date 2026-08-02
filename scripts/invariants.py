@@ -473,6 +473,11 @@ def sweep(out_path: pathlib.Path) -> int:
 
     results = {"c": [], "zig": []}
     counts = {"transcripts": 0, "records": 0}
+    # Counted separately because JSONTestSuite is fetched on demand. A claim
+    # that quotes the combined figure is true in a tree that has fetched it and
+    # false in a fresh clone -- which is exactly how `make verify` came to pass
+    # here and fail there.
+    fixture_counts = {"transcripts": 0, "records": 0}
 
     for corpus, files in corpora.items():
         if not files:
@@ -486,8 +491,13 @@ def sweep(out_path: pathlib.Path) -> int:
                 if impl == "c" and mode.startswith("oom:"):
                     continue
                 text = run_binary(binary, mode, listfile)
-                counts["transcripts"] += text.count('"schema"')
-                counts["records"] += sum(1 for l in text.splitlines() if '"seq"' in l)
+                n_t = text.count('"schema"')
+                n_r = sum(1 for l in text.splitlines() if '"seq"' in l)
+                counts["transcripts"] += n_t
+                counts["records"] += n_r
+                if corpus == "fixtures":
+                    fixture_counts["transcripts"] += n_t
+                    fixture_counts["records"] += n_r
                 results[impl].extend(check_text(text, f"{impl}:{corpus}:{mode}"))
 
     c_only = [v for v in results["c"]]
@@ -513,6 +523,15 @@ def sweep(out_path: pathlib.Path) -> int:
                        "a signal rather than being invalid. The Zig side is checked."),
         "transcripts_checked": counts["transcripts"],
         "records_checked": counts["records"],
+        # The figures a fresh clone with no network also produces. Claims quote
+        # these; the totals above vary with what has been fetched.
+        "transcripts_checked_committed_corpus": fixture_counts["transcripts"],
+        "records_checked_committed_corpus": fixture_counts["records"],
+        "corpus_note": ("The *_committed_corpus figures come from the fixtures "
+                        "in this repository alone and are reproducible in a "
+                        "clean checkout with no network. The totals include "
+                        "JSONTestSuite and minimized fuzz findings when those "
+                        "are present, so they vary between trees."),
         "violations_c_only": len([v for v in c_only
                                   if (v["rule"], v.get("input"), v.get("mode")) not in both]),
         "violations_zig_only": len([v for v in zig_only

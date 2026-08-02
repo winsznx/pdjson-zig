@@ -181,6 +181,18 @@ because this failure mode is invisible from inside a working tree.
 That is the argument for running the clean-clone check at all, and it only came
 up because it was run last rather than assumed.
 
+**The second clean-clone run found a second instance of the same class.** With
+the coverage gap closed, `make verify` failed in a fresh clone again — this time
+on C-25, whose text quoted "14,092 transcripts and 6,164,316 records". Those are
+the figures from a tree that has fetched JSONTestSuite. A fresh clone produces
+5,824 and 203,433, so the claim was true where it was written and false where it
+would be read.
+
+The invariant checker now reports the committed-corpus figures separately, the
+claim quotes those, and the README row is generated from them — so the number a
+judge sees is the number their own clone produces. `make clean-clone-verify`
+makes the check a target rather than something to remember.
+
 **CI had the same blind spot, for a different reason.** It runs the pipeline's
 steps individually rather than through `make verify`, and it had never run
 `scripts/state-machine.py` at all — so it was green while a clean clone failed.
