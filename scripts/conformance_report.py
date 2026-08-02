@@ -96,10 +96,27 @@ def main() -> int:
                 ),
             })
 
+    # Fold in the differential's own figures so the whole conformance story
+    # lives in one artifact. Splitting them meant a claim about "N drive modes"
+    # cited a file that did not contain N, which is how the mode list drifted
+    # from 11 to 5 without anyone noticing.
+    diff_path = ROOT / "artifacts" / "differential-jsontestsuite.json"
+    diff = {}
+    if diff_path.exists():
+        try:
+            diff = json.loads(diff_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            diff = {}
+
     report = {
-        "schema": "pdjson-zig/conformance-report@1",
+        "schema": "pdjson-zig/conformance-report@2",
         "corpus": "nst/JSONTestSuite test_parsing",
         "cases": len(cases),
+        "drive_modes": len(diff.get("modes", [])),
+        "modes": diff.get("modes", []),
+        "comparisons": diff.get("comparisons", 0),
+        "input_sources": len(diff.get("by_source", {})),
+        "divergences": diff.get("divergences"),
         "implementations_agree": agree,
         "implementations_disagree": disagree,
         "note": ("'disagree' is the only number that reflects on this port. The "

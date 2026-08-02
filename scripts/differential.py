@@ -354,7 +354,11 @@ def main() -> int:
 
     matrix_dir = ROOT / "artifacts" / "differential"
     matrix_dir.mkdir(parents=True, exist_ok=True)
-    (matrix_dir / "source-matrix.json").write_text(json.dumps({
+    # Label-scoped, because a fixed path meant the JSONTestSuite run silently
+    # overwrote the fixed-corpus matrix and every number a claim quoted from it.
+    # Same failure the benchmark smoke run and the hex-float smoke run both had.
+    label = args.label.replace("/", "-")
+    (matrix_dir / f"source-matrix-{label}.json").write_text(json.dumps({
         "schema": "pdjson-zig/source-matrix@1",
         "label": args.label,
         "method": ("Derived from the run that produced "
@@ -368,8 +372,8 @@ def main() -> int:
 
     # The two sources the original's own tests never exercise get their own
     # files, because they are the ones a reader is most likely to doubt.
-    for opener, fname in (("json_open_stream", "file-source-summary.json"),
-                          ("json_open_user", "user-source-summary.json")):
+    for opener, fname in (("json_open_stream", f"file-source-summary-{label}.json"),
+                          ("json_open_user", f"user-source-summary-{label}.json")):
         row = by_source.get(opener)
         if row is None:
             continue

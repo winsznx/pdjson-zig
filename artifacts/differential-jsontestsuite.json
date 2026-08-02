@@ -10,6 +10,7 @@
     "peek",
     "skip",
     "sep",
+    "after-end",
     "stream:next",
     "stream:nostream",
     "stream:peek",
@@ -18,14 +19,59 @@
     "user:peek"
   ],
   "inputs": 318,
-  "comparisons": 3498,
+  "comparisons": 3816,
   "divergences": 0,
   "upstream_ub": 0,
   "zig_crashes": 0,
   "c_crashes_unexplained": 0,
   "timeouts": 0,
-  "elapsed_seconds": 34.31,
+  "elapsed_seconds": 46.16,
   "c_oracle": "build/transcript_c",
   "zig_binary": "zig-out/bin/transcript_zig",
-  "findings": []
+  "findings": [],
+  "sources_exercised": 3,
+  "by_source": {
+    "json_open_buffer": {
+      "opener": "json_open_buffer",
+      "how": "an explicit pointer and length",
+      "modes": [
+        "next",
+        "nostream",
+        "peek",
+        "skip",
+        "sep",
+        "after-end"
+      ],
+      "comparisons": 1908,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0
+    },
+    "json_open_stream": {
+      "opener": "json_open_stream",
+      "how": "a real FILE* from tmpfile(), read through fgetc/ungetc",
+      "modes": [
+        "stream:next",
+        "stream:nostream",
+        "stream:peek"
+      ],
+      "comparisons": 954,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0
+    },
+    "json_open_user": {
+      "opener": "json_open_user",
+      "how": "caller-supplied get/peek callbacks over the same bytes",
+      "modes": [
+        "user:next",
+        "user:nostream",
+        "user:peek"
+      ],
+      "comparisons": 954,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0
+    }
+  }
 }

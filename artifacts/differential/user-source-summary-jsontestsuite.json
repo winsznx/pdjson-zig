@@ -1,0 +1,17 @@
+{
+  "schema": "pdjson-zig/source-summary@1",
+  "label": "jsontestsuite",
+  "opener": "json_open_user",
+  "how": "caller-supplied get/peek callbacks over the same bytes",
+  "modes": [
+    "user:next",
+    "user:nostream",
+    "user:peek"
+  ],
+  "inputs": 318,
+  "comparisons": 954,
+  "divergences": 0,
+  "upstream_ub": 0,
+  "timeouts": 0,
+  "note": "Upstream's own tests do not drive this source, so nothing in tests/original covers it. These comparisons are the only evidence for it."
+}

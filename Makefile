@@ -143,6 +143,8 @@ size: build
 claims:
 	@echo "==> Claim ledger validation"
 	$(PYTHON) scripts/validate-claims.py
+	@echo "==> Claim ledger audit (the prose, not just the checks)"
+	$(PYTHON) scripts/audit-claims.py
 
 report: build
 	$(PYTHON) scripts/report.py
@@ -199,8 +201,9 @@ verify:
 	@$(PYTHON) scripts/state-machine.py --self-test
 	@$(PYTHON) scripts/state-machine.py
 	@echo
-	@echo "[9b/16] hex-float correctness against an exact-integer reference"
-	@$(PYTHON) scripts/hexfloat_oracle.py --compare 20000 --seed 20260802
+	@echo "[9b/16] hex-float correctness against an exact-integer reference (smoke)"
+	@$(PYTHON) scripts/hexfloat_oracle.py --compare 20000 --seed 20260802 \
+	    --out artifacts/hex-float/property-smoke.json
 	@echo
 	@echo "[10/16] transcript invariants, checked without reference to either implementation"
 	@$(PYTHON) scripts/invariants.py --sweep
@@ -230,6 +233,7 @@ verify:
 	@echo
 	@echo "[16/16] validate CLAIMS.json against the artifacts just produced"
 	@$(PYTHON) scripts/validate-claims.py
+	@$(PYTHON) scripts/audit-claims.py
 	@echo
 	@echo "=============================================================="
 	@echo " VERIFY OK"

@@ -59,9 +59,9 @@ project.
 Per-source artifacts, kept separately because these are the two rows a reader is
 most likely to doubt:
 
-- [`artifacts/differential/file-source-summary.json`](../artifacts/differential/file-source-summary.json)
-- [`artifacts/differential/user-source-summary.json`](../artifacts/differential/user-source-summary.json)
-- [`artifacts/differential/source-matrix.json`](../artifacts/differential/source-matrix.json) — the full matrix, plus a per-mode breakdown
+- [`artifacts/differential/file-source-summary-fixed-corpus.json`](../artifacts/differential/file-source-summary-fixed-corpus.json)
+- [`artifacts/differential/user-source-summary-fixed-corpus.json`](../artifacts/differential/user-source-summary-fixed-corpus.json)
+- [`artifacts/differential/source-matrix-fixed-corpus.json`](../artifacts/differential/source-matrix-fixed-corpus.json) — the full matrix, plus a per-mode breakdown
 
 ## The 45 upstream-UB cases are all in one row
 
@@ -86,6 +86,8 @@ judgement — see [`DECISIONS.md`](../DECISIONS.md) D-16.
 - **Equal comparison counts do not mean equal thoroughness.** The buffer source
   has 15 modes because allocation-failure schedules and `json_skip_until` targets
   only exist there; the other sources are covered across fewer axes.
-- **The JSONTestSuite corpus adds 3,498 more comparisons** across 11 modes and
-  three sources, reported separately in
+- **The JSONTestSuite corpus adds 3,816 more comparisons** across 12 modes and
+  three sources, with its own matrix in
+  [`artifacts/differential/source-matrix-jsontestsuite.json`](../artifacts/differential/source-matrix-jsontestsuite.json)
+  and its conformance classification in
   [`artifacts/conformance-report.json`](../artifacts/conformance-report.json).

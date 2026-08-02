@@ -11,6 +11,12 @@
 #      as information -- an accept/reject disagreement with the suite's naming
 #      convention is a fact about pdjson, not a defect in the port.
 #
+# The mode list is spelled out rather than defaulted, because this corpus is
+# fetched on demand and is usually absent in CI -- so a drift between what this
+# script passes and what the committed artifact records would go unnoticed. It
+# did: the artifact recorded 11 modes while this line passed 5, and
+# scripts/audit-claims.py is what surfaced it.
+#
 # Skips cleanly when the suite is absent, because `make verify` must work with
 # no network.
 set -eu
@@ -27,7 +33,7 @@ fi
 echo "  running the equivalence comparison over JSONTestSuite"
 python3 "$ROOT/scripts/differential.py" \
     --corpus tests/conformance/JSONTestSuite/test_parsing \
-    --modes next,nostream,peek,skip,sep \
+    --modes next,nostream,peek,skip,sep,after-end,stream:next,stream:nostream,stream:peek,user:next,user:nostream,user:peek \
     --label jsontestsuite \
     --out artifacts/differential-jsontestsuite.json \
     --quiet

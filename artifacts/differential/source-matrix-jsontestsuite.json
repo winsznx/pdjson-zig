@@ -1,0 +1,136 @@
+{
+  "schema": "pdjson-zig/source-matrix@1",
+  "label": "jsontestsuite",
+  "method": "Derived from the run that produced artifacts/differential-jsontestsuite.json, not asserted. Each drive mode is attributed to the json_open_* function it uses; a source with 0 comparisons would be a claim with nothing behind it.",
+  "inputs": 318,
+  "sources": {
+    "json_open_buffer": {
+      "opener": "json_open_buffer",
+      "how": "an explicit pointer and length",
+      "modes": [
+        "next",
+        "nostream",
+        "peek",
+        "skip",
+        "sep",
+        "after-end"
+      ],
+      "comparisons": 1908,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0
+    },
+    "json_open_stream": {
+      "opener": "json_open_stream",
+      "how": "a real FILE* from tmpfile(), read through fgetc/ungetc",
+      "modes": [
+        "stream:next",
+        "stream:nostream",
+        "stream:peek"
+      ],
+      "comparisons": 954,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0
+    },
+    "json_open_user": {
+      "opener": "json_open_user",
+      "how": "caller-supplied get/peek callbacks over the same bytes",
+      "modes": [
+        "user:next",
+        "user:nostream",
+        "user:peek"
+      ],
+      "comparisons": 954,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0
+    }
+  },
+  "by_mode": {
+    "next": {
+      "comparisons": 318,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "nostream": {
+      "comparisons": 318,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "peek": {
+      "comparisons": 318,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "skip": {
+      "comparisons": 318,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "sep": {
+      "comparisons": 318,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "after-end": {
+      "comparisons": 318,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "stream:next": {
+      "comparisons": 318,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_stream"
+    },
+    "stream:nostream": {
+      "comparisons": 318,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_stream"
+    },
+    "stream:peek": {
+      "comparisons": 318,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_stream"
+    },
+    "user:next": {
+      "comparisons": 318,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_user"
+    },
+    "user:nostream": {
+      "comparisons": 318,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_user"
+    },
+    "user:peek": {
+      "comparisons": 318,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_user"
+    }
+  }
+}

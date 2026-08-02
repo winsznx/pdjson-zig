@@ -1,0 +1,43 @@
+{
+  "schema": "pdjson-zig/number-torture@1",
+  "source": "tests/port/number_torture.zig",
+  "method": "Counts are derived from the loop bounds the tests actually use, not written down beside them, so a bound that changes changes this artifact. Every case is compared against C's strtod bit for bit, including the number of bytes consumed.",
+  "tests": 10,
+  "test_names": [
+    "fixed lexemes match libc strtod exactly",
+    "long digit strings match libc strtod",
+    "exponent sweep across the whole double range",
+    "powers of two and their neighbours",
+    "hex floats match libc strtod, including past 53 bits of mantissa",
+    "randomised hex floats match libc strtod",
+    "randomised lexemes match libc strtod",
+    "nan payloads that overflow 64 bits are implementation-defined",
+    "json_get_number over parsed number tokens",
+    "json_get_number on a string token follows strtod prefix rules"
+  ],
+  "exponent_sweep_points": 661,
+  "exponent_sweep_range": [
+    -340,
+    320
+  ],
+  "exponent_sweep_lexemes": 1322,
+  "digit_string_lengths": [
+    17,
+    18,
+    19,
+    20,
+    40,
+    100,
+    300,
+    500
+  ],
+  "max_digit_string": 500,
+  "randomised_case_counts": [
+    20000,
+    20000
+  ],
+  "randomised_total": 40000,
+  "suite_passed": true,
+  "derivation_problems": [],
+  "limitation": "This records coverage of the *conversion*, compared against the platform's strtod. Agreement with libc is compatibility; correctness under IEEE-754 is a separate question, answered for the hex-float grammar by scripts/hexfloat_oracle.py against an exact-integer reference."
+}

@@ -82,6 +82,8 @@ def main() -> int:
 
     fuzz = newest_fuzz_session()
     fuzz_path, fuzz_data = (None, None) if fuzz is None else fuzz
+    jts = load("differential-jsontestsuite.json")
+    fuzz_session = fuzz_data or {}
 
     report = {
         "schema": "pdjson-zig/verification-report@1",
@@ -101,6 +103,23 @@ def main() -> int:
             "unsupported": dig(tests, "summary.assertions_unsupported"),
             "tool_differential_mismatches": dig(tests, "summary.tool_differential_mismatches"),
             "sources_modified": dig(tests, "modified"),
+        },
+        # One place that adds up every comparison ever made, so the "no
+        # divergence anywhere" claim cites a file that actually contains its
+        # arithmetic instead of one of the three files it summarises.
+        "no_divergence_ledger": {
+            "fixed_corpus_comparisons": dig(diff, "comparisons"),
+            "jsontestsuite_comparisons": dig(jts, "comparisons"),
+            "published_fuzz_cases": dig(fuzz_session, "cases"),
+            "total_comparisons": sum(
+                x for x in (dig(diff, "comparisons"), dig(jts, "comparisons"),
+                            dig(fuzz_session, "cases")) if isinstance(x, int)),
+            "divergences": sum(
+                x for x in (dig(diff, "divergences"), dig(jts, "divergences"),
+                            dig(fuzz_session, "divergences")) if isinstance(x, int)),
+            "note": ("Comparisons on inputs where the pinned original is well "
+                     "defined. Cases the sanitizer classifies as upstream UB are "
+                     "counted separately and are not in this total."),
         },
         "differential": {
             "inputs": dig(diff, "inputs"),

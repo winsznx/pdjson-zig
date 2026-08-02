@@ -284,18 +284,18 @@
     },
     {
       "id": "C-15",
-      "text": "The Zig implementation's json_get_number matches C strtod bit for bit across a 661-point exponent sweep, powers of two, digit strings up to 500 digits, 20,000 randomised decimal lexemes and 20,000 randomised hex floats.",
+      "text": "The Zig implementation's json_get_number matches C strtod bit for bit across a 661-point exponent sweep, powers of two, digit strings up to 500 digits, and 40,000 randomised lexemes -- 20,000 decimal and 20,000 hex floats.",
       "status": "verified",
       "proof_level": "executable",
-      "artifact": "artifacts/original-test-report.json",
+      "artifact": "artifacts/number-torture.json",
       "check": {
         "kind": "equals",
-        "path": "modified",
-        "value": false
+        "path": "suite_passed",
+        "value": true
       },
-      "command": "zig build test",
+      "command": "python3 scripts/number-torture-report.py",
       "verified_date": "2026-08-02",
-      "limitation": "Asserted by tests/port/number_torture.zig, which fails the build on any mismatch; the artifact reference here is a proxy because Zig's test runner does not emit JSON. Two documented exceptions: nan(...) payloads that overflow 64 bits are implementation-defined per C99 7.20.1.3p4 and are not matched (D-09). The hex-float path is implemented in this project rather than delegated, because std.fmt.parseFloat truncates past 53 bits of mantissa -- found by fuzzing at ~30M cases (D-18).",
+      "limitation": "The counts are derived from the loop bounds the tests actually use, so a bound that changes changes the artifact. Agreement with the platform's strtod is compatibility, not correctness: if libc were wrong here, both would be wrong together. Correctness under IEEE-754 is established separately for the hex-float grammar, against an exact-integer reference (C-26).",
       "allowed_in": [
         "readme",
         "devfolio"
@@ -363,7 +363,7 @@
     },
     {
       "id": "C-19",
-      "text": "On the independent nst/JSONTestSuite conformance corpus, the Zig port and the pinned C original agree on all 318 parsing cases across 11 drive modes and all three input sources, and the original is fully conforming (95/95 must-accept, 188/188 must-reject).",
+      "text": "On the independent nst/JSONTestSuite conformance corpus, the Zig port and the pinned C original agree on all 318 parsing cases across 12 drive modes and three input sources -- 3,816 comparisons -- and the original is fully conforming (95/95 must-accept, 188/188 must-reject).",
       "status": "verified",
       "proof_level": "executable",
       "artifact": "artifacts/conformance-report.json",
@@ -384,18 +384,18 @@
     },
     {
       "id": "C-20",
-      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 6,104 fixed-corpus comparisons plus 3,498 JSONTestSuite comparisons plus an 11.8-million-case fuzz session, all at zero.",
+      "text": "No divergence has ever been observed on any input where the pinned original is well defined: 6,104 fixed-corpus comparisons plus 3,816 JSONTestSuite comparisons plus 11,812,800 published fuzz cases -- 11,822,720 in total, all at zero.",
       "status": "verified",
       "proof_level": "executable",
-      "artifact": "artifacts/differential-jsontestsuite.json",
+      "artifact": "artifacts/verification-report.json",
       "check": {
         "kind": "equals",
-        "path": "divergences",
+        "path": "no_divergence_ledger.divergences",
         "value": 0
       },
-      "command": "make verify",
+      "command": "python3 scripts/report.py",
       "verified_date": "2026-08-02",
-      "limitation": "Scoped to the buffer input source (see C-18) and to the host and CI targets. 'Well defined' is decided mechanically by an ASan+UBSan build of the original, not by judgement (DECISIONS.md D-16).",
+      "limitation": "The total adds three separately produced artifacts; the ledger in verification-report.json is where the arithmetic lives, so the number cannot be assembled by hand. Cases the sanitizer classifies as upstream UB are excluded from the total and counted separately -- there is no defined behaviour to match on them. 'Never observed' is not 'cannot occur'.",
       "allowed_in": [
         "readme",
         "devfolio",
@@ -723,7 +723,7 @@
       "text": "All four documented input sources are exercised with real comparison counts, not asserted: json_open_buffer 3,270, json_open_stream 1,090 (a real FILE*), json_open_user 1,090 (caller callbacks), json_open_string 654 -- each at 0 divergences.",
       "status": "verified",
       "proof_level": "executable",
-      "artifact": "artifacts/differential/source-matrix.json",
+      "artifact": "artifacts/differential/source-matrix-fixed-corpus.json",
       "check": {
         "kind": "at_least",
         "path": "sources.json_open_user.comparisons",

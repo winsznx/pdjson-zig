@@ -23,6 +23,14 @@
     "tool_differential_mismatches": 0,
     "sources_modified": false
   },
+  "no_divergence_ledger": {
+    "fixed_corpus_comparisons": 6104,
+    "jsontestsuite_comparisons": 3816,
+    "published_fuzz_cases": 11812800,
+    "total_comparisons": 11822720,
+    "divergences": 0,
+    "note": "Comparisons on inputs where the pinned original is well defined. Cases the sanitizer classifies as upstream UB are counted separately and are not in this total."
+  },
   "differential": {
     "inputs": 218,
     "comparisons": 6104,
