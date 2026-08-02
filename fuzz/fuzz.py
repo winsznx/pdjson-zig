@@ -46,6 +46,10 @@ DEFAULT_MODES = [
     "next", "nostream", "peek", "skip", "sep",
     "stream:next", "stream:peek", "stream:sep",
     "user:next", "user:peek", "user:skip",
+    # Calls json_next past the terminal event without a reset, which is the
+    # only way to exercise the error latch and DONE's idempotence; see
+    # docs/state-machine.md.
+    "after-end",
 ]
 
 BATCH = 400
@@ -144,6 +148,19 @@ def mutate(rng: random.Random, data: bytes, corpus: list[bytes]) -> bytes:
 
 
 # ------------------------------------------------------------------- running
+
+def sha256_of(path: pathlib.Path) -> str:
+    """Pin which binaries a session ran against.
+
+    A session summary that does not say what it tested is not evidence: the
+    101 false findings this harness once produced came from a stale oracle
+    binary, and nothing in the log said which binary that was.
+    """
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return "unavailable"
+
 
 def pack(inputs: list[bytes]) -> bytes:
     out = bytearray()
@@ -293,6 +310,9 @@ def main() -> int:
     ap.add_argument("--modes", default=",".join(DEFAULT_MODES))
     ap.add_argument("--out", default="fuzz/logs/session.json")
     ap.add_argument("--quiet", action="store_true")
+    ap.add_argument("--raw-log", default=None,
+                    help="append-only NDJSON, one line per round, written as the "
+                         "session runs")
     args = ap.parse_args()
 
     for b in (C_BIN, ZIG_BIN):
@@ -324,6 +344,32 @@ def main() -> int:
     if not seeds:
         seeds = [b"{}", b"[]", b"1"]
 
+    # An append-only record written *while* the session runs, one line per
+    # round. The summary at the end is a derived number and a reader has to take
+    # it on trust; this is the trace it was derived from, flushed as it goes, so
+    # a session that was cut short or that hit something shows it here. Nothing
+    # in it is filtered.
+    raw = None
+    if args.raw_log:
+        raw_path = ROOT / args.raw_log
+        raw_path.parent.mkdir(parents=True, exist_ok=True)
+        raw = raw_path.open("w", buffering=1)
+        raw.write(json.dumps({
+            "schema": "pdjson-zig/fuzz-raw@1",
+            "seed": args.seed,
+            "requested_seconds": args.seconds,
+            "modes": modes,
+            "batch_size": BATCH,
+            "seed_corpus_inputs": len(seeds),
+            "c_oracle_sha256": sha256_of(C_BIN),
+            "zig_binary_sha256": sha256_of(ZIG_BIN),
+            "upstream_commit": "78fe04b820dc8817f540bdd87fb22887e0ef3981",
+            "note": ("One line per round, flushed as it is written. Round times "
+                     "are seconds since the session started, so this file is "
+                     "reproducible in content but not byte-identical between "
+                     "runs. Nothing here is filtered or reordered."),
+        }) + "\n")
+
     started = time.time()
     deadline = started + args.seconds
     cases = 0
@@ -346,6 +392,19 @@ def main() -> int:
         z_rc, z_out = run_pack(ZIG_BIN, mode, packfile)
         cases += len(batch)
         rounds += 1
+
+        if raw is not None:
+            raw.write(json.dumps({
+                "round": rounds,
+                "t": round(time.time() - started, 3),
+                "mode": mode,
+                "cases": cases,
+                "agreed": c_rc == z_rc and c_out == z_out,
+                "c_returncode": c_rc,
+                "zig_returncode": z_rc,
+                "c_output_sha256": hashlib.sha256(c_out).hexdigest()[:16],
+                "zig_output_sha256": hashlib.sha256(z_out).hexdigest()[:16],
+            }) + "\n")
 
         if c_rc == z_rc and c_out == z_out:
             continue
@@ -386,11 +445,30 @@ def main() -> int:
                 "zig_transcript": (rerun[2] if rerun else z_one).decode("utf-8", "replace"),
                 "sanitizer_report": upstream_is_ub(mode, small, tmp),
             })
+            if raw is not None:
+                raw.write(json.dumps({
+                    "round": rounds,
+                    "t": round(time.time() - started, 3),
+                    "finding": kind,
+                    "mode": mode,
+                    "minimized_bytes": len(small),
+                    "minimized_sha256": hashlib.sha256(small).hexdigest(),
+                    "minimized_base64": base64.b64encode(small).decode(),
+                }) + "\n")
             if not args.quiet:
                 print(f"  !! {kind} mode={mode} minimized to {len(small)} bytes "
                       f"({small[:60]!r})", file=sys.stderr)
 
     elapsed = time.time() - started
+    if raw is not None:
+        raw.write(json.dumps({
+            "end": True,
+            "rounds": rounds,
+            "cases": cases,
+            "elapsed_seconds": round(elapsed, 2),
+            "counts": counts,
+        }) + "\n")
+        raw.close()
 
     zig_ver = subprocess.run(["zig", "version"], capture_output=True).stdout.decode().strip()
     cc_ver = subprocess.run(["cc", "--version"], capture_output=True).stdout.decode().splitlines()
@@ -413,6 +491,9 @@ def main() -> int:
         "zig_version": zig_ver,
         "c_compiler": cc_ver[0] if cc_ver else "unknown",
         "upstream_commit": "78fe04b820dc8817f540bdd87fb22887e0ef3981",
+        "c_oracle_sha256": sha256_of(C_BIN),
+        "zig_binary_sha256": sha256_of(ZIG_BIN),
+        "raw_log": args.raw_log,
         "findings": findings,
     }
 

@@ -717,6 +717,46 @@
         "devfolio",
         "video"
       ]
+    },
+    {
+      "id": "C-37",
+      "text": "All four documented input sources are exercised with real comparison counts, not asserted: json_open_buffer 3,270, json_open_stream 1,090 (a real FILE*), json_open_user 1,090 (caller callbacks), json_open_string 654 -- each at 0 divergences.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/differential/source-matrix.json",
+      "check": {
+        "kind": "at_least",
+        "path": "sources.json_open_user.comparisons",
+        "value": 1000
+      },
+      "command": "python3 scripts/differential.py --label fixed-corpus",
+      "verified_date": "2026-08-02",
+      "limitation": "The matrix attributes each drive mode to its json_open_* function and multiplies by the input count; it is derived from the run rather than measured per call, so a mode that silently fell back to a different source would be misattributed. The source functions themselves are separately covered by scripts/api-coverage.py. Upstream's own tests do not drive json_open_stream or json_open_user at all, so these comparisons are the only behavioural evidence for those two.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
+    },
+    {
+      "id": "C-38",
+      "text": "The differential's comparison is demonstrated to be sensitive to every field a transcript record carries -- event, token bytes, token length, number bits, line, position, depth, context, context count, error text, operation and sequence -- by perturbing each field and requiring the comparison to notice.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/mutation-report.json",
+      "check": {
+        "kind": "equals",
+        "path": "detector",
+        "value": "full"
+      },
+      "command": "python3 scripts/mutation-test.py --self-test",
+      "verified_date": "2026-08-02",
+      "limitation": "The field sensitivity is checked against synthetic transcripts, not against the parser: it proves the comparison notices a changed field, not that the parser can produce every such change. The three deliberately weakened comparators are also checked to be genuinely blind to what they ignore, because a weakening that changed nothing would mean the strength was never there. The artifact check here records which detector produced the report; the field-by-field result prints rather than writing its own artifact.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
     }
   ]
 }

@@ -192,6 +192,65 @@ def compare(path: pathlib.Path, mode: str):
     }
 
 
+# ---------------------------------------------------------------------------
+# The source matrix.
+#
+# "all four documented input sources" is a sentence. This turns it into a table:
+# how many comparisons ran through json_open_buffer, json_open_string,
+# json_open_stream (a real FILE*) and json_open_user (caller callbacks), and how
+# many divergences each produced. A source whose row reads 0 comparisons would
+# be a claim with nothing behind it.
+# ---------------------------------------------------------------------------
+
+SOURCE_OF_PREFIX = {
+    "stream:": ("json_open_stream", "a real FILE* from tmpfile(), read through fgetc/ungetc"),
+    "user:": ("json_open_user", "caller-supplied get/peek callbacks over the same bytes"),
+    "string:": ("json_open_string", "length derived with strlen, so an embedded NUL truncates"),
+}
+DEFAULT_SOURCE = ("json_open_buffer", "an explicit pointer and length")
+
+
+def source_of(mode: str):
+    for prefix, info in SOURCE_OF_PREFIX.items():
+        if mode.startswith(prefix):
+            return info
+    return DEFAULT_SOURCE
+
+
+def source_matrix(modes, inputs, divergences):
+    """Per-source and per-mode breakdown, derived from the run, not asserted."""
+    by_source: dict = {}
+    for mode in modes:
+        name, how = source_of(mode)
+        row = by_source.setdefault(name, {
+            "opener": name,
+            "how": how,
+            "modes": [],
+            "comparisons": 0,
+            "divergences": 0,
+            "upstream_ub": 0,
+            "timeouts": 0,
+        })
+        row["modes"].append(mode)
+        row["comparisons"] += inputs
+
+    per_mode = {m: {"comparisons": inputs, "divergences": 0, "upstream_ub": 0,
+                    "timeouts": 0, "source": source_of(m)[0]} for m in modes}
+
+    for d in divergences:
+        kind = d["kind"]
+        key = {"divergence": "divergences", "upstream_ub": "upstream_ub",
+               "timeout": "timeouts"}.get(kind)
+        if key is None:
+            continue
+        m = d["mode"]
+        if m in per_mode:
+            per_mode[m][key] += 1
+            by_source[source_of(m)[0]][key] += 1
+
+    return by_source, per_mode
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--corpus", action="append", default=[])
@@ -285,14 +344,59 @@ def main() -> int:
         ],
     }
 
+    by_source, per_mode = source_matrix(modes, len(inputs), divergences)
+    summary["sources_exercised"] = len(by_source)
+    summary["by_source"] = by_source
+
     out = ROOT / args.out
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(summary, indent=2) + "\n")
+
+    matrix_dir = ROOT / "artifacts" / "differential"
+    matrix_dir.mkdir(parents=True, exist_ok=True)
+    (matrix_dir / "source-matrix.json").write_text(json.dumps({
+        "schema": "pdjson-zig/source-matrix@1",
+        "label": args.label,
+        "method": ("Derived from the run that produced "
+                   f"{args.out}, not asserted. Each drive mode is attributed to "
+                   "the json_open_* function it uses; a source with 0 "
+                   "comparisons would be a claim with nothing behind it."),
+        "inputs": len(inputs),
+        "sources": by_source,
+        "by_mode": per_mode,
+    }, indent=2) + "\n")
+
+    # The two sources the original's own tests never exercise get their own
+    # files, because they are the ones a reader is most likely to doubt.
+    for opener, fname in (("json_open_stream", "file-source-summary.json"),
+                          ("json_open_user", "user-source-summary.json")):
+        row = by_source.get(opener)
+        if row is None:
+            continue
+        (matrix_dir / fname).write_text(json.dumps({
+            "schema": "pdjson-zig/source-summary@1",
+            "label": args.label,
+            "opener": opener,
+            "how": row["how"],
+            "modes": row["modes"],
+            "inputs": len(inputs),
+            "comparisons": row["comparisons"],
+            "divergences": row["divergences"],
+            "upstream_ub": row["upstream_ub"],
+            "timeouts": row["timeouts"],
+            "note": ("Upstream's own tests do not drive this source, so nothing "
+                     "in tests/original covers it. These comparisons are the "
+                     "only evidence for it."),
+        }, indent=2) + "\n")
 
     total_bad = (summary["divergences"] + summary["zig_crashes"]
                  + summary["c_crashes_unexplained"] + summary["timeouts"])
     print(f"[{args.label}] {len(inputs)} inputs x {len(modes)} modes = "
           f"{len(jobs)} comparisons in {elapsed:.1f}s")
+    for name, row in sorted(by_source.items()):
+        print(f"    {name:<18} {row['comparisons']:>5} comparisons  "
+              f"{row['divergences']} divergence(s)  "
+              f"{row['upstream_ub']} upstream-UB  ({len(row['modes'])} modes)")
     print(f"  divergences={summary['divergences']} "
           f"upstream_ub={summary['upstream_ub']} "
           f"zig_crashes={summary['zig_crashes']} "

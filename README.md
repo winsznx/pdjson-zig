@@ -8,7 +8,7 @@
 | **Upstream** | `skeeto/pdjson` @ [`78fe04b`](https://github.com/skeeto/pdjson/commit/78fe04b820dc8817f540bdd87fb22887e0ef3981) (master, 2024-02-22, Unlicense) |
 | **Dominant proof** | Two independent programs drive the C original and the Zig port through the same script and emit deterministic NDJSON behaviour transcripts. Equivalence means **byte-identical transcripts**. |
 | **Upstream tests** | **18/18** assertions pass, sources unmodified and hash-pinned, linked against only the Zig library |
-| **Differential** | **0 divergences** in 6,104 fixed-corpus + 3,498 JSONTestSuite comparisons, across all four input sources and 28 drive modes |
+| **Differential** | **0 divergences** in 6,104 fixed-corpus + 3,498 JSONTestSuite comparisons, across all four input sources ([matrix](docs/differential-sources.md)) and 28 drive modes |
 | **Fuzzing** | 30-minute published session, **11.8M cases, 0 divergences, 0 crashes, 0 timeouts** |
 | **Harness self-test** | **12/12** injected defects caught; **54/54 specified state transitions** exercised ([`docs/state-machine.md`](docs/state-machine.md)) |
 | **C ABI** | Identical layout on **6 targets** (32- and 64-bit, x86, ARM, RISC-V, Windows), asserted at compile time so a drift fails `zig build`; a C consumer using the pinned header links against the Zig archive alone |
@@ -89,6 +89,8 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-34 | The Zig port costs a consumer more space than the original: linking one identical C program against the Zig archive rather than the pinned original's object grows the stripped executable 2.42x and the machine-code section 3.29x. | verified | [`artifacts/size-report.json`](artifacts/size-report.json) |
 | C-35 | The parser's transition relation is written out as a 10-state specification derived from RFC 8259 and pdjson.h, and the corpus exercises all 54 specified transitions, with 0 transitions observed that the specification does not contain. | verified | [`artifacts/state-machine/coverage.json`](artifacts/state-machine/coverage.json) |
 | C-36 | Both implementations cover exactly the same set of state transitions on the same inputs: 0 transitions are reached by one and not the other. | verified | [`artifacts/state-machine/coverage.json`](artifacts/state-machine/coverage.json) |
+| C-37 | All four documented input sources are exercised with real comparison counts, not asserted: json_open_buffer 3,270, json_open_stream 1,090 (a real FILE*), json_open_user 1,090 (caller callbacks), json_open_string 654 -- each at 0 divergences. | verified | [`artifacts/differential/source-matrix.json`](artifacts/differential/source-matrix.json) |
+| C-38 | The differential's comparison is demonstrated to be sensitive to every field a transcript record carries -- event, token bytes, token length, number bits, line, position, depth, context, context count, error text, operation and sequence -- by perturbing each field and requiring the comparison to notice. | verified | [`artifacts/mutation-report.json`](artifacts/mutation-report.json) |
 <!-- CLAIMS:END -->
 
 Every row is checked against a generated artifact by

@@ -97,6 +97,145 @@ MUTANTS: dict[str, tuple[str, str, str]] = {
 }
 
 
+
+# ---------------------------------------------------------------------------
+# Detection.
+#
+# "12/12 mutants caught" is only meaningful if the comparison doing the catching
+# is actually sensitive to what it claims to compare. A harness that compared
+# only the event sequence would still catch most of these mutants, and would
+# report the same 12/12 while being blind to token bytes, number values, line
+# numbers, positions, depths and error text.
+#
+# So the comparison is a named, swappable function, and --self-test checks each
+# one field by field: the real comparator must notice a change in *every*
+# transcript field, and each deliberately weakened comparator must miss exactly
+# the fields it ignores. A weakening that changes nothing would mean the
+# strength was never there.
+# ---------------------------------------------------------------------------
+
+def _records(out: bytes) -> list[dict]:
+    recs = []
+    for line in out.decode("utf-8", "replace").splitlines():
+        if line.startswith("{"):
+            try:
+                recs.append(json.loads(line))
+            except json.JSONDecodeError:
+                recs.append({"unparsed": line})
+    return recs
+
+
+def detect_full(a: bytes, b: bytes) -> bool:
+    """The real one: byte-identical or it is a difference."""
+    return a != b
+
+
+def detect_event_only(a: bytes, b: bytes) -> bool:
+    """Deliberately weak: the event sequence and nothing else."""
+    ea = [r.get("event") for r in _records(a) if "event" in r]
+    eb = [r.get("event") for r in _records(b) if "event" in r]
+    return ea != eb
+
+
+def detect_record_count(a: bytes, b: bytes) -> bool:
+    """Deliberately weak: how many records, and nothing about them."""
+    return len(_records(a)) != len(_records(b))
+
+
+def detect_first_record(a: bytes, b: bytes) -> bool:
+    """Deliberately weak: only the first record."""
+    ra, rb = _records(a), _records(b)
+    return (ra[:1] or [None]) != (rb[:1] or [None])
+
+
+DETECTORS = {
+    "full": detect_full,
+    "event-only": detect_event_only,
+    "record-count": detect_record_count,
+    "first-record": detect_first_record,
+}
+
+# Every field a transcript record carries, and a changed value for it. The real
+# comparator has to notice each one; anything it does not notice is a field the
+# differential is silently ignoring across all 6,104 comparisons.
+FIELD_PERTURBATIONS = {
+    "event": ("NUMBER", "STRING"),
+    "tok": ("3132", "3133"),
+    "toklen": (2, 3),
+    "num": ("3ff0000000000000", "3ff0000000000001"),
+    "line": (1, 2),
+    "pos": (5, 6),
+    "depth": (1, 2),
+    "ctx": ("ARRAY", "OBJECT"),
+    "ctxn": (1, 2),
+    "err": (None, "6f6f7073"),
+    "op": ("next", "peek"),
+    "seq": (0, 1),
+}
+
+
+def detector_self_test() -> int:
+    """Check the comparators against synthetic transcripts, one field at a time."""
+    def transcript(**overrides) -> bytes:
+        base = {"seq": 0, "op": "next", "event": "NUMBER", "tok": "3132",
+                "toklen": 2, "num": "3ff0000000000000", "line": 1, "pos": 5,
+                "depth": 1, "ctx": "ARRAY", "ctxn": 1, "err": None}
+        base.update(overrides)
+        head = json.dumps({"schema": "pdjson-zig/transcript@2", "mode": "next",
+                           "bytes": 7})
+        return (head + "\n" + json.dumps(base) + "\n"
+                + json.dumps({"end": True, "records": 1}) + "\n").encode()
+
+    baseline = transcript()
+    failures = 0
+
+    print("The real comparator must notice a change in every field:")
+    for field, (_, changed) in FIELD_PERTURBATIONS.items():
+        if detect_full(baseline, transcript(**{field: changed})):
+            print(f"  ok    {field}")
+        else:
+            failures += 1
+            print(f"  FAIL  {field} changed and the comparison did not notice it")
+
+    print("\nA comparator must not fire when nothing changed:")
+    for name, fn in DETECTORS.items():
+        if fn(baseline, transcript()):
+            failures += 1
+            print(f"  FAIL  {name} reports a difference between identical output")
+        else:
+            print(f"  ok    {name}")
+
+    # Each weakening must actually be weaker, or "12/12 under full detection"
+    # would be an unearned number.
+    print("\nEach deliberately weakened comparator must miss what it ignores:")
+    weakenings = [
+        ("event-only", "line", "line numbers"),
+        ("event-only", "tok", "token bytes"),
+        ("event-only", "num", "number values"),
+        ("event-only", "err", "error text"),
+        ("event-only", "pos", "byte positions"),
+        ("event-only", "depth", "container depth"),
+        ("record-count", "event", "the events themselves"),
+        ("first-record", "line", "anything past the first record"),
+    ]
+    for name, field, what in weakenings:
+        changed = transcript(**{field: FIELD_PERTURBATIONS[field][1]})
+        if name == "first-record":
+            # Put the change in a second record so "first record only" is the
+            # thing being tested rather than the field.
+            changed = (baseline.decode().replace(
+                '{"end"', json.dumps({"seq": 1, "op": "next", "event": "DONE",
+                                      "line": 9}) + "\n" + '{"end"')).encode()
+        if DETECTORS[name](baseline, changed):
+            failures += 1
+            print(f"  FAIL  {name} noticed {what}; it is not the weakening it claims")
+        else:
+            print(f"  ok    {name} is blind to {what}")
+
+    print(f"\ndetector self-test: {failures} failure(s)")
+    return 1 if failures else 0
+
+
 # A mutant that hangs is still a detected mutant, but it must not hang *this*
 # script. Every subprocess below is bounded.
 RUN_TIMEOUT = 20
@@ -144,6 +283,21 @@ def oracle(mode: str, path: pathlib.Path):
 
 
 def main() -> int:
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--self-test", action="store_true",
+                    help="check the comparators field by field; builds nothing")
+    ap.add_argument("--detector", default="full", choices=sorted(DETECTORS),
+                    help="deliberately weaken detection, to show the strength "
+                         "of the real comparison is doing the work")
+    ap.add_argument("--out", default="artifacts/mutation-report.json")
+    args = ap.parse_args()
+
+    if args.self_test:
+        return detector_self_test()
+
+    differs_fn = DETECTORS[args.detector]
+
     if not C_BIN.exists():
         print(f"missing {C_BIN}; run 'make build' first", file=sys.stderr)
         return 2
@@ -221,7 +375,7 @@ def main() -> int:
                         detected_by = {"fixture": f.name, "mode": m,
                                        "how": "timeout"}
                         break
-                    if got != expected[(m, f)]:
+                    if differs_fn(expected[(m, f)], got):
                         detected_by = {"fixture": f.name, "mode": m,
                                        "how": "transcript differs"}
                         break
@@ -241,7 +395,14 @@ def main() -> int:
                 results.append({"mutant": name, "status": "survived"})
 
     report = {
-        "schema": "pdjson-zig/mutation-report@1",
+        "schema": "pdjson-zig/mutation-report@2",
+        "detector": args.detector,
+        "detector_note": ("'full' is byte-identical transcripts, the comparison "
+                          "the real differential uses. The other detectors are "
+                          "deliberately weaker and exist to show that the "
+                          "strength is doing the work: run with --detector "
+                          "event-only and mutants survive. "
+                          "--self-test checks every comparator field by field."),
         "description": ("Deliberate defects injected into the Zig implementation. "
                         "Each must be detected by comparing against the C oracle "
                         "over the fixed corpus."),
@@ -262,7 +423,7 @@ def main() -> int:
         "not_evaluated": broken,
         "results": results,
     }
-    out = ROOT / "artifacts" / "mutation-report.json"
+    out = ROOT / args.out
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2) + "\n")
 

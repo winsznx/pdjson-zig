@@ -1,0 +1,274 @@
+{
+  "schema": "pdjson-zig/source-matrix@1",
+  "label": "fixed-corpus",
+  "method": "Derived from the run that produced artifacts/differential-summary.json, not asserted. Each drive mode is attributed to the json_open_* function it uses; a source with 0 comparisons would be a claim with nothing behind it.",
+  "inputs": 218,
+  "sources": {
+    "json_open_buffer": {
+      "opener": "json_open_buffer",
+      "how": "an explicit pointer and length",
+      "modes": [
+        "next",
+        "nostream",
+        "peek",
+        "skip",
+        "sep",
+        "oom:0",
+        "oom:1",
+        "oom:2",
+        "oom:5",
+        "skipuntil:4",
+        "skipuntil:6",
+        "skipuntil:7",
+        "skipuntil:8",
+        "skipuntil:11",
+        "after-end"
+      ],
+      "comparisons": 3270,
+      "divergences": 0,
+      "upstream_ub": 45,
+      "timeouts": 0
+    },
+    "json_open_stream": {
+      "opener": "json_open_stream",
+      "how": "a real FILE* from tmpfile(), read through fgetc/ungetc",
+      "modes": [
+        "stream:next",
+        "stream:nostream",
+        "stream:peek",
+        "stream:skip",
+        "stream:sep"
+      ],
+      "comparisons": 1090,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0
+    },
+    "json_open_user": {
+      "opener": "json_open_user",
+      "how": "caller-supplied get/peek callbacks over the same bytes",
+      "modes": [
+        "user:next",
+        "user:nostream",
+        "user:peek",
+        "user:skip",
+        "user:sep"
+      ],
+      "comparisons": 1090,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0
+    },
+    "json_open_string": {
+      "opener": "json_open_string",
+      "how": "length derived with strlen, so an embedded NUL truncates",
+      "modes": [
+        "string:next",
+        "string:nostream",
+        "string:peek"
+      ],
+      "comparisons": 654,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0
+    }
+  },
+  "by_mode": {
+    "next": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "nostream": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "peek": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "skip": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "sep": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "oom:0": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 33,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "oom:1": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 4,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "oom:2": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 4,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "oom:5": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 4,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "stream:next": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_stream"
+    },
+    "stream:nostream": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_stream"
+    },
+    "stream:peek": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_stream"
+    },
+    "stream:skip": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_stream"
+    },
+    "stream:sep": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_stream"
+    },
+    "user:next": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_user"
+    },
+    "user:nostream": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_user"
+    },
+    "user:peek": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_user"
+    },
+    "user:skip": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_user"
+    },
+    "user:sep": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_user"
+    },
+    "string:next": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_string"
+    },
+    "string:nostream": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_string"
+    },
+    "string:peek": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_string"
+    },
+    "skipuntil:4": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "skipuntil:6": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "skipuntil:7": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "skipuntil:8": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "skipuntil:11": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    },
+    "after-end": {
+      "comparisons": 218,
+      "divergences": 0,
+      "upstream_ub": 0,
+      "timeouts": 0,
+      "source": "json_open_buffer"
+    }
+  }
+}

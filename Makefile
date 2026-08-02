@@ -12,7 +12,8 @@
 .PHONY: all build verify test test-original test-zig differential fuzz bench \
         report abi abi-generate diagnose conformance safety size state-machine fmt \
         clean distclean \
-        docker-verify mutation release-gate claims invariants hexfloat api-coverage
+        docker-verify mutation mutation-weakened release-gate claims invariants \
+        hexfloat api-coverage
 
 CC       = cc
 CFLAGS   = -std=c99 -pedantic -Wall -Wextra -Wno-missing-field-initializers -O2
@@ -110,8 +111,16 @@ fuzz: build
 	    --out fuzz/logs/session-seed$(FUZZ_SEED).json
 
 mutation: build
+	@echo "==> Does the comparison notice a change in every transcript field?"
+	$(PYTHON) -u scripts/mutation-test.py --self-test
 	@echo "==> Mutation testing (does the harness actually catch defects?)"
 	$(PYTHON) -u scripts/mutation-test.py
+
+mutation-weakened: build
+	@echo "==> The same mutants against a deliberately weakened comparison."
+	@echo "    Survivors here are the point: they are what the full comparison catches."
+	$(PYTHON) -u scripts/mutation-test.py --detector event-only \
+	    --out artifacts/mutation-report-weakened.json
 
 safety:
 	@echo "==> Escape-hatch scan and per-occurrence inventory"
