@@ -350,7 +350,7 @@ port is slower.
 
 Only real terminal output and generated reports. No mockups.
 
-1. `make verify` completing, showing all 23 steps and `VERIFY OK`.
+1. `make verify` completing, showing all 24 steps and `VERIFY OK`.
 2. `upstream/pdjson/tests/tests.c` compiled against `libpdjson.a`, showing
    `18 pass, 0 fail`.
 3. Two transcripts side by side for `uni-escaped-pair-max.json`, identical.

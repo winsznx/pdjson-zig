@@ -24,7 +24,7 @@
 make verify
 ```
 
-One command, 23 numbered steps. It pins upstream by hash, builds both
+One command, <!-- STEPS:BEGIN -->24<!-- STEPS:END --> numbered steps. It pins upstream by hash, builds both
 implementations, proves the Zig artifact contains no C parser code, checks the
 ABI four ways *including that the check itself can fail*, runs the untouched
 upstream suite against Zig, runs the differential corpus across four input

@@ -142,7 +142,7 @@ This is the entry that justifies the fuzzer existing.
 
 ## Phases 9–12 — pipeline, CI, README, claim ledger
 
-`make verify` (23 steps), CI on Linux and macOS, release gate, `CLAIMS.json` with
+`make verify` (24 steps), CI on Linux and macOS, release gate, `CLAIMS.json` with
 21 claims each checked against a generated artifact.
 
 The ledger immediately earned its place: it failed the build because the

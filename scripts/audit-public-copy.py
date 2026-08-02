@@ -75,6 +75,7 @@ PROSE_NUMBERS = {
     "32": "a bit width",
     "1000": "a rounding of a larger figure, spelled out elsewhere",
     "100": "a percentage",
+    "142": "a historical fixture count, explicitly labelled as superseded",
     "214": "a historical fixture count, explicitly labelled as superseded",
     "4.6": "a figure quoted as not reproducing, with the measurement that replaces it",
 }

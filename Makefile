@@ -13,7 +13,7 @@
         report abi abi-generate diagnose conformance safety size state-machine fmt \
         clean distclean \
         docker-verify mutation mutation-weakened release-gate claims invariants \
-        hexfloat api-coverage opt-history
+        hexfloat api-coverage opt-history number-torture
 
 CC       = cc
 CFLAGS   = -std=c99 -pedantic -Wall -Wextra -Wno-missing-field-initializers -O2
@@ -91,6 +91,10 @@ state-machine: build
 	$(PYTHON) scripts/state-machine.py --self-test
 	$(PYTHON) scripts/state-machine.py
 
+number-torture: build
+	@echo "==> Number-conversion torture coverage"
+	$(PYTHON) scripts/number-torture-report.py
+
 hexfloat: build
 	@echo "==> Hex-float correctness against an exact-integer reference"
 	$(PYTHON) scripts/hexfloat_oracle.py --compare 200000 --seed 20260802
@@ -166,78 +170,81 @@ verify:
 	@echo " pdjson-zig verification"
 	@echo "=============================================================="
 	@echo
-	@echo "[1/23] tool versions"
+	@echo "[1/24] tool versions"
 	@sh scripts/check-tools.sh
 	@echo
-	@echo "[2/23] pinned upstream hashes"
+	@echo "[2/24] pinned upstream hashes"
 	@sh scripts/verify-upstream-hashes.sh
 	@echo
-	@echo "[3/23] build C reference oracle and Zig library"
+	@echo "[3/24] build C reference oracle and Zig library"
 	@$(MAKE) --no-print-directory build
 	@echo
-	@echo "[4/23] the Zig artifact contains no upstream parser code"
+	@echo "[4/24] the Zig artifact contains no upstream parser code"
 	@sh scripts/verify-no-c-linkage.sh
 	@echo
-	@echo "[5/23] C ABI layout equivalence (host + 6 cross targets)"
+	@echo "[5/24] C ABI layout equivalence (host + 6 cross targets)"
 	@sh scripts/abi-check.sh
 	@sh scripts/abi-cross-check.sh
 	@echo
-	@echo "[6/23] the compile-time ABI contract can fail (10 injected drifts)"
+	@echo "[6/24] the compile-time ABI contract can fail (10 injected drifts)"
 	@sh scripts/abi-contract-negative.sh
 	@echo
-	@echo "[7/23] target-dependent build decisions"
+	@echo "[7/24] target-dependent build decisions"
 	@$(ZIG) build diagnose
 	@echo
-	@echo "[8/23] C oracle determinism"
+	@echo "[8/24] C oracle determinism"
 	@sh scripts/oracle-determinism.sh
 	@echo
-	@echo "[9/23] upstream test suite against the Zig library"
+	@echo "[9/24] upstream test suite against the Zig library"
 	@$(PYTHON) scripts/original-tests.py
 	@echo
-	@echo "[10/23] Zig-native test suite"
+	@echo "[10/24] Zig-native test suite"
 	@$(ZIG) build test
 	@echo
-	@echo "[11/23] fixed conformance corpus (differential, per-source matrix)"
+	@echo "[11/24] fixed conformance corpus (differential, per-source matrix)"
 	@$(PYTHON) scripts/differential.py --label fixed-corpus --quiet
 	@echo
-	@echo "[12/23] exported API behaviour coverage"
+	@echo "[12/24] exported API behaviour coverage"
 	@$(PYTHON) scripts/api-coverage.py
 	@echo
-	@echo "[13/23] state-transition coverage against a written specification"
+	@echo "[13/24] state-transition coverage against a written specification"
 	@$(PYTHON) scripts/state-machine.py --self-test
 	@$(PYTHON) scripts/state-machine.py
 	@echo
-	@echo "[14/23] hex-float correctness against an exact-integer reference (smoke)"
+	@echo "[14/24] number-conversion torture coverage"
+	@$(PYTHON) scripts/number-torture-report.py
+	@echo
+	@echo "[15/24] hex-float correctness against an exact-integer reference (smoke)"
 	@$(PYTHON) scripts/hexfloat_oracle.py --compare 20000 --seed 20260802 \
 	    --out artifacts/hex-float/property-smoke.json
 	@echo
-	@echo "[15/23] transcript invariants, checked without reference to either implementation"
+	@echo "[16/24] transcript invariants, checked without reference to either implementation"
 	@$(PYTHON) scripts/invariants.py --sweep
 	@echo
-	@echo "[16/23] JSONTestSuite conformance (skipped if not fetched)"
+	@echo "[17/24] JSONTestSuite conformance (skipped if not fetched)"
 	@sh scripts/conformance-suite.sh
 	@echo
-	@echo "[17/23] bounded differential fuzz smoke test"
+	@echo "[18/24] bounded differential fuzz smoke test"
 	@$(PYTHON) fuzz/fuzz.py --seconds $(FUZZ_SECONDS) --seed $(FUZZ_SEED) \
 	    --out fuzz/logs/session-verify.json --quiet
 	@echo
-	@echo "[18/23] formatting"
+	@echo "[19/24] formatting"
 	@$(ZIG) fmt --check build.zig src tools tests/port
 	@echo
-	@echo "[19/23] the differential's comparison notices every transcript field"
+	@echo "[20/24] the differential's comparison notices every transcript field"
 	@$(PYTHON) scripts/mutation-test.py --self-test
 	@echo
-	@echo "[20/23] escape-hatch scan and per-occurrence inventory"
+	@echo "[21/24] escape-hatch scan and per-occurrence inventory"
 	@sh scripts/safety-scan.sh
 	@echo
-	@echo "[21/23] benchmark smoke test and artifact size"
+	@echo "[22/24] benchmark smoke test and artifact size"
 	@$(PYTHON) scripts/bench.py --smoke
 	@$(PYTHON) scripts/size-report.py
 	@echo
-	@echo "[22/23] generate reports"
+	@echo "[23/24] generate reports"
 	@$(PYTHON) scripts/report.py
 	@echo
-	@echo "[23/23] validate and audit CLAIMS.json against the artifacts just produced"
+	@echo "[24/24] validate and audit CLAIMS.json against the artifacts just produced"
 	@$(PYTHON) scripts/validate-claims.py
 	@$(PYTHON) scripts/audit-claims.py
 	@$(PYTHON) scripts/audit-public-copy.py

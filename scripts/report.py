@@ -310,6 +310,7 @@ def main() -> int:
                           render_claim_block(json.loads(claims_path.read_text())))
         text = splice(text, "BENCH", render_bench_block(bench))
         text = splice(text, "SIZE", render_size_block(size))
+        text = splice(text, "STEPS", f"{report['pipeline_steps']}\n")
         text = splice(text, "OPTHISTORY", render_opthistory_block(
             load("optimization-history.json")))
         text = splice(text, "LIMITS", render_limits_block(
@@ -328,10 +329,18 @@ def main() -> int:
 
 
 def splice(text: str, name: str, block: str) -> str:
+    """Replace the content between a BEGIN/END marker pair.
+
+    Block content gets its own lines; a value short enough to sit inside a
+    sentence (the pipeline step count) is spliced inline instead, so the prose
+    around it stays readable.
+    """
     start, end = f"<!-- {name}:BEGIN -->", f"<!-- {name}:END -->"
     if start not in text or end not in text:
         return text
-    return text.split(start)[0] + start + "\n" + block + end + text.split(end)[1]
+    inline = "\n" not in block.strip()
+    body = block.strip() if inline else "\n" + block
+    return text.split(start)[0] + start + body + end + text.split(end)[1]
 
 
 def render_bench_block(bench) -> str:
