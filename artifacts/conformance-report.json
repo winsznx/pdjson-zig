@@ -1,0 +1,22 @@
+{
+  "schema": "pdjson-zig/conformance-report@1",
+  "corpus": "nst/JSONTestSuite test_parsing",
+  "cases": 318,
+  "implementations_agree": 318,
+  "implementations_disagree": 0,
+  "note": "'disagree' is the only number that reflects on this port. The y_/n_ columns describe how the pinned original relates to RFC 8259; the port reproduces that relationship by design.",
+  "upstream_vs_rfc8259": {
+    "must_accept": {
+      "conforming": 95,
+      "total": 95
+    },
+    "must_reject": {
+      "conforming": 188,
+      "total": 188
+    },
+    "implementation_defined": {
+      "total": 35
+    }
+  },
+  "notable_cases": []
+}

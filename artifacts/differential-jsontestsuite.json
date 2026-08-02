@@ -1,0 +1,25 @@
+{
+  "schema": "pdjson-zig/differential-summary@2",
+  "label": "jsontestsuite",
+  "corpora": [
+    "tests/conformance/JSONTestSuite/test_parsing"
+  ],
+  "modes": [
+    "next",
+    "nostream",
+    "peek",
+    "skip",
+    "sep"
+  ],
+  "inputs": 318,
+  "comparisons": 1590,
+  "divergences": 0,
+  "upstream_ub": 0,
+  "zig_crashes": 0,
+  "c_crashes_unexplained": 0,
+  "timeouts": 0,
+  "elapsed_seconds": 13.3,
+  "c_oracle": "build/transcript_c",
+  "zig_binary": "zig-out/bin/transcript_zig",
+  "findings": []
+}

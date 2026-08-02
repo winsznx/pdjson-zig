@@ -1,0 +1,131 @@
+{
+  "schema": "pdjson-zig/mutation-report@1",
+  "description": "Deliberate defects injected into the Zig implementation. Each must be detected by comparing against the C oracle over the fixed corpus.",
+  "fixtures": 214,
+  "modes": [
+    "next",
+    "peek",
+    "nostream",
+    "skip",
+    "sep",
+    "oom:0",
+    "oom:2"
+  ],
+  "comparable_cases": 1463,
+  "excluded_cases": 35,
+  "exclusion_reason": "(mode, fixture) pairs where an ASan+UBSan build of the pinned C original reports an error are excluded. Every mutant trivially differs on those, because the C side crashed or emitted bytes from unallocated memory; counting them would let this script certify itself. The decision is made by a sanitizer, not by judgement.",
+  "mutants_defined": 12,
+  "caught": 12,
+  "survived": 0,
+  "not_evaluated": 0,
+  "results": [
+    {
+      "mutant": "lineno-not-counted",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "only-whitespace.json",
+        "mode": "next",
+        "how": "transcript differs"
+      }
+    },
+    {
+      "mutant": "depth-off-by-one",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "arr-close-mismatch.json",
+        "mode": "next",
+        "how": "transcript differs"
+      }
+    },
+    {
+      "mutant": "oom-message-typo",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "bad-utf8-e0-overlong.json",
+        "mode": "oom:0",
+        "how": "transcript differs"
+      }
+    },
+    {
+      "mutant": "escape-b-wrong",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "str-all-escapes.json",
+        "mode": "next",
+        "how": "transcript differs"
+      }
+    },
+    {
+      "mutant": "surrogate-high-range",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "uni-escaped-pair-hi-end.json",
+        "mode": "next",
+        "how": "transcript differs"
+      }
+    },
+    {
+      "mutant": "utf8-accept-overlong",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "bad-utf8-overlong-c0.json",
+        "mode": "next",
+        "how": "transcript differs"
+      }
+    },
+    {
+      "mutant": "number-no-terminator",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "nul-after-number.json",
+        "mode": "next",
+        "how": "transcript differs"
+      }
+    },
+    {
+      "mutant": "control-char-allowed",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "ctrl-raw-1f.json",
+        "mode": "next",
+        "how": "transcript differs"
+      }
+    },
+    {
+      "mutant": "position-not-advanced-on-peek",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "arr-flat.json",
+        "mode": "next",
+        "how": "timeout"
+      }
+    },
+    {
+      "mutant": "strtod-no-conversion-value",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "arr-mixed.json",
+        "mode": "next",
+        "how": "transcript differs"
+      }
+    },
+    {
+      "mutant": "errmsg-truncation",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "uni-high-alone.json",
+        "mode": "next",
+        "how": "transcript differs"
+      }
+    },
+    {
+      "mutant": "buffer-peek-unsigned",
+      "status": "caught",
+      "detected_by": {
+        "fixture": "bad-utf8-ff.json",
+        "mode": "next",
+        "how": "transcript differs"
+      }
+    }
+  ]
+}

@@ -15,7 +15,14 @@
  *   - allocation sizes (an implementation detail, covered separately by the
  *     benchmark's allocation counters)
  *
- * Usage: transcript_c <mode> [file]      (reads stdin when file is omitted)
+ * Usage:
+ *   transcript_c <mode> [file]        transcribe one input (stdin if omitted)
+ *   transcript_c --batch <mode> <listfile>
+ *                                     transcribe every path listed in
+ *                                     <listfile>, one per line, prefixing each
+ *                                     with {"input":"<path>"}. Used by the
+ *                                     fuzzer so throughput is not dominated by
+ *                                     process startup.
  * Modes: next nostream peek skip sep oom:<n>
  */
 #define _POSIX_C_SOURCE 200112L
@@ -93,25 +100,12 @@ emit_source(size_t seq, const char *op, int c, json_stream *json)
            (unsigned long)json_get_position(json));
 }
 
-/* --------------------------------------------------------------------- main */
+/* ---------------------------------------------------------------- transcribe */
 
-int
-main(int argc, char **argv)
+static void
+transcribe(const char *mode, const char *buf, size_t len)
 {
-    const char *mode = argc > 1 ? argv[1] : "next";
-    char *buf = NULL;
-    size_t len = 0;
-
-    if (argc > 2) {
-        if (tr_read_file(argv[2], &buf, &len) != 0) {
-            fprintf(stderr, "cannot read %s\n", argv[2]);
-            return 2;
-        }
-    } else if (tr_read_stdin(&buf, &len) != 0) {
-        fprintf(stderr, "cannot read stdin\n");
-        return 2;
-    }
-
+    alloc_budget = -1;
     if (strncmp(mode, "oom:", 4) == 0)
         alloc_budget = strtol(mode + 4, NULL, 10);
 
@@ -183,6 +177,98 @@ main(int argc, char **argv)
         printf("{\"end\":true,\"records\":%lu}\n", (unsigned long)seq);
 
     json_close(json);
+}
+
+/* --------------------------------------------------------------------- main */
+
+static int
+run_batch(const char *mode, const char *listfile)
+{
+    FILE *lf = fopen(listfile, "r");
+    if (!lf) {
+        fprintf(stderr, "cannot read %s\n", listfile);
+        return 2;
+    }
+    char line[4096];
+    while (fgets(line, sizeof line, lf)) {
+        size_t n = strlen(line);
+        while (n && (line[n - 1] == '\n' || line[n - 1] == '\r')) line[--n] = '\0';
+        if (n == 0) continue;
+
+        char *buf = NULL;
+        size_t len = 0;
+        if (tr_read_file(line, &buf, &len) != 0) {
+            fprintf(stderr, "cannot read %s\n", line);
+            fclose(lf);
+            return 2;
+        }
+        printf("{\"input\":\"%s\"}\n", line);
+        transcribe(mode, buf, len);
+        free(buf);
+    }
+    fclose(lf);
+    return 0;
+}
+
+/* Pack format: a stream of records, each "<decimal length>\n" followed by
+ * exactly that many raw bytes. Lets the fuzzer hand over thousands of cases in
+ * one file, so neither process startup nor filesystem churn dominates. The
+ * pack for a round is archived verbatim as the reproduction artifact. */
+static int
+run_pack(const char *mode, const char *packfile)
+{
+    char *all = NULL;
+    size_t total = 0;
+    if (tr_read_file(packfile, &all, &total) != 0) {
+        fprintf(stderr, "cannot read %s\n", packfile);
+        return 2;
+    }
+
+    size_t off = 0, index = 0;
+    while (off < total) {
+        size_t n = 0;
+        int saw_digit = 0;
+        while (off < total && all[off] >= '0' && all[off] <= '9') {
+            n = n * 10 + (size_t)(all[off] - '0');
+            off++;
+            saw_digit = 1;
+        }
+        if (!saw_digit || off >= total || all[off] != '\n') break;
+        off++;
+        if (off + n > total) break;
+
+        printf("{\"input\":\"pack:%lu\"}\n", (unsigned long)index++);
+        transcribe(mode, all + off, n);
+        off += n;
+    }
+
+    free(all);
+    return 0;
+}
+
+int
+main(int argc, char **argv)
+{
+    if (argc > 3 && strcmp(argv[1], "--batch") == 0)
+        return run_batch(argv[2], argv[3]);
+    if (argc > 3 && strcmp(argv[1], "--pack") == 0)
+        return run_pack(argv[2], argv[3]);
+
+    const char *mode = argc > 1 ? argv[1] : "next";
+    char *buf = NULL;
+    size_t len = 0;
+
+    if (argc > 2) {
+        if (tr_read_file(argv[2], &buf, &len) != 0) {
+            fprintf(stderr, "cannot read %s\n", argv[2]);
+            return 2;
+        }
+    } else if (tr_read_stdin(&buf, &len) != 0) {
+        fprintf(stderr, "cannot read stdin\n");
+        return 2;
+    }
+
+    transcribe(mode, buf, len);
     free(buf);
     return 0;
 }

@@ -1,0 +1,47 @@
+{
+  "schema": "pdjson-zig/upstream-issues@1",
+  "upstream": "https://github.com/skeeto/pdjson",
+  "pinned_commit": "78fe04b820dc8817f540bdd87fb22887e0ef3981",
+  "note": "Defects found in the pinned original while building this port, each with a minimal public-API reproducer and confirmed against the pinned commit before filing. Filed during the hackathon. Duplicate checks were run against all open and closed issues and pull requests first; neither overlaps #31 (execution character set), #27 (locale and strtod), or #15 (peek and position).",
+  "issues": [
+    {
+      "id": "UB-01",
+      "url": "https://github.com/skeeto/pdjson/issues/36",
+      "title": "json_get_context() reads an unallocated stack slot after a failed allocation (NULL deref / OOB read)",
+      "class": "memory safety",
+      "location": "pdjson.c:912, reached from push() at pdjson.c:52",
+      "evidence": [
+        "AddressSanitizer: SEGV on unknown address 0x000000000008 in json_get_context pdjson.c:912",
+        "UndefinedBehaviorSanitizer: member access within null pointer of type 'struct json_stack' at pdjson.c:912:18",
+        "AddressSanitizer: heap-buffer-overflow pdjson.c:912 in json_get_context"
+      ],
+      "reproducer": "tests/upstream-bugs/repro_oom_stack.c",
+      "reproduce_command": "cc -std=c99 -g -fsanitize=address,undefined -I upstream/pdjson -o /tmp/repro tests/upstream-bugs/repro_oom_stack.c upstream/pdjson/pdjson.c && /tmp/repro",
+      "analysis": "docs/upstream-bug-oom-stack.md",
+      "found_by": "differential testing under deterministic allocation-failure schedules; 43 anomalies across a 214-input corpus all resolved to this one line",
+      "regression_test": "tests/port/regressions.zig, tests/port/allocator_failure.zig",
+      "standards_basis": "Not a standards question. Null-pointer dereference and out-of-bounds read are undefined behaviour under C99 6.5.3.2 and 6.5.6; both are demonstrated by sanitizer output rather than argued.",
+      "independently_verified_by_upstream": false
+    },
+    {
+      "id": "UB-02",
+      "url": "https://github.com/skeeto/pdjson/issues/37",
+      "title": "Byte 0xFF is read as EOF by the memory-buffer source, so it disagrees with the FILE* source",
+      "class": "correctness / API contract",
+      "location": "buffer_peek(), pdjson.c:94-100",
+      "evidence": [
+        "buffer source on \"\\xFF\": event=JSON_ERROR position=1 error='unterminated string literal'",
+        "FILE* source on the same bytes: event=JSON_ERROR position=2 error='invalid UTF-8 character'",
+        "json_source_get() returns -1 indefinitely on a run of 0xFF bytes while json_get_position() stays at 0"
+      ],
+      "reproducer": "tests/upstream-bugs/repro_0xff_eof.c",
+      "reproduce_command": "cc -std=c99 -I upstream/pdjson -o /tmp/repro tests/upstream-bugs/repro_0xff_eof.c upstream/pdjson/pdjson.c && /tmp/repro",
+      "analysis": "docs/upstream-bug-0xff.md",
+      "found_by": "hand-written edge-case corpus (fixtures ff-bare, ff-in-string, ff-after-number, ff-in-array, ff-run), confirmed by comparing the two input sources",
+      "regression_test": "tests/port/regressions.zig",
+      "standards_basis": "C99 6.2.5p15 leaves the signedness of `char` implementation-defined; C99 7.21.7.1 specifies fgetc() to return the byte as an unsigned char converted to int. The inconsistency is between the library's own two documented input sources, so it does not depend on reading the JSON specification.",
+      "scope_limitation": "0xFF is never valid UTF-8, so this does not make the parser accept invalid input. It changes which error is reported, the byte position, and whether json_source_get() can advance.",
+      "independently_verified_by_upstream": false
+    }
+  ]
+}

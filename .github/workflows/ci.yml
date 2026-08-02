@@ -1,0 +1,150 @@
+name: verify
+
+# The pipeline is the same one a judge runs locally. CI adds a second target
+# (x86-64 Linux, where `char` is signed but the toolchain differs) and proves
+# the evidence reproduces from a clean checkout rather than from this laptop.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  provenance:
+    name: pinned upstream hashes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Deliberately first and standalone: if the pinned original drifted,
+      # nothing downstream is measuring what it claims to measure.
+      - name: verify upstream hashes
+        run: sh scripts/verify-upstream-hashes.sh
+      - name: original test files are unmodified
+        run: |
+          git diff --exit-code -- upstream/pdjson || {
+            echo "upstream/ has uncommitted modifications" >&2; exit 1; }
+
+  verify:
+    name: full verification (${{ matrix.os }})
+    needs: provenance
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mlugg/setup-zig@v1
+        with:
+          version: 0.16.0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: toolchain
+        run: sh scripts/check-tools.sh
+
+      - name: build
+        run: make build
+
+      - name: formatting
+        run: zig fmt --check build.zig src tools tests/port
+
+      - name: escape-hatch scan
+        run: sh scripts/safety-scan.sh
+
+      # The claim that matters most: the Zig artifact stands alone.
+      - name: no upstream parser code in the Zig artifact
+        run: sh scripts/verify-no-c-linkage.sh
+
+      - name: C ABI equivalence
+        run: sh scripts/abi-check.sh
+
+      - name: oracle determinism
+        run: sh scripts/oracle-determinism.sh
+
+      - name: upstream test suite against the Zig library
+        run: python3 scripts/original-tests.py
+
+      - name: Zig-native tests
+        run: zig build test
+
+      # Also run the tests in Debug, where Zig's safety checks are strictest.
+      - name: Zig-native tests (Debug)
+        run: zig build test -Doptimize=Debug
+
+      - name: differential, fixed corpus
+        run: python3 scripts/differential.py --label fixed-corpus --quiet
+
+      - name: fetch JSONTestSuite
+        run: sh scripts/fetch-conformance.sh
+
+      - name: differential, JSONTestSuite
+        run: sh scripts/conformance-suite.sh
+
+      - name: differential fuzz (bounded)
+        run: python3 fuzz/fuzz.py --seconds 120 --seed ${{ github.run_number }} --out fuzz/logs/ci.json --quiet
+
+      - name: benchmark smoke test
+        run: python3 scripts/bench.py --smoke
+
+      - name: reports
+        run: python3 scripts/report.py
+
+      - name: claim ledger
+        run: python3 scripts/validate-claims.py
+
+      - name: upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-artifacts-${{ matrix.os }}
+          path: |
+            artifacts/
+            fuzz/logs/
+            bench/results/
+          retention-days: 30
+
+  sanitizers:
+    name: sanitizers on the C oracle
+    needs: provenance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mlugg/setup-zig@v1
+        with:
+          version: 0.16.0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: build
+        run: make build
+      # The sanitized oracle is what decides whether a difference is the port's
+      # fault or the original's, so it has to actually work on this platform.
+      - name: sanitized oracle reproduces the documented upstream defect
+        run: |
+          cc -std=c99 -g -fsanitize=address,undefined -I upstream/pdjson \
+             -o /tmp/repro tests/upstream-bugs/repro_oom_stack.c upstream/pdjson/pdjson.c
+          set +e
+          ASAN_OPTIONS=detect_leaks=0:abort_on_error=0:exitcode=86 \
+          UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=0 /tmp/repro 2>/tmp/err.txt
+          set -e
+          if grep -qE "AddressSanitizer|runtime error:" /tmp/err.txt; then
+            echo "upstream defect reproduced as expected:"
+            grep -E "SUMMARY|runtime error:" /tmp/err.txt | head -5
+          else
+            echo "expected the pinned upstream to report a sanitizer error here" >&2
+            cat /tmp/err.txt >&2
+            exit 1
+          fi
+      - name: 0xFF reproducer runs
+        run: |
+          cc -std=c99 -I upstream/pdjson -o /tmp/ff \
+             tests/upstream-bugs/repro_0xff_eof.c upstream/pdjson/pdjson.c
+          /tmp/ff

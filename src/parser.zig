@@ -200,16 +200,25 @@ pub fn isSpace(c: c_int) bool {
     return c == 0x09 or c == 0x0a or c == 0x0d or c == 0x20;
 }
 
-/// `strchr(set, c) != NULL`.
-///
-/// Reproduces the detail that C's `strchr` also matches the terminating NUL,
-/// so `strchr(".eE", 0)` is non-null. The original relies on this by accident
-/// when a number is followed by an embedded NUL byte; the resulting control
-/// flow happens to reach the same event, and this keeps it that way.
-fn strchrFound(set: []const u8, c: c_int) bool {
+// The original uses `strchr` on two short literals in the number lexer. Both
+// are specialised here into direct comparisons -- they sit in the hottest loop
+// in the parser, and a search over a slice is a poor way to ask "is this one of
+// three bytes".
+//
+// Both keep one detail that is easy to lose: C's `strchr` also matches the
+// terminating NUL, so `strchr(".eE", 0)` is non-null. The original leans on
+// that by accident when a number is followed by an embedded NUL byte, and the
+// resulting control flow reaches the same event either way. Dropping the
+// `ch == 0` arm would change behaviour on input like "1\x00".
+
+fn isNonZeroDigitOrNul(c: c_int) bool {
     const ch: u8 = @truncate(@as(c_uint, @bitCast(c)));
-    if (ch == 0) return true;
-    return std.mem.indexOfScalar(u8, set, ch) != null;
+    return ch == 0 or (ch >= '1' and ch <= '9');
+}
+
+fn isFractionOrExponentOrNul(c: c_int) bool {
+    const ch: u8 = @truncate(@as(c_uint, @bitCast(c)));
+    return ch == 0 or ch == '.' or ch == 'e' or ch == 'E';
 }
 
 fn asByte(c: c_int) u8 {
@@ -286,7 +295,27 @@ fn pop(self: *Stream, c: c_int, expected: Type) Type {
     return if (expected == .array) .array_end else .object_end;
 }
 
-fn pushchar(self: *Stream, c: c_int) bool {
+/// Append one byte to the token buffer.
+///
+/// Split into an inline fast path and a cold growth path deliberately. This is
+/// the innermost operation in the parser -- one call per token byte -- and
+/// profiling showed clang inlining the equivalent C helper into `read_digits`
+/// while Zig kept it as an out-of-line call, which accounted for most of the
+/// throughput gap against the original. See bench/methodology.md.
+inline fn pushchar(self: *Stream, c: c_int) bool {
+    if (self.data.string_fill != self.data.string_size) {
+        if (self.data.string) |s| {
+            s[self.data.string_fill] = asByte(c);
+            self.data.string_fill += 1;
+            return true;
+        }
+    }
+    return pushcharSlow(self, c);
+}
+
+/// The growth path, plus the defensive case where the buffer pointer is absent.
+/// Kept out of line so the hot path stays small.
+fn pushcharSlow(self: *Stream, c: c_int) bool {
     if (self.data.string_fill == self.data.string_size) {
         const size = std.math.mul(usize, self.data.string_size, 2) catch {
             outOfMemory(self);
@@ -585,7 +614,7 @@ fn readNumber(self: *Stream, first: c_int) Type {
         if (!pushchar(self, c)) return .err;
     }
 
-    if (strchrFound("123456789", c)) {
+    if (isNonZeroDigitOrNul(c)) {
         if (isDigit(srcPeek(self))) {
             if (!readDigits(self)) return .err;
         }
@@ -593,7 +622,7 @@ fn readNumber(self: *Stream, first: c_int) Type {
 
     // Up to the decimal point or exponent has been read.
     c = srcPeek(self);
-    if (!strchrFound(".eE", c)) {
+    if (!isFractionOrExponentOrNul(c)) {
         return if (pushchar(self, 0)) .number else .err;
     }
 

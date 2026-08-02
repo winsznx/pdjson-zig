@@ -1,0 +1,204 @@
+{
+  "schema": "pdjson-zig/original-test-report@1",
+  "upstream_commit": "78fe04b820dc8817f540bdd87fb22887e0ef3981",
+  "test_sources": [
+    "upstream/pdjson/tests/tests.c",
+    "upstream/pdjson/tests/stream.c",
+    "upstream/pdjson/tests/pretty.c"
+  ],
+  "modified": false,
+  "note": "Upstream test sources are compiled in place from the pinned tree. Byte-identity is enforced by scripts/verify-upstream-hashes.sh.",
+  "suites": {
+    "tests.c[c]": {
+      "binary": "build/tests_c",
+      "returncode": 0,
+      "passed": 18,
+      "failed": 0,
+      "duration_seconds": 0.2195,
+      "raw_tail": "18 pass, 0 fail"
+    },
+    "tests.c[zig]": {
+      "binary": "build/tests_zig",
+      "returncode": 0,
+      "passed": 18,
+      "failed": 0,
+      "duration_seconds": 0.5265,
+      "raw_tail": "18 pass, 0 fail"
+    },
+    "stream.c[differential]": {
+      "kind": "differential",
+      "description": "upstream/pdjson/tests/stream.c built against C and against Zig, output compared byte for byte",
+      "fixtures": 142,
+      "mismatches": 0,
+      "detail": [],
+      "duration_seconds": 1.728
+    },
+    "pretty.c[differential]": {
+      "kind": "differential",
+      "description": "upstream/pdjson/tests/pretty.c built against C and against Zig, output compared byte for byte",
+      "fixtures": 142,
+      "mismatches": 0,
+      "detail": [],
+      "duration_seconds": 1.926
+    }
+  },
+  "build_commands": {
+    "c": "cc -std=c99 -pedantic -Wall -Wextra -Wno-missing-field-initializers -O2 -o /Users/mac/pdjson-zig/build/tests_c /Users/mac/pdjson-zig/upstream/pdjson/tests/tests.c /Users/mac/pdjson-zig/upstream/pdjson/pdjson.c",
+    "zig": "cc -std=c99 -pedantic -Wall -Wextra -Wno-missing-field-initializers -O2 -o /Users/mac/pdjson-zig/build/tests_zig /Users/mac/pdjson-zig/upstream/pdjson/tests/tests.c /Users/mac/pdjson-zig/zig-out/lib/libpdjson.a"
+  },
+  "tests": [
+    {
+      "test": "\\uXXXX",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "array",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "empty stream",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "false",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "incomplete array",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "invalid surrogate half",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "invalid surrogate pair",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "mixed stream",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "null",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "number",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "number stream",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "object",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "stream separation",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "string",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "string quotes",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "surrogate misorder",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "surrogate pair",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    },
+    {
+      "test": "true",
+      "suite": "upstream/pdjson/tests/tests.c",
+      "c_status": "passed",
+      "zig_status": "passed",
+      "status": "passed",
+      "parity": true
+    }
+  ],
+  "summary": {
+    "assertions_total": 18,
+    "assertions_passed_against_zig": 18,
+    "assertions_failed_against_zig": 0,
+    "assertions_skipped": 0,
+    "assertions_unsupported": 0,
+    "tool_differential_fixtures": 284,
+    "tool_differential_mismatches": 0
+  }
+}

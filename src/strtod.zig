@@ -75,14 +75,23 @@ pub fn strtod(s: []const u8) Result {
     }
     if (eqlIgnoreCase(rest, "nan")) {
         var n: usize = i + 3;
+        var payload: u64 = 0;
         // Optional n-char-sequence: nan(alnum_and_underscore*)
         if (n < s.len and s[n] == '(') {
             var j = n + 1;
             while (j < s.len and (std.ascii.isAlphanumeric(s[j]) or s[j] == '_')) j += 1;
-            if (j < s.len and s[j] == ')') n = j + 1;
+            if (j < s.len and s[j] == ')') {
+                payload = nanPayload(s[n + 1 .. j]);
+                n = j + 1;
+            }
         }
-        const q = std.math.nan(f64);
-        return .{ .value = if (negative) -q else q, .consumed = n };
+        // A quiet NaN with the payload in the low mantissa bits, matching how
+        // glibc and Apple libc interpret the n-char-sequence. The exact
+        // encoding is implementation-defined (C99 7.20.1.3p4); see the note on
+        // `nanPayload` for the one case this deliberately does not chase.
+        const pattern: u64 = 0x7ff8000000000000 | (payload & 0x7ffffffffffff) |
+            (@as(u64, @intFromBool(negative)) << 63);
+        return .{ .value = @bitCast(pattern), .consumed = n };
     }
 
     if (eqlIgnoreCase(rest, "0x")) {
@@ -93,6 +102,45 @@ pub fn strtod(s: []const u8) Result {
 
     if (scanDecimal(s, i)) |end| return finish(s, i, end, negative);
     return .{ .value = 0, .consumed = 0 };
+}
+
+/// Interpret the n-char-sequence of `nan(...)` the way glibc and Apple libc do:
+/// as a base-0 integer (0x = hex, leading 0 = octal, otherwise decimal) placed
+/// in the mantissa. A sequence that is not a valid integer yields 0, which is a
+/// plain quiet NaN.
+///
+/// Sequences that overflow 64 bits are the one case not reproduced: libc
+/// implementations disagree there, and C99 7.20.1.3p4 leaves the meaning of the
+/// sequence implementation-defined, so there is no "correct" answer to match.
+/// See DECISIONS.md D-09. It is unreachable from JSON number syntax; it can
+/// only be observed by calling `json_get_number()` on a *string* token whose
+/// text begins "nan(".
+fn nanPayload(seq: []const u8) u64 {
+    if (seq.len == 0) return 0;
+    var base: u8 = 10;
+    var i: usize = 0;
+    if (seq.len >= 2 and seq[0] == '0' and (seq[1] | 0x20) == 'x') {
+        base = 16;
+        i = 2;
+    } else if (seq[0] == '0') {
+        base = 8;
+        i = 1;
+    }
+    if (i >= seq.len) return 0;
+
+    var acc: u64 = 0;
+    while (i < seq.len) : (i += 1) {
+        const d: u8 = switch (seq[i]) {
+            '0'...'9' => seq[i] - '0',
+            'a'...'f' => seq[i] - 'a' + 10,
+            'A'...'F' => seq[i] - 'A' + 10,
+            else => return 0,
+        };
+        if (d >= base) return 0;
+        acc = std.math.mul(u64, acc, base) catch return 0;
+        acc = std.math.add(u64, acc, d) catch return 0;
+    }
+    return acc;
 }
 
 /// Returns the end index of a valid hex-float body starting at `start`

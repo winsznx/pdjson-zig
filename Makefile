@@ -1,0 +1,184 @@
+# pdjson-zig -- build and verification entry points.
+#
+# The one command that matters:
+#
+#     make verify
+#
+# It runs the whole evidence pipeline from a clean checkout and fails on the
+# first thing that does not hold up. Every number in README.md comes out of an
+# artifact this target regenerates.
+
+.POSIX:
+.PHONY: all build verify test test-original test-zig differential fuzz bench \
+        report abi conformance safety fmt clean distclean docker-verify \
+        mutation release-gate claims
+
+CC       = cc
+CFLAGS   = -std=c99 -pedantic -Wall -Wextra -Wno-missing-field-initializers -O2
+UPSTREAM = upstream/pdjson
+BUILD    = build
+ZIG      = zig
+PYTHON   = python3
+
+# Long-run knobs. `make fuzz FUZZ_SECONDS=600` for a deeper session.
+FUZZ_SECONDS = 60
+FUZZ_SEED    = 1
+BENCH_REPS   = 5
+
+all: build
+
+# ---------------------------------------------------------------------- build
+
+build: $(BUILD)/.stamp
+
+$(BUILD)/.stamp: build.zig $(wildcard src/*.zig) $(wildcard tools/*.zig) \
+                 $(wildcard oracle/*.c) $(wildcard oracle/*.h)
+	@mkdir -p $(BUILD)
+	@echo "==> Zig library and tools (ReleaseSafe: bounds and overflow checks on)"
+	$(ZIG) build
+	@echo "==> Zig tools (ReleaseFast, for the benchmark comparison only)"
+	$(ZIG) build --release=fast --prefix $(BUILD)/zig-fast
+	@echo "==> C reference oracle (links the pinned upstream pdjson.c)"
+	$(CC) $(CFLAGS) -I $(UPSTREAM) -I oracle \
+	    -o $(BUILD)/transcript_c oracle/transcript_c.c $(UPSTREAM)/pdjson.c
+	$(CC) $(CFLAGS) -I $(UPSTREAM) \
+	    -o $(BUILD)/bench_c oracle/bench_c.c $(UPSTREAM)/pdjson.c
+	@echo "==> C oracle with ASan+UBSan (used to attribute faults, not to pass tests)"
+	$(CC) -std=c99 -g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer \
+	    -I $(UPSTREAM) -I oracle \
+	    -o $(BUILD)/transcript_c_asan oracle/transcript_c.c $(UPSTREAM)/pdjson.c
+	@echo "==> ABI probe from the pinned public header"
+	$(CC) -std=c11 -pedantic -Wall -Wextra -I $(UPSTREAM) \
+	    -o $(BUILD)/abi_probe_c tools/abi_probe_c.c
+	@touch $@
+
+# --------------------------------------------------------------------- checks
+
+test: test-zig
+
+test-zig: build
+	@echo "==> Zig-native test suite"
+	$(ZIG) build test
+
+test-original: build
+	@echo "==> Upstream test suite, unmodified, linked against the Zig library"
+	$(PYTHON) scripts/original-tests.py
+
+abi: build
+	@echo "==> C ABI layout equivalence"
+	@sh scripts/abi-check.sh
+
+conformance: build
+	@echo "==> Fixed conformance corpus (differential)"
+	$(PYTHON) scripts/differential.py --label fixed-corpus --quiet
+
+differential: conformance
+
+fuzz: build
+	@echo "==> Differential fuzz session ($(FUZZ_SECONDS)s, seed $(FUZZ_SEED))"
+	$(PYTHON) fuzz/fuzz.py --seconds $(FUZZ_SECONDS) --seed $(FUZZ_SEED) \
+	    --out fuzz/logs/session-seed$(FUZZ_SEED).json
+
+mutation: build
+	@echo "==> Mutation testing (does the harness actually catch defects?)"
+	$(PYTHON) -u scripts/mutation-test.py
+
+safety:
+	@echo "==> Escape-hatch scan"
+	@sh scripts/safety-scan.sh
+
+fmt:
+	@echo "==> Formatting check"
+	$(ZIG) fmt --check build.zig src tools tests/port
+
+bench: build
+	@echo "==> Benchmark ($(BENCH_REPS) repetitions)"
+	$(PYTHON) scripts/bench.py --repetitions $(BENCH_REPS)
+
+claims:
+	@echo "==> Claim ledger validation"
+	$(PYTHON) scripts/validate-claims.py
+
+report: build
+	$(PYTHON) scripts/report.py
+
+# ------------------------------------------------------------------- pipeline
+
+# The order is deliberate: provenance first (so nothing downstream is measuring
+# a tampered baseline), then build, then the cheap invariants, then the
+# expensive evidence, then the claim ledger last so it validates fresh
+# artifacts rather than stale ones.
+verify:
+	@echo "=============================================================="
+	@echo " pdjson-zig verification"
+	@echo "=============================================================="
+	@echo
+	@echo "[1/16] tool versions"
+	@sh scripts/check-tools.sh
+	@echo
+	@echo "[2/16] pinned upstream hashes"
+	@sh scripts/verify-upstream-hashes.sh
+	@echo
+	@echo "[3/16] build C reference oracle and Zig library"
+	@$(MAKE) --no-print-directory build
+	@echo
+	@echo "[4/16] the Zig artifact contains no upstream parser code"
+	@sh scripts/verify-no-c-linkage.sh
+	@echo
+	@echo "[5/16] C ABI layout equivalence"
+	@sh scripts/abi-check.sh
+	@echo
+	@echo "[6/16] C oracle determinism"
+	@sh scripts/oracle-determinism.sh
+	@echo
+	@echo "[7/16] upstream test suite against the Zig library"
+	@$(PYTHON) scripts/original-tests.py
+	@echo
+	@echo "[8/16] Zig-native test suite"
+	@$(ZIG) build test
+	@echo
+	@echo "[9/16] fixed conformance corpus (differential)"
+	@$(PYTHON) scripts/differential.py --label fixed-corpus --quiet
+	@echo
+	@echo "[10/16] JSONTestSuite conformance (skipped if not fetched)"
+	@sh scripts/conformance-suite.sh
+	@echo
+	@echo "[11/16] bounded differential fuzz smoke test"
+	@$(PYTHON) fuzz/fuzz.py --seconds $(FUZZ_SECONDS) --seed $(FUZZ_SEED) \
+	    --out fuzz/logs/session-verify.json --quiet
+	@echo
+	@echo "[12/16] formatting"
+	@$(ZIG) fmt --check build.zig src tools tests/port
+	@echo
+	@echo "[13/16] escape-hatch scan"
+	@sh scripts/safety-scan.sh
+	@echo
+	@echo "[14/16] benchmark smoke test"
+	@$(PYTHON) scripts/bench.py --smoke
+	@echo
+	@echo "[15/16] generate reports"
+	@$(PYTHON) scripts/report.py
+	@echo
+	@echo "[16/16] validate CLAIMS.json against the artifacts just produced"
+	@$(PYTHON) scripts/validate-claims.py
+	@echo
+	@echo "=============================================================="
+	@echo " VERIFY OK"
+	@echo "=============================================================="
+
+release-gate: verify
+	@sh scripts/release-gate.sh
+
+# --------------------------------------------------------------------- docker
+
+docker-verify:
+	docker build -t pdjson-zig-verify .
+	docker run --rm pdjson-zig-verify
+
+# ---------------------------------------------------------------------- clean
+
+clean:
+	rm -rf $(BUILD) zig-out .zig-cache fuzz/work
+
+distclean: clean
+	rm -rf tests/conformance/JSONTestSuite

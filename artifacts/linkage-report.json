@@ -1,0 +1,11 @@
+{
+  "schema": "pdjson-zig/linkage-report@1",
+  "library": "zig-out/lib/libpdjson.a",
+  "objects_in_archive": 1,
+  "upstream_private_symbols_found": null,
+  "undefined_json_symbols": null,
+  "public_symbols_expected": 22,
+  "public_symbols_exported": 22,
+  "build_inputs_reference_pdjson_c": false,
+  "result": "pass"
+}

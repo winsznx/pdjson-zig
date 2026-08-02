@@ -1,0 +1,175 @@
+{
+  "schema": "pdjson-zig/verification-report@1",
+  "generated": "2026-08-02",
+  "upstream": {
+    "url": "https://github.com/skeeto/pdjson",
+    "commit": "78fe04b820dc8817f540bdd87fb22887e0ef3981",
+    "license": "Unlicense",
+    "files_pinned": 9
+  },
+  "toolchain": {
+    "schema": "pdjson-zig/toolchain@1",
+    "zig": "0.16.0",
+    "c_compiler": "Apple clang version 21.0.0 (clang-2100.1.1.101)",
+    "python": "Python 3.11.7",
+    "uname": "Darwin Winszns-MacBook-Pro.local 27.0.0 Darwin Kernel Version 27.0.0: Tue Jul 14 21:53:38 PDT 2026; root:xnu-13432.0.94.501.4~1/RELEASE_ARM64_T6000 arm64"
+  },
+  "original_tests": {
+    "assertions_total": 18,
+    "assertions_passed": 18,
+    "assertions_failed": 0,
+    "skipped": 0,
+    "unsupported": 0,
+    "tool_differential_mismatches": 0,
+    "sources_modified": false
+  },
+  "differential": {
+    "inputs": 214,
+    "comparisons": 1926,
+    "divergences": 0,
+    "upstream_ub": 43,
+    "zig_crashes": 0,
+    "timeouts": 0,
+    "modes": [
+      "next",
+      "nostream",
+      "peek",
+      "skip",
+      "sep",
+      "oom:0",
+      "oom:1",
+      "oom:2",
+      "oom:5"
+    ]
+  },
+  "fuzz": {
+    "log": null,
+    "seed": null,
+    "elapsed_seconds": null,
+    "cases": null,
+    "cases_per_second": null,
+    "divergences": null,
+    "zig_crashes": null,
+    "timeouts": null,
+    "modes": null
+  },
+  "abi": {
+    "comparison": "identical",
+    "c_consumer_link": "linked_and_ran",
+    "sizeof_json_stream": 272,
+    "exported_symbols": 22
+  },
+  "linkage": {
+    "result": "pass",
+    "objects": 1,
+    "public_symbols_exported": 22
+  },
+  "safety": {
+    "result": "pass",
+    "counts": {
+      "ptrCast": 10,
+      "alignCast": 1,
+      "constCast": 0,
+      "intCast": 11,
+      "bitCast": 13,
+      "truncate": 4,
+      "force_unwrap": 0,
+      "undefined_initializers": 8,
+      "unreachable": 0,
+      "setRuntimeSafety": 0,
+      "inline_asm": 0,
+      "volatile": 0
+    },
+    "shipped_mode": "ReleaseSafe -- bounds checks, overflow checks and illegal-behaviour detection are active in the artifact this project distributes, including in the benchmark numbers reported as 'zig-safe'."
+  },
+  "mutation": {
+    "defined": 12,
+    "caught": 12,
+    "survived": 0,
+    "comparable_cases": 1463,
+    "excluded_cases": 35
+  },
+  "determinism": {
+    "runs_per_mode": 5,
+    "c_oracle_deterministic": true,
+    "zig_deterministic": true
+  },
+  "benchmark": {
+    "smoke": false,
+    "repetitions": 5,
+    "cases": [
+      {
+        "workload": "large-mixed",
+        "mode": "parse",
+        "speedup_safe_vs_c": 0.868,
+        "speedup_fast_vs_c": 0.885
+      },
+      {
+        "workload": "large-mixed",
+        "mode": "strings",
+        "speedup_safe_vs_c": 1.041,
+        "speedup_fast_vs_c": 1.076
+      },
+      {
+        "workload": "numbers",
+        "mode": "parse",
+        "speedup_safe_vs_c": 0.793,
+        "speedup_fast_vs_c": 0.825
+      },
+      {
+        "workload": "numbers",
+        "mode": "strings",
+        "speedup_safe_vs_c": 0.948,
+        "speedup_fast_vs_c": 0.99
+      },
+      {
+        "workload": "strings-ascii",
+        "mode": "strings",
+        "speedup_safe_vs_c": 0.905,
+        "speedup_fast_vs_c": 0.922
+      },
+      {
+        "workload": "strings-unicode",
+        "mode": "strings",
+        "speedup_safe_vs_c": 1.021,
+        "speedup_fast_vs_c": 1.068
+      },
+      {
+        "workload": "deep-nesting",
+        "mode": "parse",
+        "speedup_safe_vs_c": 0.837,
+        "speedup_fast_vs_c": 0.848
+      },
+      {
+        "workload": "many-small-docs",
+        "mode": "parse",
+        "speedup_safe_vs_c": 0.884,
+        "speedup_fast_vs_c": 0.911
+      },
+      {
+        "workload": "malformed-early",
+        "mode": "parse",
+        "speedup_safe_vs_c": 1.891,
+        "speedup_fast_vs_c": 5.622
+      },
+      {
+        "workload": "malformed-late",
+        "mode": "parse",
+        "speedup_safe_vs_c": 0.868,
+        "speedup_fast_vs_c": 0.887
+      },
+      {
+        "workload": "whitespace-heavy",
+        "mode": "parse",
+        "speedup_safe_vs_c": 0.935,
+        "speedup_fast_vs_c": 0.935
+      },
+      {
+        "workload": "flat-ints",
+        "mode": "parse",
+        "speedup_safe_vs_c": 0.792,
+        "speedup_fast_vs_c": 0.819
+      }
+    ]
+  }
+}

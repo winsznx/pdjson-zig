@@ -93,7 +93,7 @@ test "printf %c with 0 embeds a NUL that truncates the visible message" {
     b.str("' in value");
     b.finish();
     // The full byte string is written...
-    try std.testing.expectEqual(@as(usize, 27), b.fill);
+    try std.testing.expectEqual(@as(usize, 28), b.fill);
     // ...but C string semantics stop at the NUL.
     try std.testing.expectEqualSlices(u8, "unexpected byte '", std.mem.sliceTo(&buf, 0));
 }

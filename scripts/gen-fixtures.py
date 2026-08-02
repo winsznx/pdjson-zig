@@ -84,6 +84,15 @@ add("str-raw-tab", '"a\tb"')
 add("str-del-byte", '"\x7f"')
 add("str-embedded-nul-escape", '"a\\u0000b"')
 
+# Every unescaped control byte, individually. The parser rejects 0x00-0x1F in
+# a string, and the boundary at 0x1F/0x20 is exactly the kind of off-by-one a
+# port can get wrong without any structural test noticing.
+for _cc in range(0x00, 0x21):
+    add(f"ctrl-raw-{_cc:02x}", b'"a' + bytes([_cc]) + b'b"')
+# ...and the escaped forms of the same range, which are legal.
+for _cc in range(0x00, 0x21):
+    add(f"ctrl-escaped-{_cc:02x}", ('"a\\u%04xb"' % _cc))
+
 # -- unicode ----------------------------------------------------------------
 add("uni-basic", r'"hello"')
 add("uni-bmp", r'"é中￿"')
@@ -100,6 +109,14 @@ add("uni-truncated", '"\\u')
 add("utf8-2byte", '"é"')
 add("utf8-3byte", '"中"')
 add("utf8-4byte", '"\U0001f600"')
+# Escape-form surrogate pairs at both ends of the range. The literal UTF-8
+# forms above do not exercise the surrogate decoder at all.
+add("uni-escaped-pair-min", r'"\uD800\uDC00"')
+add("uni-escaped-pair-max", r'"\uDBFF\uDFFF"')
+add("uni-escaped-pair-hi-end", r'"\uDBFF\uDC00"')
+add("uni-escaped-pair-lo-end", r'"\uD800\uDFFF"')
+add("uni-escaped-just-below-hi", r'"\uD7FF"')
+add("uni-escaped-just-above-lo", r'"\uE000"')
 
 # -- invalid UTF-8 ----------------------------------------------------------
 add("bad-utf8-lone-continuation", b'"\x80"')

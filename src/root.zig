@@ -18,6 +18,7 @@ pub const errmsg = @import("errmsg.zig");
 pub const Parser = @import("api.zig").Parser;
 pub const Event = @import("api.zig").Event;
 pub const Context = @import("api.zig").Context;
+pub const Error = @import("api.zig").Error;
 
 comptime {
     // Emit the C ABI surface as part of the library.

@@ -1,0 +1,9 @@
+{
+  "schema": "pdjson-zig/determinism-report@1",
+  "runs_per_mode": 5,
+  "fixtures": 214,
+  "modes": ["next", "nostream", "peek", "skip", "sep"],
+  "c_oracle_deterministic": true,
+  "zig_deterministic": true,
+  "note": "Transcripts deliberately exclude pointer values, heap addresses, timing, and the bytes of errmsg past its NUL terminator, all of which are not reproducible."
+}

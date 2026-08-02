@@ -111,18 +111,72 @@ const Emitter = struct {
 pub fn main(p: std.process.Init) !void {
     const app = try cli.App.init(p);
 
+    var buf: [1 << 16]u8 = undefined;
+    var stdout = app.stdout(&buf);
+    const e = Emitter{ .out = stdout.w() };
+
+    if (std.mem.eql(u8, app.arg(0, ""), "--batch")) {
+        const mode = app.arg(1, "next");
+        const listfile = app.argOpt(2) orelse app.die("--batch needs a list file", .{});
+        const list = app.readFile(listfile, 1 << 28) catch
+            app.die("cannot read {s}", .{listfile});
+        defer app.gpa.free(list);
+
+        var it = std.mem.tokenizeAny(u8, list, "\r\n");
+        while (it.next()) |path| {
+            const data = app.readFile(path, 1 << 30) catch
+                app.die("cannot read {s}", .{path});
+            defer app.gpa.free(data);
+            try e.out.print("{{\"input\":\"{s}\"}}\n", .{path});
+            try transcribe(e, mode, data);
+        }
+        try stdout.flush();
+        return;
+    }
+
+    if (std.mem.eql(u8, app.arg(0, ""), "--pack")) {
+        const mode = app.arg(1, "next");
+        const packfile = app.argOpt(2) orelse app.die("--pack needs a pack file", .{});
+        const all = app.readFile(packfile, 1 << 30) catch
+            app.die("cannot read {s}", .{packfile});
+        defer app.gpa.free(all);
+
+        var off: usize = 0;
+        var index: usize = 0;
+        while (off < all.len) {
+            var n: usize = 0;
+            var saw_digit = false;
+            while (off < all.len and all[off] >= '0' and all[off] <= '9') : (off += 1) {
+                n = n * 10 + (all[off] - '0');
+                saw_digit = true;
+            }
+            if (!saw_digit or off >= all.len or all[off] != '\n') break;
+            off += 1;
+            if (off + n > all.len) break;
+
+            try e.out.print("{{\"input\":\"pack:{d}\"}}\n", .{index});
+            index += 1;
+            try transcribe(e, mode, all[off .. off + n]);
+            off += n;
+        }
+        try stdout.flush();
+        return;
+    }
+
     const mode = app.arg(0, "next");
     const input = app.readInput(app.argOpt(1), 1 << 30) catch
         app.die("cannot read input", .{});
     defer app.gpa.free(input);
 
+    try transcribe(e, mode, input);
+    try stdout.flush();
+}
+
+fn transcribe(e: Emitter, mode: []const u8, input: []const u8) !void {
+    alloc_budget = -1;
     if (std.mem.startsWith(u8, mode, "oom:")) {
         alloc_budget = std.fmt.parseInt(i64, mode[4..], 10) catch -1;
     }
-
-    var buf: [1 << 16]u8 = undefined;
-    var stdout = app.stdout(&buf);
-    const e = Emitter{ .out = stdout.w() };
 
     try e.out.print("{{\"schema\":\"{s}\",\"mode\":\"{s}\",\"bytes\":{d}}}\n", .{ schema, mode, input.len });
 
@@ -192,5 +246,4 @@ pub fn main(p: std.process.Init) !void {
     }
 
     core.close(s);
-    try stdout.flush();
 }
