@@ -51,10 +51,12 @@ Zig, C, JSON, parser, differential-testing, fuzzing, ABI, memory-safety, verific
 ```
 https://github.com/winsznx/pdjson-zig
 https://github.com/skeeto/pdjson
-https://github.com/skeeto/pdjson/issues/36
-https://github.com/skeeto/pdjson/issues/37
 https://github.com/skeeto/pdjson/issues/38
 ```
+
+The three issue links are one field entry each; if only five links fit, use the
+repository, upstream, and #38 (which carries the maintainer's confirmation
+covering all three).
 
 ## Platforms
 
@@ -252,14 +254,66 @@ duplication.
    byte. 0xFF is never valid UTF-8, so this does not make the parser accept bad
    input — it misreports where and why the input was rejected.
 
+3. https://github.com/skeeto/pdjson/issues/38
+   json_get_number() reads uninitialised bytes after a partial token. A token
+   that fails part way never gets its terminating NUL, so strtod walks past what
+   the parser wrote. On glibc the accessor returns different values for identical
+   input across runs of the same binary. Found not by the differential comparison
+   but by the gate that checks the ORACLE ITSELF is reproducible.
+
 The port reproduces bug 2 deliberately, using Zig's c_char so it makes the same
 signedness choice the C compiler makes on the same target. Silently fixing a bug
 would break the equivalence claim in the least visible way possible. The fix
 ships as an opt-in build flag, and that build is expected to diverge — it is one
 of the twelve mutants.
+```
 
-Neither issue has been triaged by upstream at the time of writing, and the claim
-ledger records them as reported rather than confirmed.
+## Upstream impact
+
+```
+Differential testing for pdjson-zig uncovered three defects in the original
+skeeto/pdjson implementation:
+
+  #36 — json_get_context() accessed an unallocated stack slot after allocation
+        failure
+  #37 — byte 0xFF was interpreted as EOF by the memory-buffer source
+  #38 — json_get_number() read uninitialized bytes after a partial token
+
+The upstream maintainer confirmed the findings, fixed all three issues, and
+described the reports as "solid findings, excellent analysis."
+
+  #36  fixed by 858faf26f  Do not advance the container stack on a failed push
+  #37  fixed by b0f17fe6f  Do not read byte 0xFF as EOF in the buffer source
+  #38  fixed by 2807b9ae1  Terminate tokens abandoned part way through
+
+All three were closed as completed on 2026-08-02. A fourth commit, c32ccb6c6,
+was credited by the maintainer as found while fixing #36; it is recorded but is
+not counted among the three findings, because it was not one of the filed
+issues.
+
+These findings came from independently executing the C implementation and the
+Zig port, comparing observable behavior, and mechanically attributing
+divergences using sanitizer evidence — an ASan+UBSan build of the pinned
+original decides whether a case is a defect in the original or a difference to
+explain, rather than judgement doing it.
+
+Scope of the contribution, stated precisely: the defects were discovered and
+reported through this methodology, and the maintainer wrote the fixes and closed
+the issues. No pull request was opened from this project. The maintainer has
+also said skeeto/pdjson will be archived soon in favour of
+https://github.com/boris-kolpackov/libpdjson5, so the repository is not expected
+to remain actively maintained.
+
+The pin for this project stays at 78fe04b, the commit every measurement was made
+against, so the upstream fixes change no figure here.
+
+  Issues:  https://github.com/skeeto/pdjson/issues/36
+           https://github.com/skeeto/pdjson/issues/37
+           https://github.com/skeeto/pdjson/issues/38
+  Commits: https://github.com/skeeto/pdjson/commit/858faf26f
+           https://github.com/skeeto/pdjson/commit/b0f17fe6f
+           https://github.com/skeeto/pdjson/commit/2807b9ae1
+  Comment: https://github.com/skeeto/pdjson/issues/38
 ```
 
 ## GitHub repository
@@ -303,13 +357,16 @@ twice.
 ```
 Stated rather than left to be discovered:
 
-- The differential corpus drives json_open_buffer only. json_open_stream (FILE*)
-  and json_open_user are implemented, exported, and exercised by the upstream
-  suite and the ABI consumer, but are not compared transcript by transcript.
-  Given that bug #37 is precisely a disagreement between two sources, this is the
-  hole most likely to hold something, and it is the obvious next step.
-- ABI equivalence is verified on two targets (arm64 macOS, x86-64 Linux), not
-  asserted universally.
+- ABI equivalence is EXECUTED on two targets (arm64 macOS, x86-64 Linux) and
+  asserted at compile time on six more. Both executed targets are LP64.
+- The transition specification is hand-written, so its agreeing with both
+  implementations is evidence rather than proof; a shared misreading of RFC 8259
+  would be invisible to it. The independent JSONTestSuite corpus is what covers
+  that. And 100% transition coverage is not path coverage.
+- The fixture corpus was written by the same person who wrote the port. The
+  independent checks against that bias are JSONTestSuite, the mutation harness,
+  the invariant rules and the transition specification -- each of which found
+  something the fixtures had missed.
 - nan(...) payloads that overflow 64 bits are not matched. C99 7.20.1.3p4 makes
   them implementation-defined and libcs disagree. Reachable only by calling
   json_get_number() on a string token beginning "nan(".
@@ -351,19 +408,23 @@ port is slower.
 
 ## Screenshots to attach
 
-Only real terminal output and generated reports. No mockups.
+Only real terminal output, real browser windows, and generated reports. No
+mockups.
 
 1. `make verify` completing, showing all 24 steps and `VERIFY OK`.
 2. `upstream/pdjson/tests/tests.c` compiled against `libpdjson.a`, showing
-   `18 pass, 0 fail`.
-3. Two transcripts side by side for `uni-escaped-pair-max.json`, identical.
-4. `scripts/verify-upstream-hashes.sh` failing on a tampered test file, then
-   passing after `git checkout`.
-5. The ASan/UBSan output from `repro_oom_stack.c` at `pdjson.c:912`.
-6. `artifacts/mutation-report.json` showing 12/12 with the excluded-case count.
-7. The generated benchmark table, showing the port is slower.
+   18 pass / 0 fail, with `ar t` proving the archive holds one Zig object.
+3. The #36 reproducer under ASan+UBSan, showing the null dereference and the
+   SEGV at pdjson.c:912.
+4. GitHub: issues #36, #37 and #38 closed, ending on #38 where the maintainer's
+   confirmation is visible. The only browser shot, and the fastest to read.
+5. The two transcript producers emitting byte-identical output on a surrogate
+   pair and an embedded NUL, with `diff` reporting no difference.
+6. The generated benchmark and size tables, showing the port is slower on 9 of
+   12 workload/mode pairs and larger in a consumer's binary.
 
----
+Capture instructions, with every command already executed against the current
+tree: docs/screenshot-checklist.md.
 
 ## Remaining manual steps
 

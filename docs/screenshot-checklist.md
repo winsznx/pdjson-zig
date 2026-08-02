@@ -6,6 +6,8 @@ yourself; nothing in this repository will produce them for you.
 
 Six shots, in priority order — if you only capture three, take 1, 2 and 4.
 
+Shot 4 is the only one that is a browser rather than a terminal, and it is the one a reader with three seconds will read fastest.
+
 Every command below was run before this list was written, and the "what you
 should see" notes describe the output that actually came back. If one of them
 produces something different on your machine, that is a finding, not a typo.
@@ -48,27 +50,7 @@ ar t zig-out/lib/libpdjson.a
 Shows 18 `PASS` lines, `18 pass, 0 fail`, and that the archive contains one Zig
 object — the "no C parser inside" evidence, in one frame.
 
-## 3. Provenance, including the tamper check failing
-
-```sh
-clear
-sh scripts/verify-upstream-hashes.sh
-echo "/* tampered */" >> upstream/pdjson/tests/tests.c
-sh scripts/verify-upstream-hashes.sh
-git checkout upstream/pdjson/tests/tests.c
-sh scripts/verify-upstream-hashes.sh
-```
-
-OK, then a red `FAIL drift` with both digests, then OK again. Proves the
-"untouched tests" claim is checked rather than asserted.
-
-**Remember the `git checkout`** — leaving the file modified will fail
-`make verify`, the release gate, and shot 1.
-
-What you should see: `OK (9 files match ...)`, then the two digests and
-`FAILED (1 problem(s), 9 file(s) checked)`, then `OK` again.
-
-## 4. An upstream bug, under sanitizers
+## 3. An upstream bug, under sanitizers
 
 ```sh
 clear
@@ -79,6 +61,31 @@ ASAN_OPTIONS=detect_leaks=0 /tmp/repro 2>&1 | head -14
 
 The UBSan "member access within null pointer" line and the ASan SEGV at
 `json_get_context pdjson.c:912`. Concrete evidence for the Bug Catcher claim.
+
+## 4. Upstream confirmed and fixed all three
+
+Browser, not a terminal. Open the three issues and arrange so the **closed**
+state is visible on each, ending on #38 where the maintainer's comment is:
+
+- <https://github.com/skeeto/pdjson/issues/36>
+- <https://github.com/skeeto/pdjson/issues/37>
+- <https://github.com/skeeto/pdjson/issues/38>
+
+A single browser window with the three tabs and #38 in front is the strongest
+frame; a tiled view of all three works too. What must be legible: the closed
+badge, and "Solid findings, excellent analysis."
+
+If a browser shot is awkward, the generated README section is an acceptable
+substitute and has clickable links to all three issues and all three fix commits:
+
+```sh
+clear && sed -n '/UPSTREAM:BEGIN/,/UPSTREAM:END/p' README.md | grep -v '<!--'
+```
+
+This shot replaced the provenance tamper check in the six, because external
+confirmation of the findings is the stronger evidence for a reader who has three
+seconds. The tamper check is still worth capturing if you have room — it is in
+the optional list below.
 
 ## 5. Two transcripts, byte-identical
 
@@ -107,7 +114,29 @@ point, and both are spliced from artifacts so they cannot drift.
 
 ---
 
-## Optional seventh, if you have room
+## Optional extras, if you have room
+
+### Provenance, including the tamper check failing
+
+```sh
+clear
+sh scripts/verify-upstream-hashes.sh
+echo "/* tampered */" >> upstream/pdjson/tests/tests.c
+sh scripts/verify-upstream-hashes.sh
+git checkout upstream/pdjson/tests/tests.c
+sh scripts/verify-upstream-hashes.sh
+```
+
+OK, then a red `FAIL drift` with both digests, then OK again. Proves the
+"untouched tests" claim is checked rather than asserted.
+
+**Remember the `git checkout`** — leaving the file modified will fail
+`make verify`, the release gate, and shot 1.
+
+What you should see: `OK (9 files match ...)`, then the two digests and
+`FAILED (1 problem(s), 9 file(s) checked)`, then `OK` again.
+
+### More
 
 Pick whichever of these reads best on your terminal:
 

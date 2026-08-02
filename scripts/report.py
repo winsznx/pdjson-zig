@@ -408,12 +408,13 @@ def render_summary_block(v, diff, jts, fuzz_data, tests, bench, size, safety,
         f"| **Benchmark** | **Slower on {dig(bench, 'workloads_zig_slower')} of {dig(bench, 'workloads_measured')}** workload/mode pairs, faster on {dig(bench, 'workloads_zig_faster_or_equal')}, and larger in a consumer's binary — by how much depends on the platform. Both tables below, generated from the artifacts. |",
         f"| **Invariants** | {n(dig(inv, 'transcripts_checked_committed_corpus'))} transcripts and {n(dig(inv, 'records_checked_committed_corpus'))} records from the committed corpus checked against {dig(inv, 'rule_functions')} rules that reference neither implementation: **{dig(inv, 'violations_total')} violations** |",
         f"| **API coverage** | All {dig(api, 'exported_functions')} exported functions behaviourally compared; **{dig(api, 'classification.untested')} untested** |",
-        f"| **Upstream bugs found** | {n_issues}, all filed with minimal "
-        f"reproducers — **all {n_issues} confirmed and fixed by the maintainer** "
-        f"([#36](https://github.com/skeeto/pdjson/issues/36), "
+        f"| **Upstream impact** | **{n_issues} defects discovered, confirmed, and "
+        f"fixed in `skeeto/pdjson`** — "
+        f"[#36](https://github.com/skeeto/pdjson/issues/36), "
         f"[#37](https://github.com/skeeto/pdjson/issues/37), "
-        f"[#38](https://github.com/skeeto/pdjson/issues/38)). Two also "
-        f"independently confirmed by Valgrind. |",
+        f"[#38](https://github.com/skeeto/pdjson/issues/38), all closed as "
+        f"completed with a fix commit each. Two also independently confirmed by "
+        f"Valgrind. |",
     ]
     return "\n".join(rows) + "\n"
 
@@ -521,8 +522,11 @@ def render_upstream_block(issues) -> str:
     for f in dig(out, "fix_commits", []) or []:
         num = f["fixes"].lstrip("#")
         t = titles.get(num, "")
-        rows.append(f"| [{f['fixes']}](https://github.com/skeeto/pdjson/issues/{num}) "
-                    f"| {t} | `{f['sha']}` {f['subject']} |")
+        rows.append(
+            f"| [{f['fixes']}](https://github.com/skeeto/pdjson/issues/{num}) "
+            f"| {t} | [`{f['sha']}`]"
+            f"(https://github.com/skeeto/pdjson/commit/{f['sha']}) "
+            f"{f['subject']} |")
     mc = dig(out, "maintainer_comment", {}) or {}
     rows.append("")
     rows.append(f"All three closed as completed on {dig(out, 'closed_on')}. The "
@@ -533,13 +537,23 @@ def render_upstream_block(issues) -> str:
     rows.append("")
     extra = dig(out, "additional_commit_upstream_credited_to_this_work", {}) or {}
     if extra:
-        rows.append(f"A fourth commit, `{extra['sha']}` ({extra['subject']}), was "
+        rows.append(f"A fourth commit, [`{extra['sha']}`]"
+                    f"(https://github.com/skeeto/pdjson/commit/{extra['sha']}) "
+                    f"({extra['subject']}), was "
                     f"credited as found while fixing "
                     f"[#36](https://github.com/skeeto/pdjson/issues/36). It is "
                     f"recorded in the artifact but is not counted as a finding "
                     f"here, because it was not one of the three filed issues.")
         rows.append("")
     rows.append(f"_{dig(out, 'consequence_for_this_port')}_")
+    rows.append("")
+    rows.append("The issues were **discovered and reported** through the "
+                "methodology below; the maintainer wrote the fixes and closed "
+                "them. No pull request was opened from this project. The "
+                "maintainer has also said `skeeto/pdjson` will be archived soon "
+                "in favour of [`boris-kolpackov/libpdjson5`]"
+                "(https://github.com/boris-kolpackov/libpdjson5), so these links "
+                "point at a repository that is not expected to stay active.")
     return "\n".join(rows) + "\n"
 
 

@@ -251,7 +251,35 @@ python3 -c "import json;d=json.load(open('artifacts/differential-summary.json'))
 
 ---
 
-## 4:20–4:45 — honest benchmark
+## 4:20–4:40 — upstream confirmed and fixed all three
+
+**Screen:** a browser, three tabs — issues
+[#36](https://github.com/skeeto/pdjson/issues/36),
+[#37](https://github.com/skeeto/pdjson/issues/37),
+[#38](https://github.com/skeeto/pdjson/issues/38) — each showing the closed
+state, ending on #38 so the maintainer's comment is visible. Scroll to it and
+leave it on screen for the last five seconds.
+
+> "Those three reports went upstream. The maintainer confirmed all three, wrote
+> a fix for each, and closed them — 858faf26f, b0f17fe6f, 2807b9ae1.
+>
+> To be precise about what that is and isn't: I discovered and reported them
+> through this methodology. He wrote the fixes. I didn't open a pull request.
+> And it's not evidence the port is equivalent — it's evidence the defects were
+> real.
+>
+> The pin here stays at the original commit, so nothing I measured changes."
+
+**Timing:** 15–20 seconds. If it runs long, drop the last sentence, not the
+qualification before it.
+
+**Do not say** "my patches were merged" or anything implying the repository will
+stay active — the maintainer has said he intends to archive it in favour of
+`libpdjson5`.
+
+---
+
+## 4:40–5:00 — honest benchmark
 
 **Screen:** the generated table.
 
@@ -280,7 +308,7 @@ sed -n '/BENCH:BEGIN/,/BENCH:END/p' README.md
 
 ---
 
-## 4:45–5:00 — decisions, limits, reproduction
+## 5:00–5:20 — decisions, limits, reproduction
 
 **Screen:** `DECISIONS.md` headings, then the README limitations section.
 
@@ -356,6 +384,7 @@ means the transcripts are byte-identical.
 Results, all reproducible with one command:
   - 18/18 assertions in the UNMODIFIED upstream test suite, linked against only
     the Zig library
+  - 3 defects discovered, confirmed and fixed upstream in skeeto/pdjson
   - 0 divergences across 6,272 fixed-corpus + 3,816 JSONTestSuite comparisons,
     covering all three documented input sources
   - 0 divergences in a published differential fuzz session

@@ -17,7 +17,7 @@
 | **Benchmark** | **Slower on 9 of 12** workload/mode pairs, faster on 3, and larger in a consumer's binary — by how much depends on the platform. Both tables below, generated from the artifacts. |
 | **Invariants** | 5,824 transcripts and 203,433 records from the committed corpus checked against 13 rules that reference neither implementation: **0 violations** |
 | **API coverage** | All 22 exported functions behaviourally compared; **0 untested** |
-| **Upstream bugs found** | 3, all filed with minimal reproducers — **all 3 confirmed and fixed by the maintainer** ([#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38)). Two also independently confirmed by Valgrind. |
+| **Upstream impact** | **3 defects discovered, confirmed, and fixed in `skeeto/pdjson`** — [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38), all closed as completed with a fix commit each. Two also independently confirmed by Valgrind. |
 <!-- SUMMARY:END -->
 
 ```sh
@@ -477,17 +477,19 @@ fixed by the maintainer**.
 <!-- UPSTREAM:BEGIN -->
 | Issue | Defect | Fixed by |
 | --- | --- | --- |
-| [#36](https://github.com/skeeto/pdjson/issues/36) | json_get_context() reads an unallocated stack slot after a failed allocation (NULL deref / OOB read) | `858faf26f` Do not advance the container stack on a failed push |
-| [#37](https://github.com/skeeto/pdjson/issues/37) | Byte 0xFF is read as EOF by the memory-buffer source, so it disagrees with the FILE* source | `b0f17fe6f` Do not read byte 0xFF as EOF in the buffer source |
-| [#38](https://github.com/skeeto/pdjson/issues/38) | json_get_number() reads uninitialised bytes after a partial token, making it nondeterministic | `2807b9ae1` Terminate tokens abandoned part way through |
+| [#36](https://github.com/skeeto/pdjson/issues/36) | json_get_context() reads an unallocated stack slot after a failed allocation (NULL deref / OOB read) | [`858faf26f`](https://github.com/skeeto/pdjson/commit/858faf26f) Do not advance the container stack on a failed push |
+| [#37](https://github.com/skeeto/pdjson/issues/37) | Byte 0xFF is read as EOF by the memory-buffer source, so it disagrees with the FILE* source | [`b0f17fe6f`](https://github.com/skeeto/pdjson/commit/b0f17fe6f) Do not read byte 0xFF as EOF in the buffer source |
+| [#38](https://github.com/skeeto/pdjson/issues/38) | json_get_number() reads uninitialised bytes after a partial token, making it nondeterministic | [`2807b9ae1`](https://github.com/skeeto/pdjson/commit/2807b9ae1) Terminate tokens abandoned part way through |
 
 All three closed as completed on 2026-08-02. The maintainer's reply on [#38](https://github.com/skeeto/pdjson/issues/38):
 
 > Solid findings, excellent analysis.
 
-A fourth commit, `c32ccb6c6` (Do not count a value that failed to parse), was credited as found while fixing [#36](https://github.com/skeeto/pdjson/issues/36). It is recorded in the artifact but is not counted as a finding here, because it was not one of the three filed issues.
+A fourth commit, [`c32ccb6c6`](https://github.com/skeeto/pdjson/commit/c32ccb6c6) (Do not count a value that failed to parse), was credited as found while fixing [#36](https://github.com/skeeto/pdjson/issues/36). It is recorded in the artifact but is not counted as a finding here, because it was not one of the three filed issues.
 
 _The pin stays at 78fe04b. Equivalence is claimed against that commit and every artifact here was produced against it, so the fixes landing after it do not change any measurement. They do change what the port's deliberate reproduction of #37 means: upstream now fixes 0xFF, so `zig build -Dfix-0xff=true` is the build that matches current upstream, and the default build matches the pinned commit. Both remain available and the distinction is unchanged -- see DECISIONS.md D-05._
+
+The issues were **discovered and reported** through the methodology below; the maintainer wrote the fixes and closed them. No pull request was opened from this project. The maintainer has also said `skeeto/pdjson` will be archived soon in favour of [`boris-kolpackov/libpdjson5`](https://github.com/boris-kolpackov/libpdjson5), so these links point at a repository that is not expected to stay active.
 <!-- UPSTREAM:END -->
 
 They were found by executing the C original and the Zig port independently,
