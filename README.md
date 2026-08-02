@@ -600,6 +600,7 @@ The documents worth reading in their own right:
 | [`docs/hex-float-proof.md`](docs/hex-float-proof.md) | Correctness under IEEE-754, not just agreement with libc |
 | [`docs/transcript-invariants.md`](docs/transcript-invariants.md) | Rules that reference neither implementation |
 | [`docs/write-up.md`](docs/write-up.md) | The narrative: what was hard, what went wrong, what was learned |
+| [`docs/final-audit-v2.md`](docs/final-audit-v2.md) | The second adversarial audit: whether the *checks* hold, and the sixteen places they did not |
 
 ## Known limitations
 

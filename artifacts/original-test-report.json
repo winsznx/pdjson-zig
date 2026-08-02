@@ -14,7 +14,7 @@
       "returncode": 0,
       "passed": 18,
       "failed": 0,
-      "duration_seconds": 0.5498,
+      "duration_seconds": 0.4204,
       "raw_tail": "18 pass, 0 fail"
     },
     "tests.c[zig]": {
@@ -22,24 +22,24 @@
       "returncode": 0,
       "passed": 18,
       "failed": 0,
-      "duration_seconds": 0.5077,
+      "duration_seconds": 0.7883,
       "raw_tail": "18 pass, 0 fail"
     },
     "stream.c[differential]": {
       "kind": "differential",
       "description": "upstream/pdjson/tests/stream.c built against C and against Zig, output compared byte for byte",
-      "fixtures": 215,
+      "fixtures": 218,
       "mismatches": 0,
       "detail": [],
-      "duration_seconds": 2.732
+      "duration_seconds": 2.381
     },
     "pretty.c[differential]": {
       "kind": "differential",
       "description": "upstream/pdjson/tests/pretty.c built against C and against Zig, output compared byte for byte",
-      "fixtures": 215,
+      "fixtures": 218,
       "mismatches": 0,
       "detail": [],
-      "duration_seconds": 2.79
+      "duration_seconds": 2.43
     }
   },
   "build_commands": {
@@ -198,7 +198,7 @@
     "assertions_failed_against_zig": 0,
     "assertions_skipped": 0,
     "assertions_unsupported": 0,
-    "tool_differential_fixtures": 430,
+    "tool_differential_fixtures": 436,
     "tool_differential_mismatches": 0
   }
 }

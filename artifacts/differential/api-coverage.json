@@ -7,7 +7,7 @@
     "scenario": 15,
     "consumer": 13,
     "upstream": 15,
-    "unit": 17,
+    "unit": 18,
     "untested": 0
   },
   "untested": [],
@@ -212,11 +212,13 @@
       "function": "json_skip_until",
       "coverage": [
         "differential",
-        "scenario"
+        "scenario",
+        "unit"
       ],
       "notes": [
         "driven by both transcript producers",
-        "modes: skipuntil:4, skipuntil:6, skipuntil:7, skipuntil:8, skipuntil:11"
+        "modes: skipuntil:4, skipuntil:6, skipuntil:7, skipuntil:8, skipuntil:11",
+        "Zig tests: behaviour.zig"
       ]
     },
     {
