@@ -86,7 +86,7 @@ sh scripts/verify-upstream-hashes.sh          # passes again
 make verify
 ```
 
-**Expected:** 16 numbered steps, ending in `VERIFY OK`. Roughly 3–4 minutes with
+**Expected:** 23 numbered steps, ending in `VERIFY OK`. Roughly 3–4 minutes with
 warm artifacts, so **speed the video up 3–4× through the middle**, holding real
 time on step 4 (no C linkage), step 7 (upstream suite) and step 16 (claims).
 

@@ -24,11 +24,20 @@
 make verify
 ```
 
-One command. It pins upstream by hash, builds both implementations, proves the
-Zig artifact contains no C parser code, checks the ABI, runs the untouched
-upstream suite against Zig, runs the differential corpus, fuzzes, scans for
-escape hatches, benchmarks, and validates every claim below against the files it
-just generated. It fails on the first thing that does not hold.
+One command, 23 numbered steps. It pins upstream by hash, builds both
+implementations, proves the Zig artifact contains no C parser code, checks the
+ABI four ways *including that the check itself can fail*, runs the untouched
+upstream suite against Zig, runs the differential corpus across four input
+sources, measures state-transition coverage against a written specification,
+checks transcript invariants that reference neither implementation, fuzzes,
+inventories every escape hatch, benchmarks, measures the size a consumer pays,
+and finally validates **and audits** every claim below against the files it just
+generated. It fails on the first thing that does not hold.
+
+The audit step is there because validating a claim's machine check is not the
+same as checking its English: a claim can assert `divergences == 0` correctly
+while its prose quotes a number that moved three commits ago. That happened, and
+[`scripts/audit-claims.py`](scripts/audit-claims.py) is what now catches it.
 
 - **Demo video:** _not recorded. Script ready in [`docs/demo-script.md`](docs/demo-script.md)._
 - **Devfolio project:** _not submitted. Copy staged in [`docs/devfolio-submission.md`](docs/devfolio-submission.md); screenshots pending ([checklist](docs/screenshot-checklist.md))._
@@ -548,13 +557,26 @@ while (true) switch (try p.next()) {
 | `tools/` | Zig counterparts, the ABI probe, and `zig build diagnose`. |
 | `tests/original/` | A C consumer using the pinned header. Upstream's own tests are used in place. |
 | `tests/port/` | Zig-native tests: behaviour, number torture, allocator failure, regressions. |
-| `tests/conformance/fixtures/` | 215 generated edge-case inputs. |
-| `tests/upstream-bugs/` | Minimal reproducers for #36 and #37. |
+| `tests/conformance/fixtures/` | 218 generated edge-case inputs. |
+| `tests/upstream-bugs/` | Minimal reproducers for #36, #37, #38, and the Zig `parseFloat` defect. |
 | `fuzz/` | Fuzzer, corpus, minimized findings, session logs. |
 | `bench/` | Workloads, methodology, raw results. |
 | `scripts/` | Provenance, differential, mutation, safety, claims, reports. |
 | `artifacts/` | Everything `make verify` generates. |
 | `docs/` | Assessment, schema, bug analyses, write-up, demo script, audit. |
+
+The documents worth reading in their own right:
+
+| Document | What it covers |
+| --- | --- |
+| [`docs/abi.md`](docs/abi.md) | The four ABI checks, and how the compile-time one was proven able to fail |
+| [`docs/state-machine.md`](docs/state-machine.md) | The transition specification, and the two harness holes it exposed |
+| [`docs/safety.md`](docs/safety.md) | Every escape hatch, justified individually |
+| [`docs/mutation-testing.md`](docs/mutation-testing.md) | Testing the test harness, in two separate directions |
+| [`docs/differential-sources.md`](docs/differential-sources.md) | The four input sources as a table rather than a sentence |
+| [`docs/hex-float-proof.md`](docs/hex-float-proof.md) | Correctness under IEEE-754, not just agreement with libc |
+| [`docs/transcript-invariants.md`](docs/transcript-invariants.md) | Rules that reference neither implementation |
+| [`docs/write-up.md`](docs/write-up.md) | The narrative: what was hard, what went wrong, what was learned |
 
 ## Known limitations
 

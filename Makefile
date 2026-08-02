@@ -160,78 +160,78 @@ verify:
 	@echo " pdjson-zig verification"
 	@echo "=============================================================="
 	@echo
-	@echo "[1/16] tool versions"
+	@echo "[1/23] tool versions"
 	@sh scripts/check-tools.sh
 	@echo
-	@echo "[2/16] pinned upstream hashes"
+	@echo "[2/23] pinned upstream hashes"
 	@sh scripts/verify-upstream-hashes.sh
 	@echo
-	@echo "[3/16] build C reference oracle and Zig library"
+	@echo "[3/23] build C reference oracle and Zig library"
 	@$(MAKE) --no-print-directory build
 	@echo
-	@echo "[4/16] the Zig artifact contains no upstream parser code"
+	@echo "[4/23] the Zig artifact contains no upstream parser code"
 	@sh scripts/verify-no-c-linkage.sh
 	@echo
-	@echo "[5/16] C ABI layout equivalence (host + 6 cross targets)"
+	@echo "[5/23] C ABI layout equivalence (host + 6 cross targets)"
 	@sh scripts/abi-check.sh
 	@sh scripts/abi-cross-check.sh
 	@echo
-	@echo "[5b/16] the compile-time ABI contract can fail (10 injected drifts)"
+	@echo "[6/23] the compile-time ABI contract can fail (10 injected drifts)"
 	@sh scripts/abi-contract-negative.sh
 	@echo
-	@echo "[5c/16] target-dependent build decisions"
+	@echo "[7/23] target-dependent build decisions"
 	@$(ZIG) build diagnose
 	@echo
-	@echo "[6/16] C oracle determinism"
+	@echo "[8/23] C oracle determinism"
 	@sh scripts/oracle-determinism.sh
 	@echo
-	@echo "[7/16] upstream test suite against the Zig library"
+	@echo "[9/23] upstream test suite against the Zig library"
 	@$(PYTHON) scripts/original-tests.py
 	@echo
-	@echo "[8/16] Zig-native test suite"
+	@echo "[10/23] Zig-native test suite"
 	@$(ZIG) build test
 	@echo
-	@echo "[9/16] fixed conformance corpus (differential)"
+	@echo "[11/23] fixed conformance corpus (differential, per-source matrix)"
 	@$(PYTHON) scripts/differential.py --label fixed-corpus --quiet
 	@echo
-	@echo "[9a/16] exported API behaviour coverage"
+	@echo "[12/23] exported API behaviour coverage"
 	@$(PYTHON) scripts/api-coverage.py
 	@echo
-	@echo "[9c/16] state-transition coverage against a written specification"
+	@echo "[13/23] state-transition coverage against a written specification"
 	@$(PYTHON) scripts/state-machine.py --self-test
 	@$(PYTHON) scripts/state-machine.py
 	@echo
-	@echo "[9b/16] hex-float correctness against an exact-integer reference (smoke)"
+	@echo "[14/23] hex-float correctness against an exact-integer reference (smoke)"
 	@$(PYTHON) scripts/hexfloat_oracle.py --compare 20000 --seed 20260802 \
 	    --out artifacts/hex-float/property-smoke.json
 	@echo
-	@echo "[10/16] transcript invariants, checked without reference to either implementation"
+	@echo "[15/23] transcript invariants, checked without reference to either implementation"
 	@$(PYTHON) scripts/invariants.py --sweep
 	@echo
-	@echo "[10b/16] JSONTestSuite conformance (skipped if not fetched)"
+	@echo "[16/23] JSONTestSuite conformance (skipped if not fetched)"
 	@sh scripts/conformance-suite.sh
 	@echo
-	@echo "[11/16] bounded differential fuzz smoke test"
+	@echo "[17/23] bounded differential fuzz smoke test"
 	@$(PYTHON) fuzz/fuzz.py --seconds $(FUZZ_SECONDS) --seed $(FUZZ_SEED) \
 	    --out fuzz/logs/session-verify.json --quiet
 	@echo
-	@echo "[12/16] formatting"
+	@echo "[18/23] formatting"
 	@$(ZIG) fmt --check build.zig src tools tests/port
 	@echo
-	@echo "[12b/16] the differential's comparison notices every transcript field"
+	@echo "[19/23] the differential's comparison notices every transcript field"
 	@$(PYTHON) scripts/mutation-test.py --self-test
 	@echo
-	@echo "[13/16] escape-hatch scan and per-occurrence inventory"
+	@echo "[20/23] escape-hatch scan and per-occurrence inventory"
 	@sh scripts/safety-scan.sh
 	@echo
-	@echo "[14/16] benchmark smoke test and artifact size"
+	@echo "[21/23] benchmark smoke test and artifact size"
 	@$(PYTHON) scripts/bench.py --smoke
 	@$(PYTHON) scripts/size-report.py
 	@echo
-	@echo "[15/16] generate reports"
+	@echo "[22/23] generate reports"
 	@$(PYTHON) scripts/report.py
 	@echo
-	@echo "[16/16] validate CLAIMS.json against the artifacts just produced"
+	@echo "[23/23] validate and audit CLAIMS.json against the artifacts just produced"
 	@$(PYTHON) scripts/validate-claims.py
 	@$(PYTHON) scripts/audit-claims.py
 	@echo
