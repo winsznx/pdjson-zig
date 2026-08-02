@@ -66,6 +66,36 @@ def run(binary: pathlib.Path, mode: str, path: pathlib.Path):
         return p.returncode, p.stdout, p.stderr
     except subprocess.TimeoutExpired:
         return "timeout", b"", b""
+    except OSError as e:
+        return "exec_error", b"", str(e).encode()
+
+
+def sanity_check() -> str | None:
+    """Both binaries must actually work before any comparison is meaningful.
+
+    "The implementations disagree" and "one binary is broken" produce the same
+    diff. This is not hypothetical: a container touched build/transcript_c, the
+    OS then refused to exec it, and a fuzz session reported 101 minimized
+    "findings" that were an empty file on one side. Cheap to check, so check.
+    """
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+        f.write(b'{"a":[1,2,null,true,"x"]}')
+        probe = pathlib.Path(f.name)
+    try:
+        for mode in ("next", "stream:next", "user:next"):
+            for name, b in (("C oracle", C_BIN), ("Zig", ZIG_BIN)):
+                rc, out, err = run(b, mode, probe)
+                if rc == "exec_error":
+                    return f"{name} could not be executed: {err.decode('utf-8', 'replace')[:200]}"
+                if rc == "timeout":
+                    return f"{name} timed out on a trivial document (mode {mode})"
+                if rc != 0 or not out.strip() or b'"schema"' not in out:
+                    return (f"{name} did not produce a valid transcript for a "
+                            f"trivial document (mode {mode}, exit {rc})")
+        return None
+    finally:
+        probe.unlink(missing_ok=True)
 
 
 def upstream_sanitizer_report(mode: str, path: pathlib.Path) -> str | None:
@@ -161,6 +191,13 @@ def main() -> int:
         if not b.exists():
             print(f"missing {b}; run 'make build' first", file=sys.stderr)
             return 2
+
+    problem = sanity_check()
+    if problem is not None:
+        print(f"refusing to compare: {problem}", file=sys.stderr)
+        print("a broken binary and a real divergence look identical, so this "
+              "will not run", file=sys.stderr)
+        return 2
 
     corpora = args.corpus or ["tests/conformance/fixtures"]
     inputs: list[pathlib.Path] = []

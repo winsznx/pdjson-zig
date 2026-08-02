@@ -1,22 +1,36 @@
 # Devfolio submission
 
-## Status: prepared, not submitted — blocked on MCP authentication
+## Status: staged locally, deliberately not submitted
 
-The Devfolio MCP connection was **not available** during this build. `ToolSearch`
-returns no Devfolio tools, and the session reports the server as requiring an
-OAuth flow that cannot run in a non-interactive session.
+Nothing has been created on Devfolio. No draft, no project. This is by explicit
+instruction: the submission waits until the demo video exists and the final
+release gate passes.
 
-This means two things, both stated plainly rather than worked around:
+The live form **has** now been inspected through the Devfolio MCP, so the field
+list and limits below are the real ones rather than a guess:
 
-1. **The live submission form was never inspected.** The field names and limits
-   below are a best-effort reconstruction from how Devfolio hackathon forms are
-   normally structured, not a transcript of the real one. Field names may differ.
-2. **Nothing has been submitted.** No draft was created, and no project exists on
-   Devfolio for this entry yet.
+| Field | Constraint |
+| --- | --- |
+| `name` | 2–50 characters |
+| `tagline` | 2–50 characters |
+| `hashtags` | 1–10, required |
+| `pictures` | **1–6, required** — real screenshots only |
+| `links` | 0–5 |
+| `platforms` | 0–5 |
+| `video_url` | optional |
+| `commitMessage` | 2–50 characters |
+| `projectFieldAnswers` | two required long-form fields (below) |
 
-Everything below is copy that is ready to paste, and every number in it comes
-from an artifact that `make verify` regenerates. The remaining manual steps are
-listed at the end.
+`getHackathonTracksAndPrizes` returns an empty list for this event, so there are
+no track applications to file.
+
+Every number in the copy below comes from an artifact that `make verify`
+regenerates, and `scripts/validate-claims.py` refuses to let an unverified claim
+appear on Devfolio at all.
+
+**The one thing I cannot produce is `pictures`.** Devfolio requires real
+screenshots of the running project. Capture instructions are in
+[`screenshot-checklist.md`](screenshot-checklist.md).
 
 ---
 
@@ -26,11 +40,39 @@ listed at the end.
 pdjson-zig
 ```
 
-## Tagline
+## Hashtags (1–10, required)
 
 ```
-A Zig rewrite of a C JSON parser, proven equivalent by byte-identical behaviour transcripts — and it found two bugs in the original.
+Zig, C, JSON, parser, differential-testing, fuzzing, ABI, memory-safety, verification, porting
 ```
+
+## Links (0–5)
+
+```
+https://github.com/winsznx/pdjson-zig
+https://github.com/skeeto/pdjson
+https://github.com/skeeto/pdjson/issues/36
+https://github.com/skeeto/pdjson/issues/37
+https://github.com/skeeto/pdjson/issues/38
+```
+
+## Platforms
+
+```
+Others   (a C library and a Zig module; not a Web/mobile app)
+```
+
+## Tagline
+
+Must be 2–50 characters. Options, all within the limit:
+
+```
+Proven-equivalent Zig rewrite of a C JSON parser      (48)
+C to Zig, proven by byte-identical transcripts        (46)
+A C JSON parser rewritten in Zig, and proven          (44)
+```
+
+Recommended: the first.
 
 ## The problem
 
@@ -121,8 +163,10 @@ broken.
 Results:
   - 18/18 assertions in the UNMODIFIED upstream test suite, compiled in place
     from the pinned tree and linked against only the Zig static library
-  - 0 divergences in 1,935 fixed-corpus comparisons (215 inputs x 9 modes)
-  - 0 divergences in 1,590 JSONTestSuite comparisons (318 cases x 5 modes)
+  - 0 divergences in 4,085 fixed-corpus comparisons (215 inputs x 19 modes),
+    covering all three documented input sources: json_open_buffer,
+    json_open_stream (FILE*) and json_open_user
+  - 0 divergences in 3,498 JSONTestSuite comparisons (318 cases x 11 modes)
   - 43 cases where the pinned original invokes undefined behaviour, every one
     sanitizer-confirmed and all resolving to a single line, pdjson.c:912
 ```
@@ -150,7 +194,7 @@ both caught and both documented in DECISIONS.md D-17: they were "catching"
 mutants on cases where the C original crashes or reads out of bounds, so every
 mutant differed for reasons unrelated to the mutation. And the first sound run
 caught only 8/12 — the four survivors were real gaps in the corpus, which grew
-from 142 to 214 fixtures to close them.
+from 142 to 214 fixtures to close them (215 today, after a later fuzz finding).
 ```
 
 ## Benchmark evidence
@@ -184,9 +228,9 @@ benchmark.
 ## Bugs found in the original
 
 ```
-Both were found by the verification pipeline, not by reading the code. Both have
-minimal public-API reproducers, were confirmed against the pinned commit before
-filing, and were checked against all open and closed issues and PRs for
+All three were found by the verification pipeline, not by reading the code. Each
+has a minimal public-API reproducer, was confirmed against the pinned commit
+before filing, and was checked against every open and closed issue and PR for
 duplication.
 
 1. https://github.com/skeeto/pdjson/issues/36

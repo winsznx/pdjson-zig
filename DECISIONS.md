@@ -437,6 +437,48 @@ carry a sanitizer report, and all resolve to one line: `pdjson.c:912`.
 
 ---
 
+## D-20 — Both harnesses refuse to run against a binary that does not work
+
+**The problem.** A comparison harness cannot distinguish "the implementations
+disagree" from "one of the binaries is broken". Both look like a diff.
+
+**How it bit.** A Valgrind container running as root over a bind mount touched
+`build/transcript_c`; macOS then refused to exec it. The fuzzer read empty output
+from the C side and reported **101 minimized findings** — 29 divergences and 72
+crashes — every one an artifact. They were caught by re-checking each minimized
+case against a rebuilt oracle, where all 101 vanished.
+
+That is the third time in this project a green-looking or red-looking result was
+an artifact of the measurement rather than the thing measured (the others: a
+Debug build in the first benchmark, and mutation testing crediting itself for
+upstream crashes). The pattern is consistent enough to be worth designing
+against.
+
+**Chosen design.** Before either harness compares anything, it runs a trivial
+document — `{"a":[1,2,null,true,"x"]}` — through both binaries in three source
+modes and requires: successful exit, non-empty output, a schema header, and
+identical output. Anything else aborts with a message saying why, rather than
+producing findings.
+
+`OSError` from `subprocess` is also caught and reported as `exec_error`, not as a
+crash finding, so an unrunnable binary can never be counted as a defect.
+
+**Alternatives considered.** *Check only that the files exist* — which is what
+the code did before, and exactly what failed: the file existed and was
+executable-looking. *Checksum the binaries* — brittle across rebuilds and would
+not catch a binary that builds but cannot run on this OS.
+
+**Compatibility impact.** None. **Performance impact.** Six subprocess calls per
+run, once.
+
+**Verification.** Negative-tested both ways: truncating `build/transcript_c`
+makes both harnesses refuse to start with a clear message; restoring it makes
+them run. Also removed the invitation to the mistake — `valgrind-upstream.sh`
+now builds its own oracle into a temp directory instead of keying off
+`build/transcript_c` existing.
+
+---
+
 ## D-19 — `json_get_number` reads only what the parser wrote
 
 **Original behaviour.** `strtod()` over the token buffer, which reads until it

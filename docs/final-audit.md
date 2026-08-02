@@ -186,8 +186,21 @@ offset, size, alignment and enumerator, plus `"c_consumer_link":
 `struct json_stream` by value on its own stack, linked against only the Zig
 archive.
 
-**Correctly scoped:** verified on arm64 macOS and, in CI, x86-64 Linux. The
-report says so; the README says so. It is not claimed universally.
+**Scope, after hardening.** Executing both probes only covers targets with a
+runner, and both CI targets are LP64 — so the original claim said nothing about
+what happens when the pointer size changes.
+`scripts/abi-cross-check.sh` now compares the layouts at compile time on six
+targets: x86-64, aarch64, riscv64 and x86-64 Windows (all 272 bytes, align 8),
+plus i386 and armhf (204 bytes, align 4). Zero mismatches.
+
+That check was itself negative-tested, and **the first version failed the test**:
+changing `errmsg_len` from 128 to 127 survived it, because the missing byte was
+absorbed by padding and left `sizeof` and every offset identical. It now asserts
+field sizes as well as offsets, and the same mutation is caught.
+
+Caveat stated in the artifact and the README: both sides go through the Zig
+toolchain's clang there, so it is not a claim about other compilers on those
+targets. The executed check covers the host compiler.
 
 **PASS.**
 
@@ -215,6 +228,25 @@ test.
 
 The shipped artifact is ReleaseSafe, so these checks are live at runtime, and the
 benchmark measures that same binary.
+
+**PASS.**
+
+## 8b. Is there a defect class the existing tools cannot see?
+
+ASan and UBSan run throughout, but neither detects uninitialised *value
+propagation*. That is precisely the shape of upstream #38, and it is why that
+defect survived 30 million fuzz cases and a full ASan sweep on macOS — it was
+caught by a determinism gate, not by a sanitizer.
+
+`scripts/valgrind-upstream.sh` closes that gap. Memcheck independently confirms
+both memory defects, and for #38 traces the origin of the uninitialised bytes to
+`malloc` in `init_string` at `pdjson.c:186` — information ASan cannot produce.
+It finds no further defects, and the upstream test suite is clean under memcheck.
+
+The script asserts that both known defects still reproduce. Without that, a
+memcheck run reporting nothing would be ambiguous between "the code is clean" and
+"Valgrind is not actually running" — the same failure mode that produced the
+false 12/12 mutation scores.
 
 **PASS.**
 
@@ -346,15 +378,14 @@ If I were trying to break this submission, I would attack here:
    were invisible on the development machine. That is a warning about how much
    single-platform evidence is worth, and the reason CI runs two targets. A
    third target would probably find a fourth thing.
-1. **The differential corpus only drives `json_open_buffer`.** The `FILE *` and
-   user-callback sources are implemented and exercised by the upstream suite and
-   the ABI consumer, but never compared transcript by transcript. Since upstream
-   bug #37 *is* a disagreement between two sources, this is the hole most likely
-   to contain something. It is claim C-18, stated as a limitation.
-2. **"Equivalent" is demonstrated, not proven.** ~3,500 compared cases plus a
+1. **"Equivalent" is demonstrated, not proven.** ~3,500 compared cases plus a
    fuzz session is strong evidence about a deterministic, fully observable
    parser — but it is evidence.
-3. **Two upstream issues are filed, not triaged.** No maintainer has looked at
+2. **Three upstream issues are filed, not triaged.** No maintainer has looked at
    them.
-4. **Part of the performance gap is unexplained**, and is left that way rather
+3. **Part of the performance gap is unexplained**, and is left that way rather
    than chased.
+4. **Every check here has a scope**, and the scopes are where the remaining risk
+   lives: the cross-target ABI check uses one C frontend; Valgrind ran on the
+   fixture corpus, not exhaustively; the fuzz session is 30 minutes, not 30
+   hours.

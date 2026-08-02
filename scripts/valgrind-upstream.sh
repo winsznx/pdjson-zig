@@ -71,8 +71,12 @@ $VG "$TMP/r38" >/dev/null 2>"$TMP/r38.log" || true
 saw_38=$(count_in "uninitialised" "$TMP/r38.log")
 
 # ---- 3. the corpus, looking for anything new ------------------------------
+# Built into $TMP, never into build/. An earlier version keyed off
+# build/transcript_c existing, which invited callers to create it -- and a
+# container doing exactly that left a binary the OS refused to exec, which the
+# fuzzer then reported as 29 divergences.
 corpus_errors=0
-if [ -x "$ROOT/build/transcript_c" ]; then
+if [ -d "$ROOT/tests/conformance/fixtures" ]; then
     cc $CFLAGS -I "$ROOT/oracle" -o "$TMP/tc" \
        "$ROOT/oracle/transcript_c.c" "$UP/pdjson.c"
     ls "$ROOT"/tests/conformance/fixtures/*.json > "$TMP/list.txt"

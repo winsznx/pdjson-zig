@@ -159,6 +159,8 @@ def run_pack(binary: pathlib.Path, mode: str, path: pathlib.Path):
         return p.returncode, p.stdout
     except subprocess.TimeoutExpired:
         return "timeout", b""
+    except OSError as e:
+        return "exec_error", str(e).encode()
 
 
 def split_sections(out: bytes) -> list[bytes]:
@@ -184,6 +186,8 @@ def run_single(binary: pathlib.Path, mode: str, data: bytes, tmp: pathlib.Path):
         return p.returncode, p.stdout, p.stderr
     except subprocess.TimeoutExpired:
         return "timeout", b"", b""
+    except OSError as e:
+        return "exec_error", b"", str(e).encode()
 
 
 def upstream_is_ub(mode: str, data: bytes, tmp: pathlib.Path) -> str | None:
@@ -208,6 +212,8 @@ def differs(mode: str, data: bytes, tmp: pathlib.Path):
     """Return (kind, c_out, z_out) or None when the two agree."""
     c_rc, c_out, c_err = run_single(C_BIN, mode, data, tmp)
     z_rc, z_out, z_err = run_single(ZIG_BIN, mode, data, tmp)
+    if c_rc == "exec_error" or z_rc == "exec_error":
+        return ("exec_error", c_out, z_out)
     if c_rc == "timeout" or z_rc == "timeout":
         return ("timeout", c_out, z_out)
     if z_rc < 0:
@@ -244,6 +250,42 @@ def minimize(mode: str, data: bytes, tmp: pathlib.Path, kind: str) -> bytes:
 
 # ---------------------------------------------------------------------- main
 
+def sanity_check(tmp: pathlib.Path) -> str | None:
+    """Confirm both binaries actually work before measuring anything.
+
+    A comparison harness cannot tell "the implementations disagree" from "one of
+    the binaries is broken" -- both look like a diff. This ran for real: a
+    container touched build/transcript_c, macOS then killed it on exec, and the
+    fuzzer dutifully reported 29 minimized "divergences" that were nothing but
+    an empty file on one side.
+
+    So: run a trivial document through both and require identical, non-empty,
+    well-formed output before the session starts.
+    """
+    probe = b'{"a":[1,2,null,true,"x"]}'
+    for mode in ("next", "stream:next", "user:next"):
+        c_rc, c_out, c_err = run_single(C_BIN, mode, probe, tmp)
+        z_rc, z_out, z_err = run_single(ZIG_BIN, mode, probe, tmp)
+        for name, rc, out, err in (("C oracle", c_rc, c_out, c_err),
+                                   ("Zig", z_rc, z_out, z_err)):
+            if rc == "exec_error":
+                return (f"{name} could not be executed: "
+                        f"{err.decode('utf-8', 'replace')[:200]}")
+            if rc == "timeout":
+                return f"{name} timed out on a trivial document (mode {mode})"
+            if rc != 0:
+                return (f"{name} exited {rc} on a trivial document (mode {mode})"
+                        f"{': ' + err.decode('utf-8', 'replace')[:200] if err else ''}")
+            if not out.strip():
+                return f"{name} produced no output on a trivial document (mode {mode})"
+            if b'"schema"' not in out:
+                return f"{name} produced output with no schema header (mode {mode})"
+        if c_out != z_out:
+            return (f"the two binaries already disagree on a trivial document "
+                    f"(mode {mode}) -- rebuild both and investigate before fuzzing")
+    return None
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--seconds", type=float, default=60)
@@ -264,6 +306,13 @@ def main() -> int:
     tmp = WORK / f"case-{args.seed}.bin"
     packfile = WORK / f"pack-{args.seed}.bin"
 
+    problem = sanity_check(tmp)
+    if problem is not None:
+        print(f"refusing to fuzz: {problem}", file=sys.stderr)
+        print("the harness cannot distinguish a real divergence from a broken "
+              "binary, so it will not start", file=sys.stderr)
+        return 2
+
     seeds: list[bytes] = []
     for p in sorted((ROOT / "tests" / "conformance" / "fixtures").glob("*")):
         if p.is_file():
@@ -281,7 +330,7 @@ def main() -> int:
     rounds = 0
     findings: list[dict] = []
     counts = {"divergence": 0, "upstream_ub": 0, "zig_crash": 0,
-              "c_crash": 0, "timeout": 0}
+              "c_crash": 0, "timeout": 0, "exec_error": 0}
 
     while time.time() < deadline:
         mode = modes[rounds % len(modes)]
