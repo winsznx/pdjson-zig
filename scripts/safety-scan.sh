@@ -132,10 +132,21 @@ EOF
 printf '  "result": "%s"\n}\n' "$(if [ "$fail" -eq 0 ]; then echo pass; else echo fail; fi)"
 } > "$OUT"
 
-if [ "$fail" -eq 0 ]; then
-    echo "  @ptrCast=$PTRCAST (allocator + char* boundaries), @alignCast=$ALIGNCAST"
-    echo "  @constCast=$CONSTCAST  unreachable=$UNREACHABLE  force-unwrap=$FORCE_UNWRAP  @setRuntimeSafety=$NO_SAFETY  asm=$ASM"
-    echo "  every occurrence enumerated in artifacts/safety-report.json"
-    exit 0
+if [ "$fail" -ne 0 ]; then
+    exit 1
 fi
-exit 1
+
+echo "  @ptrCast=$PTRCAST (allocator + char* boundaries), @alignCast=$ALIGNCAST"
+echo "  @constCast=$CONSTCAST  unreachable=$UNREACHABLE  force-unwrap=$FORCE_UNWRAP  @setRuntimeSafety=$NO_SAFETY  asm=$ASM"
+echo "  every occurrence enumerated in artifacts/safety-report.json"
+
+# The budget above answers "how many". The inventory answers "which ones, and
+# why is each sound" -- keyed by enclosing function rather than by line number,
+# and failing on any occurrence that has no rule. It is the part that cannot
+# silently absorb a new escape hatch that happens to fit under a budget.
+python3 "$ROOT/scripts/safety-inventory.py" --self-test >/dev/null || {
+    echo "FAIL: the safety inventory's own classifier does not pass its self-test" >&2
+    python3 "$ROOT/scripts/safety-inventory.py" --self-test >&2
+    exit 1
+}
+python3 "$ROOT/scripts/safety-inventory.py"

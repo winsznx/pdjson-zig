@@ -108,7 +108,7 @@ mutation: build
 	$(PYTHON) -u scripts/mutation-test.py
 
 safety:
-	@echo "==> Escape-hatch scan"
+	@echo "==> Escape-hatch scan and per-occurrence inventory"
 	@sh scripts/safety-scan.sh
 
 fmt:
@@ -190,7 +190,7 @@ verify:
 	@echo "[12/16] formatting"
 	@$(ZIG) fmt --check build.zig src tools tests/port
 	@echo
-	@echo "[13/16] escape-hatch scan"
+	@echo "[13/16] escape-hatch scan and per-occurrence inventory"
 	@sh scripts/safety-scan.sh
 	@echo
 	@echo "[14/16] benchmark smoke test"

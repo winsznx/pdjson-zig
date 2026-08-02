@@ -12,7 +12,7 @@
 | **Fuzzing** | 30-minute published session, **11.8M cases, 0 divergences, 0 crashes, 0 timeouts** |
 | **Harness self-test** | **12/12** injected defects caught (its first sound run found 4 real gaps in the corpus) |
 | **C ABI** | Identical layout on **6 targets** (32- and 64-bit, x86, ARM, RISC-V, Windows), asserted at compile time so a drift fails `zig build`; a C consumer using the pinned header links against the Zig archive alone |
-| **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; 10 pointer casts, each enumerated. Ships **ReleaseSafe** — checks on. |
+| **Safety** | 0 `@constCast`, 0 `unreachable`, 0 force-unwraps, 0 inline asm; **59 escape hatches, each justified individually** ([`docs/safety.md`](docs/safety.md)). Ships **ReleaseSafe** — checks on. |
 | **Benchmark** | **Slower on 9 of 12** workload/mode pairs, faster on 3. Full table below, generated from the artifact. |
 | **Upstream bugs found** | 3, all filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38). Two independently confirmed by Valgrind. |
 
@@ -84,6 +84,8 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-29 | The struct layout the C compiler reads out of the pinned header is asserted against src/abi.zig at compile time, so a layout drift fails `zig build` itself: 27 field offsets and sizes, 11 enumerators, 7 struct size and alignment values. | verified | [`artifacts/abi/abi-report.json`](artifacts/abi/abi-report.json) |
 | C-30 | The compile-time ABI contract is demonstrated to be capable of failing: 10 injected layout drifts -- 6 in the recorded C layout, 4 in the port's own declarations -- are each caught by the build, with an unmodified control that builds clean. | verified | [`artifacts/abi/contract-negative.json`](artifacts/abi/contract-negative.json) |
 | C-31 | The Zig archive exports exactly the 22 functions the pinned header declares -- none missing, none extra -- compared as a set rather than as a count. | verified | [`artifacts/abi/abi-report.json`](artifacts/abi/abi-report.json) |
+| C-32 | Every escape hatch in the shipped library is classified individually -- 59 occurrences across 8 categories, each matched to a rule keyed by enclosing function rather than by line number, with 0 unclassified. | verified | [`artifacts/safety/inventory.json`](artifacts/safety/inventory.json) |
+| C-33 | The escape-hatch classifier passes 10 self-tests covering the ways it could silently report the wrong thing, including a hatch mentioned only in a comment, a // inside a string literal, and a test block's scratch being counted as shipped code. | verified | [`artifacts/safety/inventory.json`](artifacts/safety/inventory.json) |
 <!-- CLAIMS:END -->
 
 Every row is checked against a generated artifact by
@@ -365,6 +367,38 @@ active here or deferred to the cross-target check.
 
 Full account: [`docs/abi.md`](docs/abi.md), including the one blind spot no
 layout table can cover.
+
+## Safety, with a definition attached
+
+Zig has no `unsafe` keyword, so "no unsafe code" is not a claim until it has a
+definition. Here it is: **no operation that can reinterpret memory, bypass a
+runtime check, or read uninitialised storage** — except at a boundary that cannot
+be expressed otherwise, justified individually.
+
+`@constCast`, `unreachable`, `@setRuntimeSafety`, inline assembly, `volatile` and
+force-unwraps are all at **zero**, and the check fails if one appears. The 59
+that remain are each matched to a rule and explained:
+
+| Category | # | What it is |
+| --- | --- | --- |
+| `checked-narrowing` | 15 | `@intCast`, which *aborts* on a wrong bound rather than corrupting memory |
+| `deliberate-wraparound` | 14 | `+%`/`-%`, the reason untrusted input cannot panic this parser |
+| `c-semantics-reproduction` | 12 | `char` signedness, printf `%c`, `long`→`size_t` — integer to integer, never a pointer |
+| `c-allocator-boundary` | 8 | `json_allocator` speaks `void*` |
+| `narrowing-to-byte` | 3 | `@truncate` on an already-bounded value |
+| `public-header-boundary` | 3 | the pinned header promises `char*` |
+| `ieee754-bit-pattern` | 2 | `f64` ↔ `u64`, same width |
+| `write-before-read` | 2 | storage fully written before anything reads it |
+
+Rules are keyed by **enclosing function, not line number** — the previous report
+pointed at `parser.zig:1011` when the line had already become 1018, and a
+justification that rots without saying so reads as verified. An occurrence with
+no rule fails the build, so a new escape hatch cannot slide in under a budget
+that happened to have room.
+
+The classifier passes ten of its own tests, two of which exist because it got
+those cases wrong first. Full per-occurrence account:
+[`docs/safety.md`](docs/safety.md).
 
 ## Bugs found in the original
 

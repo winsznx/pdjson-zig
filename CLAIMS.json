@@ -617,6 +617,46 @@
         "devfolio",
         "video"
       ]
+    },
+    {
+      "id": "C-32",
+      "text": "Every escape hatch in the shipped library is classified individually -- 59 occurrences across 8 categories, each matched to a rule keyed by enclosing function rather than by line number, with 0 unclassified.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/safety/inventory.json",
+      "check": {
+        "kind": "equals",
+        "path": "unclassified",
+        "value": 0
+      },
+      "command": "python3 scripts/safety-inventory.py",
+      "verified_date": "2026-08-02",
+      "limitation": "The justifications are arguments, not machine-checked proofs. What is mechanically checked is that every occurrence has one, that no forbidden operation is present, and that the inventory matches the current source. The analysis is textual, so a hatch reached through a construct it does not model would be missed. @intCast bounds in particular are argued from the fuzz session and the random-input regression test, not proven.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
+    },
+    {
+      "id": "C-33",
+      "text": "The escape-hatch classifier passes 10 self-tests covering the ways it could silently report the wrong thing, including a hatch mentioned only in a comment, a // inside a string literal, and a test block's scratch being counted as shipped code.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/safety/inventory.json",
+      "check": {
+        "kind": "equals",
+        "path": "forbidden_present",
+        "value": 0
+      },
+      "command": "python3 scripts/safety-inventory.py --self-test",
+      "verified_date": "2026-08-02",
+      "limitation": "The artifact check here confirms no forbidden operation is present; the 10 self-test cases run as a gate inside scripts/safety-scan.sh and print their own result rather than writing an artifact. Two of the ten exist because the classifier got those cases wrong first: a test's scratch array was inheriting a justification written about the parser's own state.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
     }
   ]
 }

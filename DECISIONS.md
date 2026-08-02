@@ -698,3 +698,48 @@ conclude anything if either side is empty — two empty sets compare equal.
 **Verification.** `artifacts/abi/abi-report.json` (layout, contract freshness,
 symbol set, C consumer link), `artifacts/abi/contract-negative.json` (10
 detected, 0 missed), `artifacts/abi/exported-symbols.txt`, and `docs/abi.md`.
+
+---
+
+## D-22 — Escape hatches are justified one at a time, keyed by function
+
+**Chosen design.** `scripts/safety-inventory.py` matches every escape hatch in
+`src/` to a rule keyed by `(file, enclosing function, operation)` and records the
+reason that occurrence is sound. An occurrence with no matching rule is
+`unclassified` and fails `make safety`. `docs/safety.md` is generated from the
+result.
+
+**Reason.** The existing scan enforced budgets, which answers *how many*. A
+budget with room in it absorbs a new escape hatch silently; a rule table cannot,
+because introducing one is an edit to the rule table that shows up in review.
+
+**Why keyed by function and not by line.** The committed report listed
+`parser.zig:1011`. By the time it was read the line was 1018 — seven lines had
+been inserted above it and nothing re-derived the file. A justification pinned to
+a line number rots without saying so, and a rotted justification is worse than no
+justification because it reads as verified.
+
+**What building it found.** A wildcard rule for `= undefined` in `api.zig` said
+"the json_stream is filled completely by parser init() before any field is read".
+That is true of `initBuffer`. It was also being applied to
+`var seen: [3]f64 = undefined` inside a *test*, which it does not describe at
+all. Test blocks are now attributed separately (`test:<name>`) and excluded from
+the shipped totals — they are compiled by `zig build test` and never linked into
+the archive — and the wildcard was narrowed to the function it was written about.
+Two of the classifier's ten self-tests exist because of this.
+
+**The wrapping operators are inventoried too**, though they are the opposite of
+an escape hatch: `+%` and `-%` *add* definition. They are why untrusted input
+cannot turn an overflow into a panic, and each is a deliberate decision to
+reproduce C's unsigned wraparound, so they belong in the same ledger.
+
+**What is and is not proven.** The justifications are arguments. What is
+mechanically checked is that every occurrence has one, that no forbidden
+operation is present, that the inventory matches the current source, and that the
+classifier itself passes ten cases covering how it could report the wrong thing —
+a hatch mentioned only in prose, a `//` inside a string literal, `->` read as a
+wrapping subtract, two hatches on one line counted as one.
+
+**Verification.** `artifacts/safety/inventory.json` (59 shipped occurrences, 0
+unclassified), `docs/safety.md`, and
+`python3 scripts/safety-inventory.py --self-test`.
