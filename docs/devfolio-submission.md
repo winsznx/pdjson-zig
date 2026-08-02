@@ -318,8 +318,9 @@ Stated rather than left to be discovered:
   the stripped binary on arm64 macOS against roughly 12.5x on x86-64 Linux -- so
   the exact ratio is left to the committed artifacts rather than quoted as one
   number. Part of the remaining time gap is unexplained.
-- The three upstream issues are filed, not triaged. No maintainer has confirmed
-  them.
+- A fourth defect, in Zig's own standard library, is reproduced but not filed --
+  ziglang/zig restricts issue creation to collaborators -- so it is embargoed
+  from this copy and is not counted among the three findings.
 - This is demonstrated equivalence, not proven equivalence. 11,730,088 compared
   cases is evidence, not a proof of behavioural equality. 100% state-transition
   coverage is not path coverage, and the hand-written transition specification

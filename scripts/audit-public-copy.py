@@ -105,8 +105,16 @@ def platform_strings() -> list[str]:
     def walk(obj):
         if isinstance(obj, dict):
             for k, v in obj.items():
+                # Identifiers, not measurements: a host string, a toolchain
+                # version, a commit hash. Each is taken verbatim from the
+                # artifact that records it, which is precise; a regex for
+                # "things that look like identifiers" would also swallow real
+                # figures such as a ratio written "26.07x".
                 if k in ("platform", "machine", "processor", "zig_version",
-                         "c_compiler", "generated") and isinstance(v, str):
+                         "c_compiler", "generated", "sha", "commit",
+                         "fix_commit", "pinned_commit", "upstream_commit",
+                         "minimized_sha256", "c_oracle_sha256",
+                         "zig_binary_sha256") and isinstance(v, str):
                     found.append(v)
                 else:
                     walk(v)

@@ -5,7 +5,7 @@
     "docs/devfolio-submission.md": {
       "channel": "devfolio",
       "fenced_blocks_are_content": true,
-      "numbers": 45,
+      "numbers": 44,
       "unbacked": []
     },
     "docs/demo-script.md": {
@@ -25,10 +25,16 @@
     "0.16.0 (pinned download, not a marketplace action)",
     "Apple clang version 21.0.0 (clang-2100.1.1.101)",
     "Linux-6.17.0-1020-azure-x86_64-with-glibc2.39",
+    "78fe04b820dc8817f540bdd87fb22887e0ef3981",
+    "f9474c1ac121d0317a5ad69f02d607f7d84a4516",
     "macOS-27.0-arm64-arm-64bit-Mach-O",
     "macOS-27.0-arm64-arm-64bit",
     "Apple M1 Pro",
     "2026-08-02",
+    "2807b9ae1",
+    "858faf26f",
+    "b0f17fe6f",
+    "c32ccb6c6",
     "0.16.0",
     "x86_64",
     "arm64"

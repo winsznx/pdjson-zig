@@ -21,7 +21,15 @@
       "found_by": "differential testing under deterministic allocation-failure schedules; 43 anomalies across a 214-input corpus all resolved to this one line",
       "regression_test": "tests/port/regressions.zig, tests/port/allocator_failure.zig",
       "standards_basis": "Not a standards question. Null-pointer dereference and out-of-bounds read are undefined behaviour under C99 6.5.3.2 and 6.5.6; both are demonstrated by sanitizer output rather than argued.",
-      "independently_verified_by_upstream": false
+      "independently_verified_by_upstream": true,
+      "upstream_response": {
+        "state": "CLOSED",
+        "state_reason": "COMPLETED",
+        "closed_at": "2026-08-02T13:37:18Z",
+        "fix_commit": "858faf26f",
+        "fix_commit_subject": "Do not advance the container stack on a failed push",
+        "verified_by": "gh issue view <n> --repo skeeto/pdjson and gh api repos/skeeto/pdjson/commits, 2026-08-02"
+      }
     },
     {
       "id": "UB-02",
@@ -41,7 +49,15 @@
       "regression_test": "tests/port/regressions.zig",
       "standards_basis": "C99 6.2.5p15 leaves the signedness of `char` implementation-defined; C99 7.21.7.1 specifies fgetc() to return the byte as an unsigned char converted to int. The inconsistency is between the library's own two documented input sources, so it does not depend on reading the JSON specification.",
       "scope_limitation": "0xFF is never valid UTF-8, so this does not make the parser accept invalid input. It changes which error is reported, the byte position, and whether json_source_get() can advance.",
-      "independently_verified_by_upstream": false
+      "independently_verified_by_upstream": true,
+      "upstream_response": {
+        "state": "CLOSED",
+        "state_reason": "COMPLETED",
+        "closed_at": "2026-08-02T13:37:17Z",
+        "fix_commit": "b0f17fe6f",
+        "fix_commit_subject": "Do not read byte 0xFF as EOF in the buffer source",
+        "verified_by": "gh issue view <n> --repo skeeto/pdjson and gh api repos/skeeto/pdjson/commits, 2026-08-02"
+      }
     },
     {
       "id": "UB-03",
@@ -61,7 +77,50 @@
       "regression_test": "tests/port/regressions.zig",
       "standards_basis": "Reading an uninitialised object produces an indeterminate value (C99 6.7.8p10, 3.17.2). Not a JSON specification question.",
       "scope_limitation": "Demonstrated: a read of uninitialised bytes inside the allocation, and the resulting nondeterminism. Not demonstrated: a read past the end of the allocation. Under ASan, calling only json_get_number() reports nothing, so an out-of-bounds read is a possible consequence of the same defect rather than an observed one.",
-      "independently_verified_by_upstream": false
+      "independently_verified_by_upstream": true,
+      "upstream_response": {
+        "state": "CLOSED",
+        "state_reason": "COMPLETED",
+        "closed_at": "2026-08-02T13:37:18Z",
+        "fix_commit": "2807b9ae1",
+        "fix_commit_subject": "Terminate tokens abandoned part way through",
+        "verified_by": "gh issue view <n> --repo skeeto/pdjson and gh api repos/skeeto/pdjson/commits, 2026-08-02"
+      }
     }
-  ]
+  ],
+  "upstream_outcome": {
+    "all_three_closed_as_completed": true,
+    "closed_on": "2026-08-02",
+    "fix_commits": [
+      {
+        "sha": "858faf26f",
+        "subject": "Do not advance the container stack on a failed push",
+        "fixes": "#36"
+      },
+      {
+        "sha": "b0f17fe6f",
+        "subject": "Do not read byte 0xFF as EOF in the buffer source",
+        "fixes": "#37"
+      },
+      {
+        "sha": "2807b9ae1",
+        "subject": "Terminate tokens abandoned part way through",
+        "fixes": "#38"
+      }
+    ],
+    "additional_commit_upstream_credited_to_this_work": {
+      "sha": "c32ccb6c6",
+      "subject": "Do not count a value that failed to parse",
+      "note": "Not one of the three filed issues. The maintainer noted it was found while fixing #36 and credited it in the same comment."
+    },
+    "maintainer_comment": {
+      "author": "skeeto",
+      "issue": "https://github.com/skeeto/pdjson/issues/38",
+      "quote": "Solid findings, excellent analysis.",
+      "full_text": "Thank you, @winsznx! Solid findings, excellent analysis. You probably saw already, @boris-kolpackov, but you'll likely be interested in #36, #37, and #38, and perhaps c32ccb6 which Opus noticed while fixing #36. I'm going to archive this repository soon in favor of Boris's fork, https://github.com/boris-kolpackov/libpdjson5, but I'll leave it open a bit longer for responses to these new changes."
+    },
+    "consequence_for_this_port": "The pin stays at 78fe04b. Equivalence is claimed against that commit and every artifact here was produced against it, so the fixes landing after it do not change any measurement. They do change what the port's deliberate reproduction of #37 means: upstream now fixes 0xFF, so `zig build -Dfix-0xff=true` is the build that matches current upstream, and the default build matches the pinned commit. Both remain available and the distinction is unchanged -- see DECISIONS.md D-05.",
+    "verified_on": "2026-08-02",
+    "verification_method": "Issue state, close reason and close timestamp read from the GitHub API; fix commits read from the upstream commit log; the maintainer's comment read in full rather than quoted from a summary. Recorded here so the claim is backed by a check that can be re-run, not by a screenshot."
+  }
 }

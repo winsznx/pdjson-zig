@@ -310,6 +310,8 @@ def main() -> int:
                           render_claim_block(json.loads(claims_path.read_text())))
         text = splice(text, "BENCH", render_bench_block(bench))
         text = splice(text, "SIZE", render_size_block(size))
+        text = splice(text, "UPSTREAM", render_upstream_block(
+            load("upstream-issues.json")))
         text = splice(text, "PANIC", render_panic_block(size))
         text = splice(text, "STEPS", f"{report['pipeline_steps']}\n")
         text = splice(text, "OPTHISTORY", render_opthistory_block(
@@ -388,6 +390,7 @@ def render_summary_block(v, diff, jts, fuzz_data, tests, bench, size, safety,
 
     ledger = dig(v, "no_divergence_ledger", {}) or {}
     fuzz = fuzz_data or {}
+    n_issues = len(dig(load("upstream-issues.json"), "issues", []) or [])
     sources = len(dig(load("differential/source-matrix-fixed-corpus.json"),
                       "sources", {}) or {})
     rows = [
@@ -405,7 +408,12 @@ def render_summary_block(v, diff, jts, fuzz_data, tests, bench, size, safety,
         f"| **Benchmark** | **Slower on {dig(bench, 'workloads_zig_slower')} of {dig(bench, 'workloads_measured')}** workload/mode pairs, faster on {dig(bench, 'workloads_zig_faster_or_equal')}, and larger in a consumer's binary — by how much depends on the platform. Both tables below, generated from the artifacts. |",
         f"| **Invariants** | {n(dig(inv, 'transcripts_checked_committed_corpus'))} transcripts and {n(dig(inv, 'records_checked_committed_corpus'))} records from the committed corpus checked against {dig(inv, 'rule_functions')} rules that reference neither implementation: **{dig(inv, 'violations_total')} violations** |",
         f"| **API coverage** | All {dig(api, 'exported_functions')} exported functions behaviourally compared; **{dig(api, 'classification.untested')} untested** |",
-        "| **Upstream bugs found** | 3, all filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38). Two independently confirmed by Valgrind. |",
+        f"| **Upstream bugs found** | {n_issues}, all filed with minimal "
+        f"reproducers — **all {n_issues} confirmed and fixed by the maintainer** "
+        f"([#36](https://github.com/skeeto/pdjson/issues/36), "
+        f"[#37](https://github.com/skeeto/pdjson/issues/37), "
+        f"[#38](https://github.com/skeeto/pdjson/issues/38)). Two also "
+        f"independently confirmed by Valgrind. |",
     ]
     return "\n".join(rows) + "\n"
 
@@ -446,11 +454,12 @@ def render_limits_block(v, bench, cross, abi, fuzz_data, size) -> str:
         f"on x86-64 Linux, where Zig emits far more unwind and read-only data. "
         f"That gap is reported rather than averaged away. Part of the remaining "
         f"time gap is unexplained.",
-        f"- **The {n_issues} upstream issues are filed, not triaged.** No "
-        f"maintainer has confirmed them yet, and the ledger says so. A fourth "
-        f"defect, in Zig's own `std.fmt.parseFloat`, is reproduced but *not "
-        f"filed* -- `ziglang/zig` restricts issue creation to collaborators -- "
-        f"so it is embargoed from every public channel in `CLAIMS.json`.",
+        f"- **A fourth defect, in Zig's own `std.fmt.parseFloat`, is reproduced "
+        f"but *not filed*** -- `ziglang/zig` restricts issue creation to "
+        f"collaborators -- so it is embargoed from every public channel in "
+        f"`CLAIMS.json` and is not counted among the {n_issues} findings. The "
+        f"three upstream issues have since been confirmed and fixed; the pin "
+        f"stays at the commit every measurement here was made against.",
         f"- **Equivalence is demonstrated, not proven.** "
         f"{dig(ledger, 'total_comparisons', 0):,} compared cases and a "
         f"{int(dig(fuzz, 'elapsed_seconds', 0) // 60)}-minute fuzz session is "
@@ -495,6 +504,43 @@ def render_panic_block(size) -> str:
     return (f"**{ph['with_std_default_handler_bytes']:,} bytes with std's default "
             f"handler against {ph['with_custom_handler_bytes']:,} with the custom "
             f"one — {ph['ratio']}×.**\n")
+
+
+def render_upstream_block(issues) -> str:
+    """Upstream's response, rendered from the artifact.
+
+    The maintainer's words are quoted here, so they are read from a file that
+    records the comment in full rather than retyped from memory of it.
+    """
+    out = dig(issues, "upstream_outcome")
+    if not out:
+        return "_No upstream response recorded._\n"
+    rows = ["| Issue | Defect | Fixed by |", "| --- | --- | --- |"]
+    titles = {i["url"].rstrip("/").split("/")[-1]: i["title"]
+              for i in dig(issues, "issues", []) or []}
+    for f in dig(out, "fix_commits", []) or []:
+        num = f["fixes"].lstrip("#")
+        t = titles.get(num, "")
+        rows.append(f"| [{f['fixes']}](https://github.com/skeeto/pdjson/issues/{num}) "
+                    f"| {t} | `{f['sha']}` {f['subject']} |")
+    mc = dig(out, "maintainer_comment", {}) or {}
+    rows.append("")
+    rows.append(f"All three closed as completed on {dig(out, 'closed_on')}. The "
+                f"maintainer's reply on "
+                f"[#{mc.get('issue', '').rstrip('/').split('/')[-1]}]({mc.get('issue')}):")
+    rows.append("")
+    rows.append(f"> {mc.get('quote', '')}")
+    rows.append("")
+    extra = dig(out, "additional_commit_upstream_credited_to_this_work", {}) or {}
+    if extra:
+        rows.append(f"A fourth commit, `{extra['sha']}` ({extra['subject']}), was "
+                    f"credited as found while fixing "
+                    f"[#36](https://github.com/skeeto/pdjson/issues/36). It is "
+                    f"recorded in the artifact but is not counted as a finding "
+                    f"here, because it was not one of the three filed issues.")
+        rows.append("")
+    rows.append(f"_{dig(out, 'consequence_for_this_port')}_")
+    return "\n".join(rows) + "\n"
 
 
 def render_size_block(size) -> str:

@@ -410,6 +410,9 @@ If I were trying to break this submission, I would attack here:
    parser — but it is evidence.
 2. **Three upstream issues are filed, not triaged.** No maintainer has looked at
    them.
+   > *Superseded 2026-08-02, left in place because this document is a record of
+   > what was true when it was written: all three were subsequently confirmed and
+   > fixed by the maintainer. See the README's "Upstream impact" section.*
 3. **Part of the performance gap is unexplained**, and is left that way rather
    than chased.
 4. **Every check here has a scope**, and the scopes are where the remaining risk

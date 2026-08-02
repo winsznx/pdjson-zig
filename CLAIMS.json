@@ -117,7 +117,7 @@
       },
       "command": "make differential && cc -fsanitize=address,undefined -I upstream/pdjson -o /tmp/r tests/upstream-bugs/repro_oom_stack.c upstream/pdjson/pdjson.c && /tmp/r",
       "verified_date": "2026-08-02",
-      "limitation": "Confirmed against the pinned upstream by ASan and UBSan, with a minimal public-API reproducer in tests/upstream-bugs/repro_oom_stack.c. Analysis in docs/upstream-bug-oom-stack.md. Reported upstream; the issue URL is recorded in artifacts/upstream-issues.json.",
+      "limitation": "Confirmed against the pinned upstream by ASan and UBSan, with minimal public-API reproducers in tests/upstream-bugs/. Analyses in docs/upstream-bug-*.md. All three were subsequently closed as completed by the maintainer with fixes committed upstream; see C-41. The pin stays at 78fe04b, so those fixes land after every measurement in this repository and change none of them.",
       "allowed_in": [
         "readme",
         "devfolio",
@@ -796,6 +796,26 @@
       "command": "python3 scripts/state-machine.py",
       "verified_date": "2026-08-02",
       "limitation": "This is a property of the corpus, not of the parser: it says a clean checkout with no network reaches every specified transition, which is what makes the coverage number meaningful to someone who just cloned the repository. It says nothing further about path coverage. The check was added because `make verify` passed in the development tree at 54/54 while a clean clone reached 48/54 and failed.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
+    },
+    {
+      "id": "C-41",
+      "text": "All three defects reported upstream were confirmed and fixed by the pdjson maintainer, each closed as completed with a corresponding commit: 858faf26f for the container-stack read, b0f17fe6f for the 0xFF/EOF confusion, and 2807b9ae1 for the uninitialised read.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/upstream-issues.json",
+      "check": {
+        "kind": "equals",
+        "path": "upstream_outcome.all_three_closed_as_completed",
+        "value": true
+      },
+      "command": "gh issue view 36 --repo skeeto/pdjson --json state,stateReason",
+      "verified_date": "2026-08-02",
+      "limitation": "Issue state, close reason and close timestamp were read from the GitHub API and the fix commits from the upstream commit log, rather than inferred from a maintainer comment. The artifact records the maintainer's comment in full alongside the short quote, because a quotation trimmed to its most favourable clause is the failure mode this ledger exists to prevent. A fourth commit, c32ccb6c6, was credited by the maintainer as found while fixing #36; it is recorded but is not one of the three filed issues and is not counted as a finding here. This claim is about upstream's response, not about the port: it adds no evidence for or against equivalence.",
       "allowed_in": [
         "readme",
         "devfolio",

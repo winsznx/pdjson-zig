@@ -319,11 +319,12 @@ each other. The safety checks are close to free here.
 - **ABI equivalence is verified on two targets**, not asserted universally.
 - **`nan(...)` payloads that overflow 64 bits are not matched**, because C99
   makes them implementation-defined and libcs disagree.
-- **The two upstream issues are filed, not triaged.** No maintainer has confirmed
-  them, and the claim ledger says "reported", not "confirmed".
+- **The three upstream issues were confirmed and fixed by the maintainer**, each
+  closed as completed with a commit. That validates the findings, not the port:
+  it says the defects were real, not that the rewrite is equivalent.
 - **The port is slower**, and part of why is unknown.
-- **Equivalence is demonstrated, not proven.** ~3,500 compared cases and 25
-  minutes of fuzzing is evidence. It is not a proof of behavioural equality, and
+- **Equivalence is demonstrated, not proven.** Millions of compared cases and a
+  published fuzz session is evidence. It is not a proof of behavioural equality, and
   calling it one would undo the point of the exercise.
 
 ## Reproducing all of it

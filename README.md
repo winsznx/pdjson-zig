@@ -17,7 +17,7 @@
 | **Benchmark** | **Slower on 9 of 12** workload/mode pairs, faster on 3, and larger in a consumer's binary — by how much depends on the platform. Both tables below, generated from the artifacts. |
 | **Invariants** | 5,824 transcripts and 203,433 records from the committed corpus checked against 13 rules that reference neither implementation: **0 violations** |
 | **API coverage** | All 22 exported functions behaviourally compared; **0 untested** |
-| **Upstream bugs found** | 3, all filed with minimal reproducers: [#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38). Two independently confirmed by Valgrind. |
+| **Upstream bugs found** | 3, all filed with minimal reproducers — **all 3 confirmed and fixed by the maintainer** ([#36](https://github.com/skeeto/pdjson/issues/36), [#37](https://github.com/skeeto/pdjson/issues/37), [#38](https://github.com/skeeto/pdjson/issues/38)). Two also independently confirmed by Valgrind. |
 <!-- SUMMARY:END -->
 
 ```sh
@@ -106,6 +106,7 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-38 | The differential's comparison is demonstrated to be sensitive to every field a transcript record carries -- event, token bytes, token length, number bits, line, position, depth, context, context count, error text, operation and sequence -- by perturbing each field and requiring the comparison to notice. | verified | [`artifacts/mutation/detector-selftest.json`](artifacts/mutation/detector-selftest.json) |
 | C-39 | The differential's strength is shown to be load-bearing: the same 12 injected defects over the same 1,489 comparable cases go from 12 caught to 4 when only the comparison is weakened to the event sequence, so 8 are detected solely by the fields beyond it. | verified | [`artifacts/mutation-report-weakened.json`](artifacts/mutation-report-weakened.json) |
 | C-40 | The committed fixture corpus reaches all 54 specified state transitions on its own, without the on-demand JSONTestSuite corpus or the accumulated minimized fuzz findings. | verified | [`artifacts/state-machine/coverage.json`](artifacts/state-machine/coverage.json) |
+| C-41 | All three defects reported upstream were confirmed and fixed by the pdjson maintainer, each closed as completed with a corresponding commit: 858faf26f for the container-stack read, b0f17fe6f for the 0xFF/EOF confusion, and 2807b9ae1 for the uninitialised read. | verified | [`artifacts/upstream-issues.json`](artifacts/upstream-issues.json) |
 <!-- CLAIMS:END -->
 
 Every row is checked against a generated artifact by
@@ -468,6 +469,32 @@ The classifier passes ten of its own tests, two of which exist because it got
 those cases wrong first. Full per-occurrence account:
 [`docs/safety.md`](docs/safety.md).
 
+## Upstream impact
+
+The three defects this project reported in `skeeto/pdjson` were **confirmed and
+fixed by the maintainer**.
+
+<!-- UPSTREAM:BEGIN -->
+| Issue | Defect | Fixed by |
+| --- | --- | --- |
+| [#36](https://github.com/skeeto/pdjson/issues/36) | json_get_context() reads an unallocated stack slot after a failed allocation (NULL deref / OOB read) | `858faf26f` Do not advance the container stack on a failed push |
+| [#37](https://github.com/skeeto/pdjson/issues/37) | Byte 0xFF is read as EOF by the memory-buffer source, so it disagrees with the FILE* source | `b0f17fe6f` Do not read byte 0xFF as EOF in the buffer source |
+| [#38](https://github.com/skeeto/pdjson/issues/38) | json_get_number() reads uninitialised bytes after a partial token, making it nondeterministic | `2807b9ae1` Terminate tokens abandoned part way through |
+
+All three closed as completed on 2026-08-02. The maintainer's reply on [#38](https://github.com/skeeto/pdjson/issues/38):
+
+> Solid findings, excellent analysis.
+
+A fourth commit, `c32ccb6c6` (Do not count a value that failed to parse), was credited as found while fixing [#36](https://github.com/skeeto/pdjson/issues/36). It is recorded in the artifact but is not counted as a finding here, because it was not one of the three filed issues.
+
+_The pin stays at 78fe04b. Equivalence is claimed against that commit and every artifact here was produced against it, so the fixes landing after it do not change any measurement. They do change what the port's deliberate reproduction of #37 means: upstream now fixes 0xFF, so `zig build -Dfix-0xff=true` is the build that matches current upstream, and the default build matches the pinned commit. Both remain available and the distinction is unchanged -- see DECISIONS.md D-05._
+<!-- UPSTREAM:END -->
+
+They were found by executing the C original and the Zig port independently,
+comparing observable behaviour, and attributing every divergence mechanically —
+an ASan+UBSan build of the pinned original decides whether a case is a defect in
+the original or a difference to explain, rather than judgement doing it.
+
 ## Bugs found in the original
 
 Both were found by the verification pipeline, not by reading the code. Both have
@@ -615,7 +642,7 @@ Stated here rather than left to be discovered.
 - **ABI equivalence is *executed* on two targets**, arm64 macOS and x86-64 Linux, and asserted at compile time on 6 more. Both executed targets are LP64. Three of the four findings in the first cold audit were platform-specific and invisible on the development machine, so a third executed target would likely find a fourth thing.
 - **`nan(...)` payloads that overflow 64 bits are not matched.** C99 §7.20.1.3p4 makes them implementation-defined and libcs disagree. Reachable only by calling `json_get_number()` on a *string* token beginning `nan(`. ([D-09](DECISIONS.md))
 - **The port is slower and larger, and the size cost is platform-specific.** Slower on 9 of 12 workload/mode pairs. The stripped binary a consumer links is 2.42x on macOS-27.0-arm64-arm-64bit-Mach-O and 12.51x on x86-64 Linux, where Zig emits far more unwind and read-only data. That gap is reported rather than averaged away. Part of the remaining time gap is unexplained.
-- **The 3 upstream issues are filed, not triaged.** No maintainer has confirmed them yet, and the ledger says so. A fourth defect, in Zig's own `std.fmt.parseFloat`, is reproduced but *not filed* -- `ziglang/zig` restricts issue creation to collaborators -- so it is embargoed from every public channel in `CLAIMS.json`.
+- **A fourth defect, in Zig's own `std.fmt.parseFloat`, is reproduced but *not filed*** -- `ziglang/zig` restricts issue creation to collaborators -- so it is embargoed from every public channel in `CLAIMS.json` and is not counted among the 3 findings. The three upstream issues have since been confirmed and fixed; the pin stays at the commit every measurement here was made against.
 - **Equivalence is demonstrated, not proven.** 11,730,088 compared cases and a 30-minute fuzz session is evidence, not a proof of behavioural equality. 100% state-transition coverage is not path coverage, and the hand-written specification agreeing with both implementations would not catch a shared misreading of the grammar.
 - **The corpus is not adversarial to itself.** Fixtures were written by the same person who wrote the port. The independent checks against that are JSONTestSuite, the mutation harness, the invariant rules, and the state-transition specification -- each of which found something the fixtures had missed.
 <!-- LIMITS:END -->

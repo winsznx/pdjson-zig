@@ -282,8 +282,11 @@ Stated because they are real, not because they are comfortable.
   ReleaseSafe, so a wrong bound aborts rather than corrupting memory; that they
   hold on untrusted input rests on the fuzz session and the random-input
   regression test.
-- **Three upstream issues are filed, not triaged.** No maintainer has confirmed
-  them.
+- **The three upstream issues were confirmed and fixed** after this audit was
+  written, each closed as completed with a commit. That is external validation of
+  the findings, and of nothing else: it says the defects were real, not that the
+  port is equivalent. The pin stays at the commit every measurement here was made
+  against, so no figure in this repository changes.
 - **The port is slower and larger.** 9 of 12 workload/mode pairs slower, 2.42×
   the stripped binary in a consumer. Both are generated into the README from
   artifacts so neither can quietly improve.
