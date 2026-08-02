@@ -84,8 +84,11 @@ jobs:
       - name: no upstream parser code in the Zig artifact
         run: sh scripts/verify-no-c-linkage.sh
 
-      - name: C ABI equivalence
+      - name: C ABI equivalence (host, executed)
         run: sh scripts/abi-check.sh
+
+      - name: C ABI equivalence (cross-target, compile-time)
+        run: sh scripts/abi-cross-check.sh
 
       - name: oracle determinism
         run: sh scripts/oracle-determinism.sh

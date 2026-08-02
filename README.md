@@ -75,6 +75,7 @@ bug [#36](https://github.com/skeeto/pdjson/issues/36).
 | C-20 | No divergence has ever been observed on any input where the pinned original is well defined: 4,085 fixed-corpus comparisons plus 3,498 JSONTestSuite comparisons plus a 30-minute 34.6-million-case fuzz session, all at zero. | verified | [`artifacts/differential-jsontestsuite.json`](artifacts/differential-jsontestsuite.json) |
 | C-21 | Verification found two real defects in this port -- a hex-float rounding error and an uninitialised read inherited from the original -- both fixed, regression-tested and documented. | verified | [`artifacts/differential-summary.json`](artifacts/differential-summary.json) |
 | C-22 | Both transcript producers are deterministic on Linux and macOS: five runs over every fixture in five modes produce byte-identical output. | verified | [`artifacts/determinism-report.json`](artifacts/determinism-report.json) |
+| C-23 | The Zig type declarations and the pinned C header describe the same ABI on 6 targets spanning 32- and 64-bit, little-endian ARM, x86, RISC-V and Windows. | verified | [`artifacts/abi-cross-report.json`](artifacts/abi-cross-report.json) |
 <!-- CLAIMS:END -->
 
 Every row is checked against a generated artifact by
@@ -306,9 +307,24 @@ depth, context, raw number lexemes, number values, error text, line numbers,
 streaming with reset, and skip.
 
 `include/pdjson.h` is byte-identical to upstream's (`sha256:724f8ad9…dac6`).
-Scope: verified on arm64 macOS and x86-64 Linux (CI). Both tables derive from the
-same header on each side, so the check tracks the platform's C ABI rather than
-hard-coding one — but it attests only to targets it has been run on.
+
+Executing both probes only covers targets with a runner — arm64 macOS and x86-64
+Linux — and both are LP64, so they say nothing about what happens when the
+pointer size changes. [`scripts/abi-cross-check.sh`](scripts/abi-cross-check.sh)
+closes that without needing to execute anything: it reads Zig's layout for a
+target at compile time via `@compileLog`, then asserts those numbers against the
+pinned header with `_Static_assert` compiled for the same target.
+
+| Target | `sizeof(struct json_stream)` | align |
+| --- | --- | --- |
+| x86-64 Linux, aarch64 Linux, x86-64 Windows, riscv64 Linux | 272 | 8 |
+| i386 Linux, armhf Linux | 204 | 4 |
+
+Both sides go through the Zig toolchain's clang there, so it is not a claim about
+other compilers on those targets — the executed check covers the host compiler.
+It asserts field *sizes* as well as offsets: a shorter trailing array can be
+absorbed by padding, leaving `sizeof` and every offset identical. That gap was in
+the first version of the check and was found by deliberately breaking it.
 
 ## Bugs found in the original
 

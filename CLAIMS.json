@@ -442,6 +442,26 @@
         "devfolio",
         "video"
       ]
+    },
+    {
+      "id": "C-23",
+      "text": "The Zig type declarations and the pinned C header describe the same ABI on 6 targets spanning 32- and 64-bit, little-endian ARM, x86, RISC-V and Windows.",
+      "status": "verified",
+      "proof_level": "executable",
+      "artifact": "artifacts/abi-cross-report.json",
+      "check": {
+        "kind": "equals",
+        "path": "mismatches",
+        "value": 0
+      },
+      "command": "sh scripts/abi-cross-check.sh",
+      "verified_date": "2026-08-02",
+      "limitation": "Compile-time comparison, not execution: Zig's layout per target is read via @compileLog and asserted against the pinned header with _Static_assert compiled for that target. Both sides use the Zig toolchain's clang, so it is not a claim about other compilers on those targets -- scripts/abi-check.sh covers the host compiler by executing both probes. sizeof(struct json_stream) is 272 on the 64-bit targets and 204 on the 32-bit ones. The check asserts field sizes as well as offsets, because a shorter trailing array can otherwise be absorbed by padding; that gap existed in the first version and was found by negative-testing the check.",
+      "allowed_in": [
+        "readme",
+        "devfolio",
+        "video"
+      ]
     }
   ]
 }

@@ -65,8 +65,10 @@ test-original: build
 	$(PYTHON) scripts/original-tests.py
 
 abi: build
-	@echo "==> C ABI layout equivalence"
+	@echo "==> C ABI layout equivalence (host, executed)"
 	@sh scripts/abi-check.sh
+	@echo "==> C ABI layout equivalence (cross-target, compile-time)"
+	@sh scripts/abi-cross-check.sh
 
 conformance: build
 	@echo "==> Fixed conformance corpus (differential)"
@@ -125,8 +127,9 @@ verify:
 	@echo "[4/16] the Zig artifact contains no upstream parser code"
 	@sh scripts/verify-no-c-linkage.sh
 	@echo
-	@echo "[5/16] C ABI layout equivalence"
+	@echo "[5/16] C ABI layout equivalence (host + 6 cross targets)"
 	@sh scripts/abi-check.sh
+	@sh scripts/abi-cross-check.sh
 	@echo
 	@echo "[6/16] C oracle determinism"
 	@sh scripts/oracle-determinism.sh

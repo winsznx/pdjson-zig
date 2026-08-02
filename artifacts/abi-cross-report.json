@@ -1,0 +1,8 @@
+{
+  "schema": "pdjson-zig/abi-cross-report@1",
+  "method": "Zig's layout for each target is read at compile time via @compileLog, then asserted against the pinned upstream header with _Static_assert compiled for the same target. Neither side is executed.",
+  "caveat": "Both sides use the Zig toolchain's clang, so this shows the Zig declarations agree with that C frontend for each target. It is not a claim about other compilers on those targets; scripts/abi-check.sh covers the host compiler by execution.",
+  "targets_checked": 6,
+  "mismatches": 0,
+  "results": [ {"target":"x86_64-linux-gnu","status":"match","sizeof_json_stream":272,"alignof":8,"sizeof_enum":4},{"target":"x86-linux-gnu","status":"match","sizeof_json_stream":204,"alignof":4,"sizeof_enum":4},{"target":"aarch64-linux-gnu","status":"match","sizeof_json_stream":272,"alignof":8,"sizeof_enum":4},{"target":"arm-linux-gnueabihf","status":"match","sizeof_json_stream":204,"alignof":4,"sizeof_enum":4},{"target":"x86_64-windows-gnu","status":"match","sizeof_json_stream":272,"alignof":8,"sizeof_enum":4},{"target":"riscv64-linux-gnu","status":"match","sizeof_json_stream":272,"alignof":8,"sizeof_enum":4} ]
+}
