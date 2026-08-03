@@ -1,6 +1,6 @@
 # Verification report
 
-Generated 2026-08-02 by `scripts/report.py` from the
+Generated 2026-08-03 by `scripts/report.py` from the
 artifacts in `artifacts/`. Every number here is read out of a file that
 `make verify` regenerates; nothing is typed in by hand.
 

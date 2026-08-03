@@ -34,8 +34,13 @@ artifacts are warm.
 
 ```sh
 wc -l upstream/pdjson/pdjson.c upstream/pdjson/pdjson.h
-git -C . log -1 --format='%H' 2>/dev/null; cat .port-mortem.toml | head -14
+python3 -c "import json;print('pinned upstream commit:', json.load(open('artifacts/upstream-manifest.json'))['commit'])"
 ```
+
+Do **not** use `git -C upstream/pdjson rev-parse HEAD` here. `upstream/pdjson` is
+vendored inside this repository, so git resolves it to *this* repo's HEAD and
+prints the wrong commit while the narration says 78fe04b. Read the pin from the
+manifest the hash check uses.
 
 **Narration:**
 
@@ -221,7 +226,7 @@ python3 -c "import json;d=json.load(open('artifacts/differential-summary.json'))
 ```
 
 **Expected:** UBSan "member access within null pointer", ASan SEGV at
-`json_get_context pdjson.c:912`, then `divergences: 0  ... upstream UB: 45`.
+`json_get_context pdjson.c:912`, then `divergences: 0  ... upstream UB: 51`.
 
 **Narration:**
 
@@ -239,7 +244,7 @@ python3 -c "import json;d=json.load(open('artifacts/differential-summary.json'))
 > fires, it's classified as upstream undefined behaviour and counted separately,
 > with the sanitizer output attached.
 >
-> All 45 resolved to one line. That's upstream issue #36. The zero divergences
+> All 51 resolved to one line. That's upstream issue #36. The zero divergences
 > means zero on inputs where the original is actually defined — which is a
 > narrower claim, and a true one.
 >
